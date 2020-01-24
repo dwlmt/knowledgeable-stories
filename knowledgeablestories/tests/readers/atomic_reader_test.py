@@ -27,4 +27,4 @@ class TestAtomicDatasetReader(AllenNlpTestCase):
 
         for instance in instances:
             print(instance)
-            print(instance["metadata"])
+            print(instance["metadata"].metadata)

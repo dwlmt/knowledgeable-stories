@@ -54,7 +54,8 @@ class AtomicDatasetReader(DatasetReader):
 
         with open(file_path, mode='r') as csv_file:
             csv_reader = csv.DictReader(csv_file)
-            row_num = 0
+            example_row_num = 0
+            orig_row_num = 0
             for row in csv_reader:
 
                 for cat in self.categories:
@@ -73,10 +74,14 @@ class AtomicDatasetReader(DatasetReader):
                             relation_dict["subject"] = row["event"].replace('___','<blank>')
                             relation_dict["relation"] = cat
                             relation_dict["object"] = cat_data_item.replace('_','<blank>')
-                            relation_dict["row_num"] = row_num
+                            relation_dict["example_row_num"] = example_row_num
+                            relation_dict["orig_row_num"] = orig_row_num
+                            relation_dict["split"] = row["split"]
 
-                            row_num += 1
+                            example_row_num += 1
 
                             yield self.text_to_instance(relation_dict)
 
-            logging.info(f'Atomic dataset {file_path} has  {row_num} examples.')
+                    orig_row_num += 1
+
+            logging.info(f'Atomic dataset {file_path} has  {example_row_num} examples.')
