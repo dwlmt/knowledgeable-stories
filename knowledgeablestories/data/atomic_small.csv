@@ -1,0 +1,98 @@
+event,oEffect,oReact,oWant,xAttr,xEffect,xIntent,xNeed,xReact,xWant,prefix,split
+PersonX uses PersonX's ___ to obtain,[],"[""annoyed"", ""angry"", ""worried""]",[],[],[],"[""to have an advantage"", ""to fulfill a desire"", ""to get out of trouble""]",[],"[""pleased"", ""smug"", ""excited""]",[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],"[""controlled""]",[],[],[],"[""to be powerful""]",[],"[""powerful""]",[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],"[""manipulated""]",[],[],[],"[""to be influential""]",[],"[""powerful""]",[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,"[""none""]",[],[],[],"[""Obtains something"", ""Plans next move""]",[],[],[],[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,"[""none""]",[],[],[],"[""he uses what he has wisely"", ""he saves the rest""]",[],[],[],[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],[],"[""to oblige"", ""to refuse""]",[],[],[],"[""to reach a position of strength"", ""to ask favors from others""]",[],"[""to ask for more things"", ""to get another promotion""]","[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],[],"[""none""]",[],[],[],"[""to be skillful"", ""to have a hidden agenda""]",[],"[""to start business"", ""to hire individuals""]","[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],[],[],"[""independant"", ""stimulating""]",[],[],[],[],[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],[],[],"[""resourceful"", ""intelligent""]",[],[],[],[],[],"[""uses"", ""obtain""]",trn
+PersonX uses PersonX's ___ to obtain,[],[],[],"[""skilled"", ""resourceful""]",[],[],[],[],[],"[""uses"", ""obtain""]",trn
+PersonX changes men 's ___,[],"[""grateful to him""]",[],[],[],"[""to reform men with a bad attitude.""]",[],"[""satisfied about helping mankind""]",[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],"[""none""]",[],[],[],"[""good about themselves""]",[],"[""good""]",[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,"[""none""]",[],[],[],"[""none""]",[],[],[],[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,"[""none""]",[],[],[],"[""breaks marriages"", ""causes men stress""]",[],[],[],[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,"[""They are burdened"", ""They are delayed""]",[],[],[],"[""none""]",[],[],[],[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],"[""none""]",[],[],[],"[""trust"", ""honest""]",[],"[""confident"", ""helpful""]","[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],"[""to join PersonX"", ""to give money to the cause"", ""to fight for the cause"", ""to rescue animals""]",[],[],[],"[""to volunteer time"", ""to teach people"", ""to show the plight of animals""]",[],"[""to get people to volunteer"", ""to have people sign petitions"", ""to have people donate what they can""]","[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],"[""to thank x profusely"", ""to tell others""]",[],[],[],"[""to understand men"", ""to plan for their changes""]",[],"[""to reap the rewards"", ""to explore the benefits""]","[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],[],"[""powerful"", ""caring""]",[],[],[],[],[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],[],"[""persuasive"", ""skilled""]",[],[],[],[],[],"[""changes"", ""men""]",trn
+PersonX changes men 's ___,[],[],[],"[""controlling"", ""manipulative"", ""endearing""]",[],[],[],[],[],"[""changes"", ""men""]",trn
+PersonX thanks ___ for PersonY's assistance,[],"[""proud""]",[],[],[],"[""to be respectful""]",[],"[""grateful""]",[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],"[""generous""]",[],[],[],"[""to show gratitude"", ""to be polite""]",[],"[""satisfied""]",[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,"[""smile because they appreciate that PersonX did mention them in his/her speech"", ""make a phone call to PersonX"", ""shake PersonX's hand"", ""become famous""]",[],[],[],"[""none""]",[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,"[""Person Y takes next customer"", ""Person Y listens to new customer's problem""]",[],[],[],"[""smiles"", ""has problem solved""]",[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,"[""smiles back"", ""says you are welcome""]",[],[],[],"[""shakes hands"", ""smiles""]",[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],"[""To get reward"", ""To work on another task""]",[],[],[],"[""To be knowing Y"", ""To have a task assigned""]",[],"[""To get award"", ""To share prize money with Y""]","[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],"[""to help more"", ""to accept the thank you""]",[],[],[],"[""none""]",[],"[""to show appreciation"", ""to be grateful""]","[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],"[""none""]",[],[],[],"[""to contact Ross"", ""to go to Ross's house""]",[],"[""to take Ross to lunch"", ""to go home and watch TV""]","[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],[],"[""blessed"", ""thankful""]",[],[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],[],"[""grateful"", ""appreciative""]",[],[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX thanks ___ for PersonY's assistance,[],[],[],"[""modest"", ""humble""]",[],[],[],[],[],"[""thanks"", ""assistance""]",trn
+PersonX lets loose a ___,[],"[""fearful""]",[],[],[],"[""to instill fear into the people""]",[],"[""vengeance""]",[],"[""lets"", ""loose""]",trn
+PersonX lets loose a ___,"[""lose something"", ""no effect""]",[],[],[],"[""gets attacked"", ""gets yelled at""]",[],[],[],[],"[""lets"", ""loose""]",trn
+PersonX lets loose a ___,"[""none""]",[],[],[],"[""wins the battle"", ""is now feared""]",[],[],[],[],"[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],"[""none""]",[],[],[],"[""none""]",[],"[""to regain control"", ""to locate""]","[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],"[""none""]",[],[],[],"[""to decide to put the bookcase together herself"", ""to hit her finger with the hammer and yells in pain""]",[],"[""to wrap her swollen finger"", ""to vow to finish putting the book case together herself""]","[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],"[""none""]",[],[],[],"[""none""]",[],"[""to relieve themselves"", ""to feel better""]","[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],[],"[""willful"", ""unattached""]",[],[],[],[],[],"[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],[],"[""emotional"", ""expressive""]",[],[],[],[],[],"[""lets"", ""loose""]",trn
+PersonX lets loose a ___,[],[],[],"[""carefree"", ""wrathful""]",[],[],[],[],[],"[""lets"", ""loose""]",trn
+PersonX calls ___ to the importance,[],"[""happy to know what is improtant""]",[],[],[],"[""people to know what is important""]",[],"[""good about themselves for calling attention to something important""]",[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],"[""educated""]",[],[],[],"[""others to understand the urgency""]",[],"[""accomplished""]",[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,"[""none""]",[],[],[],"[""none""]",[],[],[],[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,"[""none""]",[],[],[],"[""PersonY thinks carefully"", ""PersonY is surprised at the importance""]",[],[],[],[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],[],"[""none""]",[],[],[],"[""facts"", ""knowledge of a situation""]",[],"[""to shed light light on a situation"", ""to prove a point""]","[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],[],"[""none""]",[],[],[],"[""to be on stage"", ""to be speaking to audience""]",[],"[""to give speech"", ""to sign autographs""]","[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],[],[],"[""attention-seeking"", ""blunt""]",[],[],[],[],[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],[],[],"[""straight-forward"", ""smart""]",[],[],[],[],[],"[""calls"", ""importance""]",trn
+PersonX calls ___ to the importance,[],[],[],"[""instructive"", ""concerned""]",[],[],[],[],[],"[""calls"", ""importance""]",trn
+PersonX sets ___ on the moon,[],"[""none""]",[],[],[],"[""the  personal""]",[],"[""happy""]",[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,"[""none""]",[],[],[],"[""gets a receipt"", ""gets a receipt""]",[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,"[""none""]",[],[],[],"[""walks around"", ""plants flag""]",[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,"[""none""]",[],[],[],"[""are physically on the moon"", ""are in space"", ""marked history to be able to be on the moon""]",[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,[],[],"[""none""]",[],[],[],"[""To train"", ""To become an astronaut""]",[],"[""To click pictures"", ""To give interviews""]","[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,[],[],"[""to ask PersonX for scientific information related to the trip"", ""to celebrate the amazing human achievement""]",[],[],[],"[""to train to be an astronaut"", ""to travel (most likely by rocket) into space""]",[],"[""to communicate with ground control"", ""to explore the rocky terrain"", ""to see other people again""]","[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,[],[],[],"[""adventerous"", ""capable""]",[],[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,[],[],[],"[""curious"", ""adventurous""]",[],[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX sets ___ on the moon,[],[],[],"[""adventurous"", ""unique""]",[],[],[],[],[],"[""sets"", ""moon""]",trn
+PersonX pays ___ to get,[],"[""cheated"", ""unhappy""]",[],[],[],"[""to get off the hook."", ""to get away with something he did.""]",[],"[""sneaky"", ""smart""]",[],"[""pays"", ""get""]",trn
+PersonX pays ___ to get,"[""gains money"", ""nods in agreement""]",[],[],[],"[""has less money"", ""smiles in satisfaction""]",[],[],[],[],"[""pays"", ""get""]",trn
+PersonX pays ___ to get,"[""none""]",[],[],[],"[""receives it"", ""is given a receipt""]",[],[],[],[],"[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],"[""none""]",[],[],[],"[""money"", ""wallet""]",[],"[""to try it out"", ""eat it""]","[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],"[""none""]",[],[],[],"[""to be at a store"", ""to know what they want""]",[],"[""to get someone out of jail"", ""to take what they bought home""]","[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],"[""none""]",[],[],[],"[""determine something to buy"", ""acquire money""]",[],"[""to take the product home"", ""to try it""]","[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],[],"[""determined"", ""rich""]",[],[],[],[],[],"[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],[],"[""responsible"", ""a good citizen""]",[],[],[],[],[],"[""pays"", ""get""]",trn
+PersonX pays ___ to get,[],[],[],"[""spendthrift"", ""acquisitive""]",[],[],[],[],[],"[""pays"", ""get""]",trn
+PersonX devotes PersonX's ___ to the study,[],"[""none""]",[],[],[],"[""to be successful"", ""to be passionate about the study""]",[],"[""fulfilled"", ""exhausted""]",[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],"[""none""]",[],[],[],"[""succeed in the exams""]",[],"[""he wins the exam""]",[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],"[""none""]",[],[],[],"[""to get ahead in life""]",[],"[""better prepared""]",[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,"[""person gives information."", ""person spend time.""]",[],[],[],"[""needs gather paperwork."", ""needs study.""]",[],[],[],[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,"[""get to study information that matters to them."", ""write papers."", ""gain recognition.""]",[],[],[],"[""smiles."", ""learns something.""]",[],[],[],[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],[],[],[],[],"[""to prepare"", ""a plan""]",[],[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],"[""none""]",[],[],[],[],[],"[""to learn"", ""to share their knowledge""]","[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],"[""none""]",[],[],[],[],[],"[""To relax"", ""To get recognition""]","[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],"[""none""]",[],[],[],[],[],"[""to pass the test."", ""to move to the next level.""]","[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],[],"[""determined"", ""giving""]",[],[],[],[],[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],[],"[""hardworking"", ""serious""]",[],[],[],[],[],"[""devotes"", ""study""]",trn
+PersonX devotes PersonX's ___ to the study,[],[],[],"[""studious"", ""smart""]",[],[],[],[],[],"[""devotes"", ""study""]",trn
+PersonX groups together ___,[],"[""none""]",[],[],[],"[""to meet all friends together""]",[],"[""happy to see all""]",[],"[""groups"", ""together""]",trn
+PersonX groups together ___,[],"[""none""]",[],[],[],"[""to make a form of humans to develop our self""]",[],"[""happy,enjoy""]",[],"[""groups"", ""together""]",trn
+PersonX groups together ___,"[""none""]",[],[],[],"[""become more organized"", ""become more efficient""]",[],[],[],[],"[""groups"", ""together""]",trn
+PersonX groups together ___,[],[],"[""none""]",[],[],[],"[""to research"", ""to come up with a plan""]",[],"[""write down the groups"", ""save notes""]","[""groups"", ""together""]",trn
+PersonX groups together ___,[],[],"[""none""]",[],[],[],"[""none""]",[],"[""schools"", ""friends""]","[""groups"", ""together""]",trn
+PersonX groups together ___,[],[],[],"[""racist"", ""unskilled""]",[],[],[],[],[],"[""groups"", ""together""]",trn
+PersonX groups together ___,[],[],[],"[""responsible"", ""creative""]",[],[],[],[],[],"[""groups"", ""together""]",trn
+PersonX provides ___ for patients,[],"[""thankful""]",[],[],[],"[""to take care of people""]",[],"[""good""]",[],"[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],"[""comforted""]",[],[],[],"[""to make them happy""]",[],"[""good about his deed""]",[],"[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,"[""Patients receive care"", ""Patients get healthier""]",[],[],[],"[""PersonX goes home from work"", ""PersonX fills out patient charts""]",[],[],[],[],"[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,"[""talk to PersonX"", ""receive assistance""]",[],[],[],"[""talks to patients"", ""assists patients""]",[],[],[],[],"[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],"[""to thank the doctor"", ""to ask for more services""]",[],[],[],"[""to find out what patients need"", ""to work with patients""]",[],"[""to improve services"", ""to find out what else patients need""]","[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],"[""none""]",[],[],[],"[""Washing his hands"", ""Puts on gloves""]",[],"[""He call them in"", ""Check them out""]","[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],"[""meet with PersonX"", ""follow PersonX's regiment""]",[],[],[],"[""outline their service plans"", ""ask patients what their needs are""]",[],"[""to fulfill the patient's needs"", ""schedule follow up appointments""]","[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],"[""to thank personx for their time"", ""to hug personx""]",[],[],[],"[""to visit the patients"", ""to greet the patients""]",[],"[""To say goodbye to the patients"", ""to thank the patients for their visit""]","[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],[],"[""skilled"", ""dedicated""]",[],[],[],[],[],"[""provides"", ""patients""]",trn
+PersonX provides ___ for patients,[],[],[],"[""dependable"", ""reliable""]",[],[],[],[],[],"[""provides"", ""patients""]",trn
