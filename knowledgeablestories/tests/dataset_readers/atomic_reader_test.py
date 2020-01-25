@@ -11,7 +11,6 @@ from allennlp.data.instance import Instance
 
 from knowledgeablestories.dataset_readers.atomic_reader import AtomicDatasetReader
 
-
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." ).resolve()
 
 class TestAtomicDatasetReader(AllenNlpTestCase):
