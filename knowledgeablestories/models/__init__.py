@@ -1,0 +1,1 @@
+from knowledgeablestories.models.knowledgeable_story_model import KnowStoryModel

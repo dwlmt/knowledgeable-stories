@@ -34,7 +34,7 @@ class AtomicDatasetReader(DatasetReader):
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._relation_token_indexers = relation_token_indexers or {"tokens": SingleIdTokenIndexer(namespace="atomic")}
+        self._relation_token_indexers = relation_token_indexers or {"tokens": SingleIdTokenIndexer(namespace="relation")}
         self._categories = categories or atomic_categories
 
         self._start_and_end_tokens = start_and_end_tokens
@@ -44,7 +44,6 @@ class AtomicDatasetReader(DatasetReader):
 
         fields["metadata"] = MetadataField(text_dict)
         for field in ["source","target"]:
-            # TODO: This is wrong as the relation needs to be a random embedding for relation type the same size as the LM but not from it.
             tokens = self._tokenizer.tokenize(text_dict[field])
             text_field = TextField(tokens, self._token_indexers)
             fields[field] =  text_field

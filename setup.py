@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
 setup(
     name='Knowledgeable-Stories',
     version='0.0.1',
-    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"],include=["data"]),
+    packages=find_packages(),
     install_requires=requirements,
     url='',
     license='',
