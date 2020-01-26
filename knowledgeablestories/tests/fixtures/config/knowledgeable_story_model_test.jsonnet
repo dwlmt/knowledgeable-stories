@@ -1,9 +1,13 @@
+local pwd = std.extVar("PWD");
+local pwd2 = std.strReplace(pwd,'model','');
+local train_path = pwd2 + "/fixtures/data/atomic_small.csv";
+
 {
   "dataset_reader": {
     "type": "atomic"
   },
-  "train_data_path": "/afs/inf.ed.ac.uk/user/s15/s1569885/git/knowledgeable-stories/knowledgeablestories/tests/fixtures/data/atomic_small.csv",
-  "validation_data_path": "/afs/inf.ed.ac.uk/user/s15/s1569885/git/knowledgeable-stories/knowledgeablestories/tests/fixtures/data/atomic_small.csv",
+  "train_data_path": train_path ,
+  "validation_data_path":  train_path,
   "model": {
     "type": "knowledgeable_stories",
     "text_field_embedder": {
