@@ -1,25 +1,18 @@
 import ast
 import csv
-import logging
-from typing import Dict, List, Iterator
+from typing import Dict, Iterator
+
+from allennlp.nn.util import logger
 
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Token, Tokenizer
-from allennlp.data.fields import TextField, MetadataField
+from allennlp.data.fields import TextField, MetadataField, ListField
 from allennlp.data.token_indexers import SingleIdTokenIndexer, PretrainedTransformerIndexer
 
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 
-atomic_categories = []
-atomic_categories += ["oEffect"]
-atomic_categories += ["oReact"]
-atomic_categories += ["oWant"]
-atomic_categories += ["xAttr"]
-atomic_categories += ["xEffect"]
-atomic_categories += ["xIntent"]
-atomic_categories += ["xNeed"]
-atomic_categories += ["xReact"]
-atomic_categories += ["xWant"]
+from knowledgeablestories.dataset_readers.special_tokens import atomic_categories
+
 
 @DatasetReader.register("atomic")
 class AtomicDatasetReader(DatasetReader):
@@ -27,14 +20,20 @@ class AtomicDatasetReader(DatasetReader):
     DatasetReader for Atomic reader dataset from https://github.com/atcbosselut/comet-commonsense
 
     """
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
-                 relation_token_indexers: Dict[str, TokenIndexer] = None, categories=None,
+    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
                  start_and_end_tokens = False) -> None:
         super().__init__(lazy=False)
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+
+        # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_tokens(atomic_categories)
+        vocab_size = len(self._tokenizer._tokenizer)
+        logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._relation_token_indexers = relation_token_indexers or {"tokens": SingleIdTokenIndexer(namespace="relation")}
+        self._token_indexers["tokens"].tokenizer = self._tokenizer._tokenizer
+
+
         self._categories = categories or atomic_categories
 
         self._start_and_end_tokens = start_and_end_tokens
@@ -42,14 +41,23 @@ class AtomicDatasetReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        fields["metadata"] = MetadataField(text_dict)
-        for field in ["source","target"]:
-            tokens = self._tokenizer.tokenize(text_dict[field])
-            text_field = TextField(tokens, self._token_indexers)
-            fields[field] =  text_field
+        fields["premises"] = TextField([Token(text_dict["event"] + " " + text_dict["relation"])], token_indexers=self._token_indexers)
 
-        text_field = TextField([Token(text_dict["relation"])], token_indexers=self._relation_token_indexers)
-        fields["relation"] = text_field
+        conclusions = []
+        argument = []
+        for t in text_dict["inference"]:
+
+            conclusion_tokens = self._tokenizer.tokenize(t)
+            conclusions.append(TextField(conclusion_tokens, self._token_indexers))
+
+            argument.append(
+                TextField(self._tokenizer.tokenize(text_dict["event"] + " " + text_dict["relation"] + " " + t),
+                          self._token_indexers))
+
+        fields["conclusions"] = ListField(conclusions)
+        fields["arguments"] = ListField(argument)
+
+        fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)
 
@@ -70,22 +78,22 @@ class AtomicDatasetReader(DatasetReader):
 
                     if len(cat_data_list) > 0:
 
-                        for cat_data_item in cat_data_list:
+                        relation_dict = {}
 
-                            relation_dict = {}
+                        targets = [x.replace('_','zBlank') for x in cat_data_list]
 
-                            relation_dict["dataset"] = "atomic"
-                            relation_dict["source"] = row["event"].replace('___','<blank>')
-                            relation_dict["relation"] = cat
-                            relation_dict["target"] = cat_data_item.replace('_','<blank>')
-                            relation_dict["example_row_num"] = example_row_num
-                            relation_dict["orig_row_num"] = orig_row_num
-                            relation_dict["split"] = row["split"]
+                        relation_dict["dataset"] = "atomic"
+                        relation_dict["event"] = row["event"].replace('___','zBlank')
+                        relation_dict["relation"] = cat
+                        relation_dict["inference"] = targets
+                        relation_dict["example_row_num"] = example_row_num
+                        relation_dict["orig_row_num"] = orig_row_num
+                        relation_dict["split"] = row["split"]
 
-                            example_row_num += 1
+                        example_row_num += 1
 
-                            yield self.text_to_instance(relation_dict)
+                        yield self.text_to_instance(relation_dict)
 
                     orig_row_num += 1
 
-            logging.info(f'Atomic dataset {file_path} has  {example_row_num} examples.')
+            logger.info(f'Atomic dataset {file_path} has  {example_row_num} examples.')

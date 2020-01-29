@@ -10,32 +10,11 @@ local train_path = pwd2 + "/fixtures/data/atomic_small.csv";
   "validation_data_path":  train_path,
   "model": {
     "type": "knowledgeable_stories",
-    "text_field_embedder": {
-      "token_embedders": {
-        "tokens": {
-          "type": "pretrained_transformer",
-          "model_name": "gpt2"
-        }
-      }
-    },
-    "language_model_head": {
-      "type": "gpt2",
-      "model_name": "gpt2"
-    },
-    "relation_text_field_embedder": {
-      "token_embedders": {
-        "tokens": {
-          "type": "embedding",
-          "embedding_dim": 768,
-          "trainable": true,
-          "vocab_namespace": "relation"
-        }
-      }
-    }
+    "embedder_vocab_size": 50267,
   },
   "iterator": {
     "type": "basic",
-    "batch_size": 32
+    "batch_size": 2
   },
   "trainer": {
     "num_epochs": 1,

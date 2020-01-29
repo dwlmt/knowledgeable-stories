@@ -23,7 +23,7 @@ class TestAtomicDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 343 # Each relation is expanded out.
+        assert len(instances) == 208 # Each relation is expanded out.
 
         for instance in instances:
             print(instance)
