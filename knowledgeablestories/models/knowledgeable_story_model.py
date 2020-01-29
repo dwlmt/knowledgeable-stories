@@ -23,6 +23,7 @@ class KnowStoryModel(Model):
                  dropout: float = 0.0,
                  dataset_defaults={"atomic": {}},
                  generation_defaults = {"temperature": 1.0, "top_k": 50},
+                 metric_defaults={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20]},
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
                 ) -> None:
@@ -30,6 +31,7 @@ class KnowStoryModel(Model):
 
         self._dataset_defaults = dataset_defaults
         self._generation_defaults = generation_defaults
+        self._metric_defaults = metric_defaults
 
         self._lm_model = GPT2LMHeadModel.from_pretrained(lm_name)
 
@@ -42,7 +44,9 @@ class KnowStoryModel(Model):
 
         self._metrics = {}
         for key, values in self._dataset_defaults.items():
-            self._metrics[f"{key}_lm_accuracy_1"] = CategoricalAccuracy(top_k=1)
+
+            for k in self._metric_defaults["lm_accuracy_top_k"]:
+                self._metrics[f"{key}_lm_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
 
         if initializer is not None:
             initializer(self)
@@ -65,7 +69,11 @@ class KnowStoryModel(Model):
             tokens = arguments["tokens"]
             lm_loss, lm_logits, presents, = self._lm_model(tokens, labels=tokens)
 
-            self._metrics[f"{dataset_name}_lm_accuracy_1"](lm_logits, tokens)
+            with torch.no_grad():
+                if not self.training or self._metric_defaults["training_metrics"]:
+                    for k in self._metric_defaults["lm_accuracy_top_k"]:
+
+                        self._metrics[f"{dataset_name}_lm_accuracy_{k}"](lm_logits, tokens)
 
             loss = loss.to(lm_loss.device)
             loss += lm_loss
