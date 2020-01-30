@@ -11,7 +11,7 @@ from allennlp.data.token_indexers import SingleIdTokenIndexer, PretrainedTransfo
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories
+from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
 
 
 @DatasetReader.register("atomic")
@@ -27,7 +27,7 @@ class AtomicDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(atomic_categories)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
@@ -41,7 +41,7 @@ class AtomicDatasetReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        fields["premises"] = TextField([Token(text_dict["event"] + " " + text_dict["relation"])], token_indexers=self._token_indexers)
+        fields["premises"] = TextField(self._tokenizer.tokenize(text_dict["event"] + " " + text_dict["relation"]), token_indexers=self._token_indexers)
 
         conclusions = []
         argument = []

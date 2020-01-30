@@ -10,22 +10,21 @@ local dataset_root = std.extVar("DATASET_ROOT");
   "evaluate_on_test": true,
   "model": {
     "type": "knowledgeable_stories",
-    "embedder_vocab_size": 50267
+    "embedder_vocab_size": 50268
   },
   "iterator": {
     "type": "basic",
-    "batch_size": 16
+    "batch_size": 24
   },
   "trainer": {
-    "num_epochs": 10,
+    "num_epochs": 20,
     "validation_metric": "-loss",
     "patience": 1,
     "shuffle": true,
     "cuda_device": [
-      2
+      0, 1
     ],
-    "grad_clipping": 5.0,
-    "model_save_interval": 3600.0,
+    "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
     "optimizer": {
       "type": "sgd",
@@ -37,7 +36,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
       "type": "reduce_on_plateau",
       "factor": 0.5,
       "mode": "max",
-      "patience": 0
+      "patience": 2
     }
   }
 }
