@@ -11,6 +11,8 @@
 
 set -e # fail fast
 
+export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
+
 # Activate Conda
 source /home/${USER}/miniconda3/bin/activate allennlp
 
@@ -24,15 +26,15 @@ export STUDENT_ID=${USER}
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
 
-declare -a ScratchPathArray=(/disk/scratch/${STUDENT_ID} /disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
+declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 
 # Iterate the string array using for loop
 for i in "${ScratchPathArray[@]}"
 do
     echo ${i}
-    mkdir -p ${i}
     if [ -w ${i} ];then
       echo "WRITABLE"
+      mkdir -p ${i}
       export SCRATCH_HOME=${i}
       break
    fi
@@ -43,7 +45,7 @@ echo ${SCRATCH_HOME}
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 export ALLENNLP_CACHE_ROOT="${CLUSTER_HOME}/allennlp_cache_root/"
 
-export SERIAL_DIR="${SCRATCH_HOME}/${EXP_NAME}"
+export SERIAL_DIR="${SCRATCH_HOME}/${EXP_NAME}_${CURRENT_TIME}"
 
 
 # Ensure the scratch home exists and CD to the experiment root level.
@@ -64,7 +66,7 @@ echo "ALLENNLP Task finished"
 mkdir -p "${CLUSTER_HOME}/runs/cluster/"
 rsync -avuzhP "${SERIAL_DIR}" "${CLUSTER_HOME}/runs/cluster/" # Copy output onto headnode
 
-rm -rf "${SERIAL_DIR}/"
+rm -rf "${SERIAL_DIR}"
 
 echo "============"
 echo "results synced"

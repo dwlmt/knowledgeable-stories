@@ -14,7 +14,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
   },
   "iterator": {
     "type": "basic",
-    "batch_size": 24
+    "batch_size": 16
   },
   "trainer": {
     "num_epochs": 20,
@@ -22,7 +22,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "patience": 1,
     "shuffle": true,
     "cuda_device": [
-      0, 1
+      0
     ],
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
@@ -36,7 +36,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
       "type": "reduce_on_plateau",
       "factor": 0.5,
       "mode": "max",
-      "patience": 2
+      "patience": 3
     }
   }
 }

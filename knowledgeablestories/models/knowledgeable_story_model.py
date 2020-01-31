@@ -27,8 +27,8 @@ class KnowStoryModel(Model):
                  lm_name: str = "gpt2",
                  embedder_vocab_size: int = None,
                  dropout: float = 0.0,
-                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True}},
-                 generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True, "num_beams": 1},
+                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc_lm": {}},
+                 generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": False, "num_beams": 5},
                  metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20]},
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
@@ -70,7 +70,9 @@ class KnowStoryModel(Model):
                 passages: Dict[str, torch.Tensor] = None,
                 premises: Dict[str, torch.Tensor] = None,
                 conclusions: Dict[str, torch.Tensor] = None,
+                negative_conclusions: Dict[str, torch.Tensor] = None,
                 arguments: Dict[str, torch.Tensor] = None,
+                negative_arguments: Dict[str, torch.Tensor] = None,
                 metadata: List[Dict[str, Any]] = None
                 ) -> Dict[str, torch.Tensor]:
 
@@ -79,6 +81,7 @@ class KnowStoryModel(Model):
 
         loss = torch.tensor(0.0)
 
+        # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None:
 
             tokens = arguments["tokens"]
@@ -91,24 +94,13 @@ class KnowStoryModel(Model):
 
                     self._metrics[f"{dataset_name}_lm_perplexity"](lm_loss)
 
-                    if "generate_text" in self._dataset_config[dataset_name]:
+                    if "generate_text" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["true"]:
 
-                        prem = premises["tokens"]
+                        generated_text = self._generate_text(dataset_name, premises)
 
-                        num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
+                        prem_tokens = premises["tokens"]
 
-                        generated_text = self._lm_model.generate(
-                            input_ids=prem,
-                            max_length=self._generation_config["max_length"],
-                            temperature=self._generation_config["temperature"],
-                            top_k=self._generation_config["top_k"],
-                            do_sample=self._generation_config["do_sample"],
-                            num_beams=self._generation_config["num_beams"],
-                            eos_token_ids = EOS_TOKEN_IDS,
-                            num_return_sequences=num_of_sequences,
-                        )
-
-                        self._bleu_score_if_required(dataset_name, prem, conclusions, generated_text)
+                        self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
             loss = loss.to(lm_loss.device)
             loss += lm_loss
@@ -116,6 +108,20 @@ class KnowStoryModel(Model):
         output["loss"] = loss
 
         return output
+
+    def _generate_text(self, dataset_name, premises):
+        num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
+        generated_text = self._lm_model.generate(
+            input_ids=premises["tokens"],
+            max_length=self._generation_config["max_length"],
+            temperature=self._generation_config["temperature"],
+            top_k=self._generation_config["top_k"],
+            do_sample=self._generation_config["do_sample"],
+            num_beams=self._generation_config["num_beams"],
+            eos_token_ids=EOS_TOKEN_IDS,
+            num_return_sequences=num_of_sequences,
+        )
+        return generated_text
 
     def _bleu_score_if_required(self, dataset_name, prem, conclusions, generated_text):
         if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
@@ -129,8 +135,8 @@ class KnowStoryModel(Model):
                 for h in text_hyp:
                     for c in text_conc:
 
-                        if len([x for x in h.tolist() if x not in EOS_TOKEN_IDS]) > 1  \
-                                and len([x for x in c.tolist() if x not in EOS_TOKEN_IDS]) > 1:
+                        if len([x for x in h.tolist() if x not in EOS_TOKEN_IDS]) > 0 and  len(h.tolist()) > 1 \
+                                and len([x for x in c.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(c.tolist()) > 1 :
 
                             h_unsqueezed = h.unsqueeze(dim=0).long()
                             c_unsqueezed = c.unsqueeze(dim=0).long()
@@ -140,11 +146,11 @@ class KnowStoryModel(Model):
 
                             for h in text_hyp:
                                 print(
-                                    f"Hypothesis: {self._tokenizer._tokenizer.decode(h.tolist(), skip_special_tokens=True)}")
+                                    f"Hypothesis: {self._tokenizer._tokenizer.decode(h.tolist(), skip_special_tokens=False)}")
 
                             for h in text_conc:
                                 print(
-                                    f"Gold: {self._tokenizer._tokenizer.decode(c.tolist(), skip_special_tokens=True)}")
+                                    f"Gold: {self._tokenizer._tokenizer.decode(c.tolist(), skip_special_tokens=False)}")
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
 
