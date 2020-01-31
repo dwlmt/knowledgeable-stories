@@ -1,0 +1,93 @@
+import ast
+import csv
+from typing import Dict, Iterator
+
+from allennlp.nn.util import logger
+
+from allennlp.data import DatasetReader, TokenIndexer, Instance, Token, Tokenizer
+from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.token_indexers import SingleIdTokenIndexer, PretrainedTransformerIndexer
+
+# Categories for relations in the commonsense reasoning dataset.
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer
+
+from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+
+@DatasetReader.register("roc_lm_reader")
+class RocLMReader(DatasetReader):
+    """
+    Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
+
+    """
+    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
+                 start_and_end_tokens = False) -> None:
+        super().__init__(lazy=False)
+
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+
+        # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer._tokenizer)
+        logger.info(f"Tokenizer vocabulary count: {vocab_size}")
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
+        self._token_indexers["tokens"].tokenizer = self._tokenizer._tokenizer
+
+
+        self._categories = categories or atomic_categories
+
+        self._start_and_end_tokens = start_and_end_tokens
+
+    def text_to_instance(self, text_dict) -> Instance:
+        fields = {}
+
+        for field in ["premises","conclusions", "negative_conclusions", "arguments", "negative_arguments"]:
+
+            if field in text_dict:
+                fields[field] = TextField(self._tokenizer.tokenize(text_dict[field]), token_indexers=self._token_indexers)
+
+        fields["metadata"] = MetadataField(text_dict)
+
+        return Instance(fields)
+
+    def _read(self, file_path: str) -> Iterator[Instance]:
+
+        with open(file_path, mode='r') as csv_file:
+            csv_reader = csv.DictReader(csv_file)
+            orig_row_num = 0
+            for row in csv_reader:
+
+                    row["orig_row_num"] = orig_row_num
+                    row["dataset"] = "roc_lm"
+
+                    if "storyid" in row:
+                        story_text = ""
+                        for f in ["sentence1","sentence2","sentence3","sentence4"]:
+                            story_text += row[f] + " "
+                        row["premises"] = story_text
+                        row["arguments"] = story_text + row["sentence5"]
+
+                    if "InputStoryid" in row:
+                        story_text = ""
+                        for f in ["InputSentence1", "InputSentence2", "InputSentence3", "InputSentence4"]:
+                            story_text += row[f] + " "
+                        row["premises"] = story_text
+
+                        if row["AnswerRightEnding"] == 1:
+                            right_ending = row["RandomFifthSentenceQuiz1"]
+                            wrong_ending = row["RandomFifthSentenceQuiz2"]
+                        else:
+                            right_ending = row["RandomFifthSentenceQuiz2"]
+                            wrong_ending = row["RandomFifthSentenceQuiz1"]
+
+                        row["premises"] = story_text
+
+                        row["conclusions"] = right_ending
+                        row["negative_conclusions"] = wrong_ending
+                        row["arguments"] = story_text + right_ending
+                        row["negative_arguments"] = story_text + wrong_ending
+
+                    yield self.text_to_instance(row)
+
+                    orig_row_num += 1
+
+            logger.info(f'ROC dataset {file_path} has  {orig_row_num} examples.')
