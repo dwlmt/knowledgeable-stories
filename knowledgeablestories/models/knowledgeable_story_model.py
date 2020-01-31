@@ -10,7 +10,7 @@ from typing import Iterator, List, Dict, Optional, Any
 
 from allennlp.nn import RegularizerApplicator, InitializerApplicator, util
 from allennlp.nn.util import get_text_field_mask, logger
-from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU
+from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from pytorch_transformers import GPT2LMHeadModel
 from torch.nn import CrossEntropyLoss, Parameter
 from transformers.modeling_auto import AutoModelWithLMHead
@@ -54,14 +54,19 @@ class KnowStoryModel(Model):
         self._dropout = torch.nn.Dropout(dropout)
 
         self._metrics = {}
-        for key, values in self._dataset_config.items():
+        for dataset_name, values in self._dataset_config.items():
 
             for k in self._metric_config["lm_accuracy_top_k"]:
-                self._metrics[f"{key}_lm_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
+                self._metrics[f"{dataset_name}_lm_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
 
-            self._metrics[f"{key}_lm_perplexity"] = Perplexity()
-            self._metrics[f"{key}_lm_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
-            self._metrics[f"{key}_lm_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0), exclude_indices=set(EOS_TOKEN_IDS))
+            self._metrics[f"{dataset_name}_lm_perplexity"] = Perplexity()
+
+            if "_lm" in dataset_name:
+                self._metrics[f"{dataset_name}_accuracy"] = Average()
+
+            if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
+                self._metrics[f"{dataset_name}_lm_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
+                self._metrics[f"{dataset_name}_lm_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0), exclude_indices=set(EOS_TOKEN_IDS))
 
         if initializer is not None:
             initializer(self)
@@ -84,13 +89,17 @@ class KnowStoryModel(Model):
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None:
 
-            tokens = arguments["tokens"]
-            lm_loss, lm_logits, presents, = self._lm_model(tokens, labels=tokens)
+            arguments_token = arguments["tokens"]
+            lm_loss, lm_logits, presents, = self._lm_model(arguments_token, labels=arguments_token)
 
             with torch.no_grad():
                 if not self.training or self._metric_config["training_metrics"]:
+
+                    self._negative_arguments_evauation_if_required(dataset_name, arguments, negative_arguments)
+
+
                     for k in self._metric_config["lm_accuracy_top_k"]:
-                        self._metrics[f"{dataset_name}_lm_accuracy_{k}"](lm_logits, tokens)
+                        self._metrics[f"{dataset_name}_lm_accuracy_{k}"](lm_logits, arguments_token)
 
                     self._metrics[f"{dataset_name}_lm_perplexity"](lm_loss)
 
@@ -108,6 +117,25 @@ class KnowStoryModel(Model):
         output["loss"] = loss
 
         return output
+
+    def _negative_arguments_evauation_if_required(self, dataset_name, arguments, negative_arguments):
+        if negative_arguments != None:
+
+            arguments_token = arguments["tokens"]
+            negative_arguments_tokens = negative_arguments["tokens"]
+
+            # Assumes equal number of negative examples. Will need to expand when incorporate multiple negative answer datasets.
+            for argument, neg_argument in zip(arguments_token, negative_arguments_tokens):
+                arg_lm_loss, arg_lm_logits, arg_presents, = self._lm_model(argument, labels=argument)
+                corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
+
+                neg_lm_loss, neg_lm_logits, neg_presents, = self._lm_model(neg_argument, labels=neg_argument)
+                neg_lm_loss_perplexity = float(torch.exp(neg_lm_loss))
+
+                is_correct = float((corr_lm_loss_perplexity < neg_lm_loss_perplexity))
+
+                self._metrics[f"{dataset_name}_accuracy"](is_correct)
+
 
     def _generate_text(self, dataset_name, premises):
         num_of_sequences = self._dataset_config[dataset_name]["generate_text"]

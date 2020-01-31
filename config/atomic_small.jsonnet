@@ -35,7 +35,6 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.5,
-      "mode": "max",
       "patience": 3
     }
   }

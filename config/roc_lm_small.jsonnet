@@ -5,7 +5,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "type": "roc_lm_reader"
   },
   "train_data_path": dataset_root + "/ROCStories/roc_train_50.csv",
-  "validation_data_path":  dataset_root + "/ROCStories/roc_train_50.csv",
+  "validation_data_path":  dataset_root + "/ROCStories/roc_val_50.csv",
   "model": {
     "type": "knowledgeable_stories",
     "embedder_vocab_size": 50268
@@ -33,7 +33,6 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.5,
-      "mode": "max",
       "patience": 3
     }
   }
