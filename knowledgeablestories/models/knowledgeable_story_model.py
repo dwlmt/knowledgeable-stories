@@ -61,8 +61,8 @@ class KnowStoryModel(Model):
 
             self._metrics[f"{dataset_name}_lm_perplexity"] = Perplexity()
 
-            if "_lm" in dataset_name:
-                self._metrics[f"{dataset_name}_accuracy"] = Average()
+            if "roc" in dataset_name:
+                self._metrics[f"{dataset_name}_cloze_accuracy"] = Average()
 
             if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
                 self._metrics[f"{dataset_name}_lm_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
@@ -78,7 +78,8 @@ class KnowStoryModel(Model):
                 negative_conclusions: Dict[str, torch.Tensor] = None,
                 arguments: Dict[str, torch.Tensor] = None,
                 negative_arguments: Dict[str, torch.Tensor] = None,
-                metadata: List[Dict[str, Any]] = None
+                metadata: List[Dict[str, Any]] = None,
+                dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
         output = {}
@@ -103,7 +104,7 @@ class KnowStoryModel(Model):
 
                     self._metrics[f"{dataset_name}_lm_perplexity"](lm_loss)
 
-                    if "generate_text" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["true"]:
+                    if "generate_text" in self._dataset_config[dataset_name]:
 
                         generated_text = self._generate_text(dataset_name, premises)
 
@@ -134,7 +135,7 @@ class KnowStoryModel(Model):
 
                 is_correct = float((corr_lm_loss_perplexity < neg_lm_loss_perplexity))
 
-                self._metrics[f"{dataset_name}_accuracy"](is_correct)
+                self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
 
     def _generate_text(self, dataset_name, premises):

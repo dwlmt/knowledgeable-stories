@@ -13,7 +13,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 
 from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
 
-@DatasetReader.register("roc_lm_reader")
+@DatasetReader.register("roc_lm")
 class RocLMReader(DatasetReader):
     """
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
