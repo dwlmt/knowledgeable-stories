@@ -10,7 +10,7 @@ from typing import Iterator, List, Dict, Optional, Any, Tuple
 
 from allennlp.modules.encoder_base import _EncoderBase
 from allennlp.nn import RegularizerApplicator, InitializerApplicator, util
-from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states
+from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from pytorch_transformers import GPT2LMHeadModel
 from torch import nn
@@ -35,7 +35,7 @@ class KnowStoryModel(Model):
                  passage_distance_weights: Tuple[float] = [1.0],
                  loss_weights={"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0},
                  passage_disc_loss_cosine = False,
-                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc_lm": {}},
+                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc": {}},
                  generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": False, "num_beams": 1},
                  metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20]},
                  regularizer: Optional[RegularizerApplicator] = None,
@@ -139,7 +139,12 @@ class KnowStoryModel(Model):
                     output = {**output, **disc_output_dict}
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
-                    if conclusions != None and negative_conclusions != None:
+                    if not self.training and conclusions != None and negative_conclusions != None:
+
+                        # Special hacking just to allow output predictions on the ROC corpus.
+                        if "roc" in dataset_name:
+                            pass
+
                         print("Conclusions",conclusions["tokens"].size())
                         print("Negative Conclusions", conclusions["tokens"].size())
 
@@ -214,10 +219,9 @@ class KnowStoryModel(Model):
             # Remove rows which spill over batches.
             batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(encoded_one.device)
 
-            logits_copy = logits_copy[batch_group_mask,]
-            target_classes = target_classes[batch_group_mask]
+            target_classes = target_classes * batch_group_mask
 
-            scores_softmax = self._log_softmax(logits_copy)
+            scores_softmax = masked_log_softmax(logits, mask=batch_group_mask)
 
             # Mask out sentences that are not present in the target classes.
             nll_loss = self._nll_loss(scores_softmax, target_classes)
