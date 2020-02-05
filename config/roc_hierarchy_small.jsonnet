@@ -2,20 +2,34 @@ local dataset_root = std.extVar("DATASET_ROOT");
 
 {
   "dataset_reader": {
-    "type": "roc_lm"
+    "type": "roc_hierarchy"
   },
   "train_data_path": dataset_root + "/ROCStories/roc_train_50.csv",
   "validation_data_path":  dataset_root + "/ROCStories/roc_val_50.csv",
   "model": {
     "type": "knowledgeable_stories",
-    "embedder_vocab_size": 50268
+    "embedder_vocab_size": 50268,
+    "sentence_seq2vec_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
+    "passage_seq2seq_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
   },
   "iterator": {
     "type": "basic",
     "batch_size": 16
   },
   "trainer": {
-    "num_epochs": 20,
+    "num_epochs": 500,
     "validation_metric": "-loss",
     "patience": 1,
     "shuffle": true,

@@ -47,6 +47,7 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "patience": 3,
     "grad_norm": 2.0,
     "shuffle": true,
+    "summary_interval": 500,
     "cuda_device": [
       0
     ],
