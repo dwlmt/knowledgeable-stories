@@ -35,8 +35,8 @@ class KnowStoryModel(Model):
                  passage_distance_weights: Tuple[float] = [1.0],
                  loss_weights={"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0},
                  passage_disc_loss_cosine = False,
-                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc": {}},
-                 generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": False, "num_beams": 1},
+                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc_lm": {}, "roc_hierarchy": {}},
+                 generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True, "num_beams": 1},
                  metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20]},
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
@@ -110,13 +110,11 @@ class KnowStoryModel(Model):
 
         loss = torch.tensor(0.0).cuda()
 
-        if passages != None:
+        if passages != None and "passage_disc_loss" in self._loss_weights:
 
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
-                passages_tokens = passages["tokens"]
-                passages_mask = get_text_field_mask(passages, num_wrapping_dims=1)
-                passages_output = self._lm_model(passages_tokens)
+                passages_mask, passages_output = self.run_lm(passages, num_wrapping_dims=1)
 
                 hidden_states = passages_output[2][-1]
 
@@ -130,10 +128,7 @@ class KnowStoryModel(Model):
 
                 if self._passage_seq2seq_encoder != None:
 
-                    passages_sentence_lengths = torch.sum(passages_mask, dim=2)
-                    mask = passages_sentence_lengths > 0
-
-                    passages_encoded = self._encode_passages(encoded_sentences_batch, mask)
+                    passages_encoded = self._encode_passages(encoded_sentences_batch, passages_mask)
 
                     passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded, passages_encoded)
                     output = {**output, **disc_output_dict}
@@ -141,15 +136,11 @@ class KnowStoryModel(Model):
 
                     if not self.training and conclusions != None and negative_conclusions != None:
 
-                        # Special hacking just to allow output predictions on the ROC corpus.
-                        if "roc" in dataset_name:
-                            pass
-
-                        print("Conclusions",conclusions["tokens"].size())
-                        print("Negative Conclusions", conclusions["tokens"].size())
+                        self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
+                                                                 passages_encoded, passages_mask)
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
-        if arguments != None:
+        if arguments != None and "lm_loss" in self._loss_weights:
 
             arguments_token = arguments["tokens"]
             lm_loss, lm_logits, presents, = self._lm_model(arguments_token, labels=arguments_token)
@@ -178,6 +169,39 @@ class KnowStoryModel(Model):
         output["loss"] = loss.cuda()
 
         return output
+
+    def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
+                                            passages_mask):
+        # Special hacking just to allow output predictions on the ROC corpus.
+        if "roc" in dataset_name:
+
+            negative_conclusions_mask, negative_conclusions_output = self.run_lm(conclusions)
+            negative_conclusions_hidden_states = negative_conclusions_output[2][-1]
+            negative_conclusions_encoded_sentences = self._encode_sentences(negative_conclusions_hidden_states,
+                                                                            negative_conclusions_mask)
+
+            negative_encoded_sentences_batch = encoded_sentences_batch.clone()
+            logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
+            negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
+            negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
+
+            negative_passages_encoded = self._encode_passages(negative_encoded_sentences_batch, passages_mask)
+
+
+            correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
+                                                         torch.squeeze(passages_encoded[:, 4, :]), dim=0)
+            wrong_similarity =  torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
+                                                         torch.squeeze(negative_passages_encoded[:, 4, :]),dim=0)
+
+            res = (correct_similarity > wrong_similarity).float()
+
+            self._metrics[f"{dataset_name}_cloze_accuracy"]([r for r in res])
+
+    def run_lm(self, text, num_wrapping_dims=0):
+        passages_tokens = text["tokens"]
+        passages_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
+        passages_output = self._lm_model(passages_tokens)
+        return passages_mask, passages_output
 
     def _calculate_disc_passage_loss(self, encoded_one, encoded_two):
 
@@ -257,6 +281,8 @@ class KnowStoryModel(Model):
         return encoded_sentences
 
     def _encode_passages(self, hidden_states, mask):
+        passages_sentence_lengths = torch.sum(mask, dim=2)
+        mask = passages_sentence_lengths > 0
         encoded_passages = self._passage_seq2seq_encoder(hidden_states, mask)
         return encoded_passages
 

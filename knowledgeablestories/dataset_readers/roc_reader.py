@@ -15,7 +15,6 @@ from knowledgeablestories.dataset_readers.special_tokens import atomic_categorie
 
 def process_roc_row(orig_row_num, row):
     row["orig_row_num"] = orig_row_num
-    row["dataset"] = "roc_lm"
     story_text_list = []
     if "storyid" in row:
         story_text = ""
@@ -91,6 +90,7 @@ class RocLMReader(DatasetReader):
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
+                    row["dataset"] = "roc_lm"
 
                     process_roc_row(orig_row_num, row)
 
@@ -144,6 +144,7 @@ class RocHierarchyReader(DatasetReader):
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
+                    row["dataset"] = "roc_hierarchy"
 
                     process_roc_row(orig_row_num, row)
 
