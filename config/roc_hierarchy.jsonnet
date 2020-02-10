@@ -3,11 +3,10 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 
 {
   "dataset_reader": {
-    "type": "atomic"
+    "type": "roc_hierarchy"
   },
-  "train_data_path": dataset_root + "/atomic/v4_atomic_trn.csv",
-  "validation_data_path":  dataset_root + "/atomic/v4_atomic_dev.csv",
-  "test_data_path":  dataset_root + "/atomic/v4_atomic_tst.csv",
+  "train_data_path": dataset_root + "/ROCStories/ROCStories_winter2017 - ROCStories_winter2017.csv",
+  "validation_data_path":  dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
   "model": {
     "type": "knowledgeable_stories",
     "embedder_vocab_size": 50268

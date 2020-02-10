@@ -1,4 +1,5 @@
 local dataset_root = std.extVar("DATASET_ROOT");
+local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 
 {
   "dataset_reader": {

@@ -64,7 +64,7 @@ class AtomicDatasetReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r') as csv_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             example_row_num = 0
             orig_row_num = 0
@@ -82,7 +82,7 @@ class AtomicDatasetReader(DatasetReader):
 
                         targets = [x.replace('_','zBlank') for x in cat_data_list]
 
-                        relation_dict["dataset"] = "atomic"
+                        relation_dict["dataset"] = "atomic_lm"
                         relation_dict["event"] = row["event"].replace('___','zBlank')
                         relation_dict["relation"] = cat
                         relation_dict["inference"] = targets

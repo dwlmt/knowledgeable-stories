@@ -1,4 +1,5 @@
 local dataset_root = std.extVar("DATASET_ROOT");
+local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 {
   "dataset_reader": {
     "type": "multitask_reader",
@@ -6,6 +7,10 @@ local dataset_root = std.extVar("DATASET_ROOT");
     "dataset_readers": {
             "roc_lm": {
                 "type": "roc_lm",
+
+            },
+            "roc_hierarchy": {
+                "type": "roc_hierarchy",
 
             },
             "atomic": {
@@ -16,10 +21,14 @@ local dataset_root = std.extVar("DATASET_ROOT");
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["roc_lm","atomic"],
+   "names_to_index": ["roc_lm", "roc_hierarchy", "atomic"],
    "iterate_forever": false,
    "iterators": {
        "roc_lm": {
+            "type": "basic",
+            "batch_size": 16
+       },
+       "roc_hierarchy": {
             "type": "basic",
             "batch_size": 16
        },
@@ -31,15 +40,31 @@ local dataset_root = std.extVar("DATASET_ROOT");
   },
   "train_data_path": {
         "roc_lm": dataset_root + "/ROCStories/ROCStories_winter2017 - ROCStories_winter2017.csv",
+        "roc_hierarchy": dataset_root + "/ROCStories/ROCStories_winter2017 - ROCStories_winter2017.csv",
         "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
   },
   "validation_data_path": {
         "roc_lm": dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
+        "roc_hierarchy": dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
         "atomic": dataset_root + "/atomic/v4_atomic_dev.csv",
   },
   "model": {
     "type": "knowledgeable_stories",
-    "embedder_vocab_size": 50268
+    "embedder_vocab_size": 50268,
+    "sentence_seq2vec_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
+    "passage_seq2seq_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
   },
   "trainer": {
     "num_epochs": 50,

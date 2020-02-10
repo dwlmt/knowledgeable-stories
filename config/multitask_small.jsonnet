@@ -1,4 +1,5 @@
 local dataset_root = std.extVar("DATASET_ROOT");
+local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 {
   "dataset_reader": {
     "type": "multitask_reader",
@@ -39,7 +40,21 @@ local dataset_root = std.extVar("DATASET_ROOT");
   },
   "model": {
     "type": "knowledgeable_stories",
-    "embedder_vocab_size": 50268
+    "embedder_vocab_size": 50268,
+    "sentence_seq2vec_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
+    "passage_seq2seq_encoder": {
+      "type": "lstm",
+      "input_size": 768,
+      "hidden_size": 768,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
   },
   "trainer": {
     "num_epochs": 50,

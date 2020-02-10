@@ -25,6 +25,7 @@ export STUDENT_ID=${USER}
 
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
+export DATASET_CACHE_ROOT="${CLUSTER_HOME}/datasets_cache/"
 
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 

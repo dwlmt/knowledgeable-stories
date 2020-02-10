@@ -14,7 +14,7 @@ from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_stat
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from pytorch_transformers import GPT2LMHeadModel
 from torch import nn
-from torch.nn import CrossEntropyLoss, Parameter
+from torch.nn import CrossEntropyLoss, Parameter, CosineEmbeddingLoss
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
@@ -35,9 +35,10 @@ class KnowStoryModel(Model):
                  passage_distance_weights: Tuple[float] = [1.0],
                  loss_weights={"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0},
                  passage_disc_loss_cosine = False,
-                 dataset_config={"atomic": {"generate_text" : 10, "bleu" : True},"roc_lm": {}, "roc_hierarchy": {}},
+                 dataset_config={"atomic_lm": {"generate_text" : 10, "bleu" : True},"roc_lm": {}, "roc_hierarchy": {},
+                                 "writing_prompts_lm": {}, "writing_prompts_hierarchy": {}},
                  generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True, "num_beams": 1},
-                 metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20]},
+                 metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20], "hierarchy_accuracy_top_k": [1, 5]},
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
                  ) -> None:
@@ -65,6 +66,10 @@ class KnowStoryModel(Model):
         # Need to turn on the hidden states.
         self._lm_model.transformer.output_hidden_states = True
 
+        self._cosine_similarity = nn.CosineSimilarity()
+        self._l2_distance = nn.PairwiseDistance(p=2)
+        self._l1_distance = nn.PairwiseDistance(p=1)
+
         # If additional characters have been added then the model needs updated for the additional tokens.
         self._embedder_vocab_size = embedder_vocab_size
         if self._embedder_vocab_size:
@@ -74,22 +79,34 @@ class KnowStoryModel(Model):
 
         self._log_softmax = nn.LogSoftmax(dim=1)
         self._nll_loss = nn.NLLLoss(ignore_index=0)
-        self._cosine_similarity = nn.CosineSimilarity()
 
         self._metrics = {}
         for dataset_name, values in self._dataset_config.items():
 
-            for k in self._metric_config["lm_accuracy_top_k"]:
-                self._metrics[f"{dataset_name}_lm_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
+            if "lm" in dataset_name:
+                for k in self._metric_config["lm_accuracy_top_k"]:
+                    self._metrics[f"{dataset_name}_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
 
-            self._metrics[f"{dataset_name}_lm_perplexity"] = Perplexity()
+                self._metrics[f"{dataset_name}_perplexity"] = Perplexity()
+
+            if "hierarchy" in dataset_name:
+                for i in range(1, len(self._passage_distance_weights) + 1):
+                    for top_n in self._metric_config["lm_accuracy_top_k"]:
+                        self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_n}"] = CategoricalAccuracy(top_k=top_n)
+
+                    self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"] = Average()
+                    self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"] = Average()
+                    self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"] = Average()
+                    self._metrics[f"{dataset_name}_disc_correct_similarity_cosine_avg_{i}"] = Average()
+                    self._metrics[f"{dataset_name}_disc_correct_distance_l1_avg_{i}"] = Average()
+                    self._metrics[f"{dataset_name}_disc_correct_distance_l2_avg_{i}"] = Average()
 
             if "roc" in dataset_name:
                 self._metrics[f"{dataset_name}_cloze_accuracy"] = Average()
 
             if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
-                self._metrics[f"{dataset_name}_lm_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
-                self._metrics[f"{dataset_name}_lm_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0), exclude_indices=set(EOS_TOKEN_IDS))
+                self._metrics[f"{dataset_name}_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
+                self._metrics[f"{dataset_name}_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0), exclude_indices=set(EOS_TOKEN_IDS))
 
         if initializer is not None:
             initializer(self)
@@ -105,6 +122,8 @@ class KnowStoryModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
+        #logger.info(metadata)
+
         output = {}
         dataset_name = metadata[0]["dataset"]
 
@@ -114,9 +133,9 @@ class KnowStoryModel(Model):
 
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
-                passages_mask, passages_output = self.run_lm(passages, num_wrapping_dims=1)
-
-                hidden_states = passages_output[2][-1]
+                with torch.no_grad():
+                    passages_mask, passages_output = self.run_lm(passages, num_wrapping_dims=1)
+                    hidden_states = passages_output[2][-1]
 
                 encoded_sentences_list = []
                 for hs, pm in zip(hidden_states, passages_mask,):
@@ -130,7 +149,8 @@ class KnowStoryModel(Model):
 
                     passages_encoded = self._encode_passages(encoded_sentences_batch, passages_mask)
 
-                    passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded, passages_encoded)
+                    passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded, passages_encoded,
+                                                                                            dataset_name)
                     output = {**output, **disc_output_dict}
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
@@ -139,22 +159,24 @@ class KnowStoryModel(Model):
                         self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                                  passages_encoded, passages_mask)
 
+
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
 
-            arguments_token = arguments["tokens"]
-            lm_loss, lm_logits, presents, = self._lm_model(arguments_token, labels=arguments_token)
+            argument_tokens = arguments["tokens"]
+            lm_loss, lm_logits, _, _ = self._lm_model(argument_tokens, labels=argument_tokens)
+
+            loss += lm_loss * self._loss_weights["lm_loss"]
 
             with torch.no_grad():
                 if not self.training or self._metric_config["training_metrics"]:
 
-                    self._negative_arguments_evauation_if_required(dataset_name, arguments, negative_arguments)
-
+                    self._negative_arguments_evaluation_if_required(dataset_name, arguments, negative_arguments)
 
                     for k in self._metric_config["lm_accuracy_top_k"]:
-                        self._metrics[f"{dataset_name}_lm_accuracy_{k}"](lm_logits, arguments_token)
+                        self._metrics[f"{dataset_name}_accuracy_{k}"](lm_logits, argument_tokens)
 
-                    self._metrics[f"{dataset_name}_lm_perplexity"](lm_loss)
+                    self._metrics[f"{dataset_name}_perplexity"](lm_loss)
 
                     if "generate_text" in self._dataset_config[dataset_name]:
 
@@ -164,11 +186,48 @@ class KnowStoryModel(Model):
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
-            loss += lm_loss * self._loss_weights["lm_loss"]
+            ''' WIP to train lower level task encoder.
+            if "sentence_disc_loss" in self._loss_weights and premises != None \
+                    and conclusions != None:
+                # Get only the last layer.
+
+                premises_encoded = self._encode_sentences_from_textfield(premises)
+                conclusions_encoded = self._encode_sentences_from_textfield(conclusions)
+
+                logger.info("Premises", premises_encoded.size())
+                logger.info("Conclusions", conclusions_encoded.size())
+            '''
 
         output["loss"] = loss.cuda()
 
         return output
+
+    def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
+        # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
+        # normalised ones.
+        with torch.no_grad():
+            sim = self._cosine_similarity(encoded_source, encoded_target)
+            self._metrics[f"{dataset_name}_disc_correct_similarity_cosine_avg_{i}"](sim.mean().item())
+
+            dist_l1 = self._l1_distance(encoded_source, encoded_target)
+            self._metrics[f"{dataset_name}_disc_correct_distance_l1_avg_{i}"](dist_l1.mean().item())
+
+            dist_l2 = self._l2_distance(encoded_source, encoded_target)
+            self._metrics[f"{dataset_name}_disc_correct_distance_l2_avg_{i}"](dist_l2.mean().item())
+
+    def _encode_sentences_from_textfield(self, text):
+        tokens = text["tokens"]
+        token_masks = get_text_field_mask(text)
+
+        logger.info(tokens.size())
+
+        lm_logits, hidden_states, c = self._lm_model(tokens)
+        logger.info(lm_logits, hidden_states, c)
+        hidden_states = hidden_states[-1]
+        logger.info(lm_logits.size())
+        logger.info(hidden_states.size())
+
+        return self._encode_sentences(hidden_states, token_masks)
 
     def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
                                             passages_mask):
@@ -181,21 +240,21 @@ class KnowStoryModel(Model):
                                                                             negative_conclusions_mask)
 
             negative_encoded_sentences_batch = encoded_sentences_batch.clone()
-            logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
+            #logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
             negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
             negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
 
             negative_passages_encoded = self._encode_passages(negative_encoded_sentences_batch, passages_mask)
 
-
             correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
-                                                         torch.squeeze(passages_encoded[:, 4, :]), dim=0)
-            wrong_similarity =  torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
-                                                         torch.squeeze(negative_passages_encoded[:, 4, :]),dim=0)
+                                                         torch.squeeze(passages_encoded[:, 4, :]), dim=1)
+            wrong_similarity = torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
+                                                         torch.squeeze(negative_passages_encoded[:, 4, :]),dim=1)
 
-            res = (correct_similarity > wrong_similarity).float()
+            res = torch.squeeze((correct_similarity > wrong_similarity).float())
 
-            self._metrics[f"{dataset_name}_cloze_accuracy"]([r for r in res])
+            for r in res.split(1):
+                self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def run_lm(self, text, num_wrapping_dims=0):
         passages_tokens = text["tokens"]
@@ -203,7 +262,7 @@ class KnowStoryModel(Model):
         passages_output = self._lm_model(passages_tokens)
         return passages_mask, passages_output
 
-    def _calculate_disc_passage_loss(self, encoded_one, encoded_two):
+    def _calculate_disc_passage_loss(self, encoded_one, encoded_two, dataset_name):
 
         # print("Disc Loss")
 
@@ -227,7 +286,7 @@ class KnowStoryModel(Model):
 
             # Use a copy to mask out elements that shouldn't be used.
             # This section excludes other correct answers for other distance ranges from the dot product.
-            logits_copy = logits.clone()
+            #logits_copy = logits.clone()
 
             offsets = list(range(1, len(self._passage_distance_weights) + 1))
             offsets = [o for o in offsets if o != i]
@@ -235,22 +294,44 @@ class KnowStoryModel(Model):
                 exclude_mask = (1 - torch.diag(torch.ones(logits.shape[0]).to(encoded_one.device), o).float())
                 exclude_mask = exclude_mask[0:logits.shape[0], 0:logits.shape[1]]
 
-                logits_copy = logits_copy * exclude_mask
+                logits = logits * exclude_mask
+
+        for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
 
             target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(encoded_one.device), i).byte()
             target_classes = torch.argmax(target_mask, dim=1).long()
 
             # Remove rows which spill over batches.
             batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(encoded_one.device)
-
             target_classes = target_classes * batch_group_mask
-
-            scores_softmax = masked_log_softmax(logits, mask=batch_group_mask)
+            logit_scores = masked_log_softmax(logits, mask=batch_group_mask)
 
             # Mask out sentences that are not present in the target classes.
-            nll_loss = self._nll_loss(scores_softmax, target_classes)
+            nll_loss = self._nll_loss(logit_scores, target_classes)
 
             loss += nll_loss * distance_weight * self._loss_weights["passage_disc_loss"]  # Add the loss and scale it.
+
+            with torch.no_grad():
+
+                if not self.training:
+
+                    encoded_sentences_correct = encoded_one_flat[
+                                                       i:, ]
+                    encoded_target_correct = encoded_two_flat[:encoded_two_flat.shape[0] - i, :]
+
+                    for top_k in self._metric_config["lm_accuracy_top_k"]:
+                        self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logit_scores, target_classes)
+
+                    self._similarity_metrics(encoded_sentences_correct, encoded_target_correct, dataset_name, i)
+
+                    # Some extra work just for metrics.
+                    correct_scores = torch.masked_select(logits, target_mask)
+                    correct_log_probs = torch.masked_select(logit_scores, target_mask)
+                    correct_probs = torch.exp(correct_log_probs)
+
+                    self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](correct_scores.mean().item())
+                    self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
+                    self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
 
         return loss, output_dict
 
@@ -286,7 +367,7 @@ class KnowStoryModel(Model):
         encoded_passages = self._passage_seq2seq_encoder(hidden_states, mask)
         return encoded_passages
 
-    def _negative_arguments_evauation_if_required(self, dataset_name, arguments, negative_arguments):
+    def _negative_arguments_evaluation_if_required(self, dataset_name, arguments, negative_arguments):
         if negative_arguments != None:
 
             arguments_token = arguments["tokens"]
@@ -294,10 +375,10 @@ class KnowStoryModel(Model):
 
             # Assumes equal number of negative examples. Will need to expand when incorporate multiple negative answer datasets.
             for argument, neg_argument in zip(arguments_token, negative_arguments_tokens):
-                arg_lm_loss, arg_lm_logits, arg_presents, = self._lm_model(argument, labels=argument)
+                arg_lm_loss, arg_lm_logits, _, _ = self._lm_model(argument, labels=argument)
                 corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
 
-                neg_lm_loss, neg_lm_logits, neg_presents, = self._lm_model(neg_argument, labels=neg_argument)
+                neg_lm_loss, neg_lm_logits, _, _ = self._lm_model(neg_argument, labels=neg_argument)
                 neg_lm_loss_perplexity = float(torch.exp(neg_lm_loss))
 
                 is_correct = float((corr_lm_loss_perplexity < neg_lm_loss_perplexity))
@@ -337,16 +418,8 @@ class KnowStoryModel(Model):
                             h_unsqueezed = h.unsqueeze(dim=0).long()
                             c_unsqueezed = c.unsqueeze(dim=0).long()
 
-                            self._metrics[f"{dataset_name}_lm_bleu"](h_unsqueezed, c_unsqueezed)
-                            self._metrics[f"{dataset_name}_lm_bleu_2"](h_unsqueezed, c_unsqueezed)
-
-                            for h in text_hyp:
-                                print(
-                                    f"Hypothesis: {self._tokenizer._tokenizer.decode(h.tolist(), skip_special_tokens=False)}")
-
-                            for h in text_conc:
-                                print(
-                                    f"Gold: {self._tokenizer._tokenizer.decode(c.tolist(), skip_special_tokens=False)}")
+                            self._metrics[f"{dataset_name}_bleu"](h_unsqueezed, c_unsqueezed)
+                            self._metrics[f"{dataset_name}_bleu_2"](h_unsqueezed, c_unsqueezed)
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
 
@@ -359,4 +432,3 @@ class KnowStoryModel(Model):
                     metrics[k] = v["BLEU"]
 
         return metrics
-

@@ -57,7 +57,7 @@ class RocLMReader(DatasetReader):
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
+    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
                  start_and_end_tokens = False) -> None:
         super().__init__(lazy=False)
 
@@ -86,7 +86,7 @@ class RocLMReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r') as csv_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
@@ -106,7 +106,7 @@ class RocHierarchyReader(DatasetReader):
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
+    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
                  start_and_end_tokens = False) -> None:
         super().__init__(lazy=False)
 
@@ -140,7 +140,7 @@ class RocHierarchyReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r') as csv_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
