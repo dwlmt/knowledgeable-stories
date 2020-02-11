@@ -27,7 +27,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
   },
   "iterator": {
     "type": "basic",
-    "batch_size": 2
+    "batch_size": 4
   },
   "trainer": {
     "num_epochs": 500,
@@ -35,7 +35,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
     "patience": 1,
     "shuffle": true,
     "cuda_device": [
-      0
+      0, 1
     ],
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,

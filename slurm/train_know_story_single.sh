@@ -3,9 +3,9 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:1  # use 1 GPU
+#SBATCH --gres=gpu:4  # use 1 GPU
 #SBATCH --mem=0  # memory in Mb
-#SBATCH --cpus-per-task=4  # number of cpus to use - there are 32 on each node.
+#SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
 
 # Set EXP_BASE_NAME and BATCH_FILE_PATH
 

@@ -1,6 +1,6 @@
 import ast
 import csv
-from typing import Dict, Iterator
+from typing import Dict, Iterator, Optional
 
 from allennlp.nn.util import logger
 
@@ -57,18 +57,21 @@ class RocLMReader(DatasetReader):
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
+    def __init__(self,
+                 lazy: bool = False,
+                 cache_directory: Optional[str] = None,
+                 tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
                  start_and_end_tokens = False) -> None:
-        super().__init__(lazy=False)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer._tokenizer
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
@@ -106,18 +109,23 @@ class RocHierarchyReader(DatasetReader):
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
-                 start_and_end_tokens = False) -> None:
-        super().__init__(lazy=False)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+    def __init__(self,
+                 lazy: bool = False,
+                 cache_directory: Optional[str] = None,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 start_and_end_tokens = False) -> None:
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
+
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer._tokenizer
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 

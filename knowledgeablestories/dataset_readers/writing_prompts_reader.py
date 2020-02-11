@@ -1,8 +1,9 @@
 from itertools import groupby
-from typing import Dict, Iterator
+from typing import Dict, Iterator, Optional
 
 import more_itertools
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+from allennlp.data.tokenizers.spacy_tokenizer import SpacyTokenizer
 from allennlp.nn.util import logger
 
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
@@ -14,7 +15,7 @@ from string import punctuation
 punc = set(punctuation) - set('.')
 
 # Categories for relations in the commonsense reasoning dataset.
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter, WordTokenizer
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
@@ -32,31 +33,35 @@ def strip_repeating_punctuation(tokens):
 
 
 class WritingPromptsAbstractReader(DatasetReader):
-    def __init__(self, tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
+    def __init__(self,
+                 lazy: bool = False,
+                 cache_directory: Optional[str] = None,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
                  lm_token_chunking: int = 300,
                  max_sentence_length: int = 75,
                  min_sentence_length: int = 2,
                  start_and_end_tokens = False) -> None:
-        super().__init__(lazy=False)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
         self._batch_size = batch_size
         self._lm_token_chunking = lm_token_chunking
         self._max_sentence_length = max_sentence_length
         self._min_sentence_length = min_sentence_length
 
-        self._word_tokenizer = WordTokenizer()
+        self._word_tokenizer = SpacyTokenizer(split_on_spaces=True)
 
         self._sentence_splitter = sentence_splitter
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer._tokenizer
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
