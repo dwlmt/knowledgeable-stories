@@ -281,21 +281,6 @@ class KnowStoryModel(Model):
                 1.0 - torch.diag(torch.ones(logits.shape[0]).to(encoded_one.device), 0).float())
         logits *= dot_product_mask
 
-
-        for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
-
-            # Use a copy to mask out elements that shouldn't be used.
-            # This section excludes other correct answers for other distance ranges from the dot product.
-            #logits_copy = logits.clone()
-
-            offsets = list(range(1, len(self._passage_distance_weights) + 1))
-            offsets = [o for o in offsets if o != i]
-            for o in offsets:
-                exclude_mask = (1 - torch.diag(torch.ones(logits.shape[0]).to(encoded_one.device), o).float())
-                exclude_mask = exclude_mask[0:logits.shape[0], 0:logits.shape[1]]
-
-                logits = logits * exclude_mask
-
         for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
 
             target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(encoded_one.device), i).byte()
