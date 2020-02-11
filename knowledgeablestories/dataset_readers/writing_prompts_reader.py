@@ -90,7 +90,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["orig_row_num"] = orig_row_num
                     row["batch_row_num"] = batch_row_num
 
-                    line = line.replace("<newline>", "\n")
+                    line = line.replace("<newline>", " ")
                     text_sentences = self.convert_text_to_sentences(line)
 
                     for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
