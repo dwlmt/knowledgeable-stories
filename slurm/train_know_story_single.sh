@@ -58,7 +58,7 @@ mkdir -p ${SERIAL_DIR}
 
 echo "ALLENNLP Task========"
 
-allennlp train --include-package knowledgeablestories \
+allennlp train --file-friendly-logging --include-package knowledgeablestories \
     -s  ${SERIAL_DIR}/${EXP_NAME}/ \
     ${EXP_CONFIG}
 
