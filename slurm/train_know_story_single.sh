@@ -5,7 +5,7 @@
 #SBATCH -n 1	  # tasks requested
 #SBATCH --gres=gpu:4  # use 1 GPU
 #SBATCH --mem=0  # memory in Mb
-#SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
+#SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
 # Set EXP_BASE_NAME and BATCH_FILE_PATH
 
@@ -26,6 +26,7 @@ export STUDENT_ID=${USER}
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
 export DATASET_CACHE_ROOT="${CLUSTER_HOME}/datasets_cache/"
+export EMBEDDER_VOCAB_SIZE=50268
 
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 

@@ -1,5 +1,7 @@
 local dataset_root = std.extVar("DATASET_ROOT");
 local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
+local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
+
 {
   "dataset_reader": {
     "type": "multitask_reader",
@@ -50,7 +52,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
   },
   "model": {
     "type": "knowledgeable_stories",
-    "embedder_vocab_size": 50268,
+    "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",
       "input_size": 768,
