@@ -17,7 +17,7 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
 
-class CmuAbstractMovieReader(DatasetReader):
+class CmuAbstractBookReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
                  cache_directory: Optional[str] = None,
@@ -60,27 +60,26 @@ class CmuAbstractMovieReader(DatasetReader):
     def _read(self, file_path: str) -> Iterator[Instance]:
 
         with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
-            csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["id","text"])
+            csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["wikipedia_id","freebase_id","title",
+                                                                              "author","publication_date","genres","story_text"])
             orig_row_num = 0
             batch_row_num = 0
             for line in csv_reader:
 
-                row = {}
-                row["orig_row_num"] = orig_row_num
-                row["batch_row_num"] = batch_row_num
-                row["id"] = line["id"]
+                line["orig_row_num"] = orig_row_num
+                line["batch_row_num"] = batch_row_num
 
-                text_sentences = self.convert_text_to_sentences(line["text"])
+                text_sentences = self.convert_text_to_sentences(line["story_text"])
 
                 for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
-                    row["story_text"] = sentence_batch
+                    line["story_text"] = sentence_batch
 
-                    yield self.text_to_instance(row)
+                    yield self.text_to_instance(line)
                     batch_row_num += 1
 
                 orig_row_num += 1
 
-            logger.info(f'Movie summaries dataset {file_path} has  {orig_row_num} examples.')
+            logger.info(f'Book summaries dataset {file_path} has  {orig_row_num} examples.')
 
     def _convert_to_textfield(self, tokens):
         text_field_list = []
@@ -106,8 +105,8 @@ class CmuAbstractMovieReader(DatasetReader):
         return text_sentences
 
 
-@DatasetReader.register("cmu_movie_lm")
-class CmuMovieLMReader(CmuAbstractMovieReader):
+@DatasetReader.register("cmu_book_lm")
+class CmuBookLMReader(CmuAbstractBookReader):
     """
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
@@ -127,8 +126,8 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
         return Instance(fields)
 
 
-@DatasetReader.register("cmu_movie_hierarchy")
-class CmuMovieHierarchyReader(CmuAbstractMovieReader):
+@DatasetReader.register("cmu_book_hierarchy")
+class CmuBookHierarchyReader(CmuAbstractBookReader):
     """
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
