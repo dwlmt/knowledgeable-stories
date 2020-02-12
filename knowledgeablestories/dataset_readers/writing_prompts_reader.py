@@ -40,8 +40,8 @@ class WritingPromptsAbstractReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
-                 lm_token_chunking: int = 300,
-                 max_sentence_length: int = 75,
+                 lm_token_chunking: int = 100,
+                 max_sentence_length: int = 55,
                  min_sentence_length: int = 2,
                  start_and_end_tokens = False) -> None:
         super().__init__(lazy=lazy, cache_directory=cache_directory)
@@ -52,7 +52,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._max_sentence_length = max_sentence_length
         self._min_sentence_length = min_sentence_length
 
-        self._word_tokenizer = SpacyTokenizer(split_on_spaces=True)
+        self._word_tokenizer = SpacyTokenizer(language = "en_core_web_md")
 
         self._sentence_splitter = sentence_splitter
 
@@ -67,7 +67,7 @@ class WritingPromptsAbstractReader(DatasetReader):
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
-        split_sentences = self._sentence_splitter.split_sentences(story_text)
+        split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
         tokenized_sentences = self._word_tokenizer.batch_tokenize(split_sentences)
 
         text_sentences = []
