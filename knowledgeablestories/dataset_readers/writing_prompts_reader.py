@@ -39,6 +39,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
+                 word_tokenizer: Tokenizer = SpacyTokenizer(language = "en_core_web_md"),
                  batch_size: int = 50,
                  lm_token_chunking: int = 100,
                  max_sentence_length: int = 55,
@@ -52,8 +53,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._max_sentence_length = max_sentence_length
         self._min_sentence_length = min_sentence_length
 
-        self._word_tokenizer = SpacyTokenizer(language = "en_core_web_md")
-
+        self._word_tokenizer = word_tokenizer
         self._sentence_splitter = sentence_splitter
 
         # Add the relations as new tokens.
