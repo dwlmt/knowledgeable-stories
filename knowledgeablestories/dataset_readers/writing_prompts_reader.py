@@ -78,7 +78,6 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["orig_row_num"] = orig_row_num
                     row["batch_row_num"] = batch_row_num
 
-                    print(line)
                     line = line.replace("<newline>", " ")
                     text_sentences = self.convert_text_to_sentences(line)
 
