@@ -22,7 +22,6 @@ class CmuAbstractBookReader(DatasetReader):
                  lazy: bool = False,
                  cache_directory: Optional[str] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 word_tokenizer: Tokenizer = SpacyTokenizer(language = "en_core_web_md"),
                  batch_size: int = 50,
                  lm_token_chunking: int = 100,
                  max_sentence_length: int = 55,
@@ -31,7 +30,6 @@ class CmuAbstractBookReader(DatasetReader):
                  start_and_end_tokens = False) -> None:
         super().__init__(lazy=lazy, cache_directory=cache_directory)
 
-        self._word_tokenizer = word_tokenizer
         self._sentence_splitter = sentence_splitter
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
@@ -85,24 +83,14 @@ class CmuAbstractBookReader(DatasetReader):
         text_field_list = []
         for tokens in tokens:
             text_field_list.append(
-                TextField(self._tokenizer.tokenize(" ".join(tokens)), token_indexers=self._token_indexers))
+                TextField(self._tokenizer.tokenize(tokens), token_indexers=self._token_indexers))
         text_list_field = ListField(text_field_list)
         return text_list_field
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
-        tokenized_sentences = self._word_tokenizer.batch_tokenize(split_sentences)
-
-        text_sentences = []
-        for sent in tokenized_sentences:
-            sent_text_token = [t.text for t in sent]
-            if len(sent_text_token) > self._max_sentence_length:
-                sent_text_token = sent_text_token[0: self._max_sentence_length]
-
-            if len(sent_text_token) > self._min_sentence_length:
-                text_sentences.append(sent_text_token)
-        return text_sentences
+        return split_sentences
 
 
 @DatasetReader.register("cmu_book_lm")

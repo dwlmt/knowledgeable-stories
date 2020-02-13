@@ -39,7 +39,6 @@ class WritingPromptsAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 word_tokenizer: Tokenizer = SpacyTokenizer(language = "en_core_web_md", split_on_spaces=True),
                  batch_size: int = 50,
                  lm_token_chunking: int = 100,
                  max_sentence_length: int = 55,
@@ -53,7 +52,6 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._max_sentence_length = max_sentence_length
         self._min_sentence_length = min_sentence_length
 
-        self._word_tokenizer = word_tokenizer
         self._sentence_splitter = sentence_splitter
 
         # Add the relations as new tokens.
@@ -68,17 +66,7 @@ class WritingPromptsAbstractReader(DatasetReader):
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
-        tokenized_sentences = self._word_tokenizer.batch_tokenize(split_sentences)
-
-        text_sentences = []
-        for sent in tokenized_sentences:
-            sent_text_token = [t.text for t in sent]
-            if len(sent_text_token) > self._max_sentence_length:
-                sent_text_token = sent_text_token[0: self._max_sentence_length]
-
-            if len(sent_text_token) > self._min_sentence_length:
-                text_sentences.append(sent_text_token)
-        return text_sentences
+        return split_sentences
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
@@ -90,6 +78,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["orig_row_num"] = orig_row_num
                     row["batch_row_num"] = batch_row_num
 
+                    print(line)
                     line = line.replace("<newline>", " ")
                     text_sentences = self.convert_text_to_sentences(line)
 
@@ -110,7 +99,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         text_field_list = []
         for tokens in tokens:
             text_field_list.append(
-                TextField(self._tokenizer.tokenize(" ".join(tokens),), token_indexers=self._token_indexers))
+                TextField(self._tokenizer.tokenize(tokens,), token_indexers=self._token_indexers))
         text_list_field = ListField(text_field_list)
         return text_list_field
 

@@ -24,7 +24,7 @@ class TestMovieSummariesDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 27
+        assert len(instances) == 29
 
         for instance in instances:
             print(instance)
@@ -40,7 +40,7 @@ class TestMovieSummariesDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 27
+        assert len(instances) == 29
 
         for instance in instances:
             print(instance)
