@@ -44,8 +44,7 @@ class KnowStoryModel(Model):
                  ) -> None:
         super().__init__(vocab, regularizer)
 
-        self._tokenizer = PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
-
+        self._tokenizer = PretrainedTransformerTokenizer(model_name="gpt2")
         # Add the relations as new tokens.
         self._tokenizer._tokenizer.add_tokens(token_tags)
 
@@ -259,6 +258,7 @@ class KnowStoryModel(Model):
     def run_lm(self, text, num_wrapping_dims=0):
         passages_tokens = text["tokens"]
         passages_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
+        self._lm_model = self._lm_model.to(passages_tokens.device)
         passages_output = self._lm_model(passages_tokens)
         return passages_mask, passages_output
 

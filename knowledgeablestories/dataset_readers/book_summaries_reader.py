@@ -45,7 +45,7 @@ class CmuAbstractBookReader(DatasetReader):
         self._tokenizer.tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
         self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
@@ -135,7 +135,7 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "cmu_movie_hierarchy"
+        text_dict["dataset"] = "cmu_book_hierarchy"
 
         story_text = text_dict["story_text"]
         text_field_list = self._convert_to_textfield(story_text)

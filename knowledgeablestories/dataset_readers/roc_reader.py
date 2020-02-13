@@ -70,7 +70,7 @@ class RocLMReader(DatasetReader):
         self._tokenizer.tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
         self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
@@ -124,7 +124,7 @@ class RocHierarchyReader(DatasetReader):
         self._tokenizer.tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
         self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens

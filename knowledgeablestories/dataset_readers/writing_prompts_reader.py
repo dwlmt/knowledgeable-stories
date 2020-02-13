@@ -39,7 +39,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 word_tokenizer: Tokenizer = SpacyTokenizer(language = "en_core_web_md"),
+                 word_tokenizer: Tokenizer = SpacyTokenizer(language = "en_core_web_md", split_on_spaces=True),
                  batch_size: int = 50,
                  lm_token_chunking: int = 100,
                  max_sentence_length: int = 55,
@@ -60,7 +60,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._tokenizer.tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
         self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
@@ -110,7 +110,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         text_field_list = []
         for tokens in tokens:
             text_field_list.append(
-                TextField(self._tokenizer.tokenize(" ".join(tokens)), token_indexers=self._token_indexers))
+                TextField(self._tokenizer.tokenize(" ".join(tokens),), token_indexers=self._token_indexers))
         text_list_field = ListField(text_field_list)
         return text_list_field
 
