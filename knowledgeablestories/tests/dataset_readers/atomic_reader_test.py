@@ -6,6 +6,7 @@ import pytest
 
 from allennlp.common.util import ensure_list
 from allennlp.common.testing import AllenNlpTestCase, test_case
+from allennlp.data import Vocabulary
 from allennlp.data.fields import TextField
 from allennlp.data.instance import Instance
 
@@ -21,10 +22,12 @@ class TestAtomicDatasetReader(AllenNlpTestCase):
         )
         instances = ensure_list(instances)
 
-        print(instances)
-
         assert len(instances) == 208 # Each relation is expanded out.
 
         for instance in instances:
+
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)

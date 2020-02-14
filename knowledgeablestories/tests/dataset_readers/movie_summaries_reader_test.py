@@ -6,6 +6,7 @@ import pytest
 
 from allennlp.common.util import ensure_list
 from allennlp.common.testing import AllenNlpTestCase
+from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.movie_summaries_reader import CmuMovieLMReader, CmuMovieHierarchyReader
 
@@ -26,6 +27,9 @@ class TestMovieSummariesDatasetReader(AllenNlpTestCase):
         assert len(instances) == 21
 
         for instance in instances:
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
             print(instance)
             print(instance["metadata"].metadata)
 

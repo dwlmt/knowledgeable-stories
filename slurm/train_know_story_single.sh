@@ -3,7 +3,7 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:4  # use 1 GPU
+#SBATCH --gres=gpu:2  # use 1 GPU
 #SBATCH --mem=0  # memory in Mb
 #SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
@@ -27,6 +27,8 @@ export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
 export DATASET_CACHE_ROOT="${CLUSTER_HOME}/datasets_cache/"
 export EMBEDDER_VOCAB_SIZE=50268
+export NUM_GPUS=2
+export NUM_CPUS=12
 
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 

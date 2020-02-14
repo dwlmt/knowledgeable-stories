@@ -2,6 +2,7 @@ import pathlib
 
 from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
+from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.writing_prompts_reader import WritingPromptsLMReader, \
     WritingPromptsHierarchyReader
@@ -20,11 +21,14 @@ class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 41
+        #assert len(instances) == 40
 
         for instance in instances:
             print(instance)
-            print(instance["metadata"].metadata)
+            #print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
 
     def test_lm(self):
         reader = WritingPromptsLMReader()
@@ -35,8 +39,11 @@ class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 41
+        assert len(instances) == 40
 
         for instance in instances:
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
             print(instance)
             print(instance["metadata"].metadata)

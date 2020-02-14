@@ -1,17 +1,15 @@
-import ast
 import csv
 from typing import Dict, Iterator, Optional
 
-from allennlp.nn.util import logger
-
-from allennlp.data import DatasetReader, TokenIndexer, Instance, Token, Tokenizer
+from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
 from allennlp.data.fields import TextField, MetadataField, ListField
-from allennlp.data.token_indexers import SingleIdTokenIndexer, PretrainedTransformerIndexer
-
+from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
+from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
+
 
 def process_roc_row(orig_row_num, row):
     row["orig_row_num"] = orig_row_num
@@ -51,37 +49,41 @@ def process_roc_row(orig_row_num, row):
 
         row["passages"] = story_text_list
 
+
 @DatasetReader.register("roc_lm")
 class RocLMReader(DatasetReader):
     """
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
+
     def __init__(self,
                  lazy: bool = False,
                  cache_directory: Optional[str] = None,
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
-                 start_and_end_tokens = False) -> None:
-        super().__init__(lazy=lazy, cache_directory=cache_directory)
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
 
         # Add the relations as new tokens.
-        self._tokenizer.tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer.tokenizer)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
+        self._token_indexers = token_indexers or {
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        for field in ["premises","conclusions", "negative_conclusions", "arguments", "negative_arguments"]:
+        for field in ["premises", "conclusions", "negative_conclusions", "arguments", "negative_arguments"]:
 
             if field in text_dict:
-                fields[field] = TextField(self._tokenizer.tokenize(text_dict[field]), token_indexers=self._token_indexers)
+                fields[field] = TextField(self._tokenizer.tokenize(text_dict[field]),
+                                          token_indexers=self._token_indexers)
 
         fields["metadata"] = MetadataField(text_dict)
 
@@ -93,15 +95,16 @@ class RocLMReader(DatasetReader):
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
-                    row["dataset"] = "roc_lm"
+                row["dataset"] = "roc_lm"
 
-                    process_roc_row(orig_row_num, row)
+                process_roc_row(orig_row_num, row)
 
-                    yield self.text_to_instance(row)
+                yield self.text_to_instance(row)
 
-                    orig_row_num += 1
+                orig_row_num += 1
 
             logger.info(f'ROC dataset {file_path} has  {orig_row_num} examples.')
+
 
 @DatasetReader.register("roc_hierarchy")
 class RocHierarchyReader(DatasetReader):
@@ -109,23 +112,22 @@ class RocHierarchyReader(DatasetReader):
     Dataset reader for the ROC Cloze Stories https://cs.rochester.edu/nlp/rocstories/
 
     """
-
     def __init__(self,
                  lazy: bool = False,
-                 cache_directory: Optional[str] = None,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
-                 start_and_end_tokens = False) -> None:
-        super().__init__(lazy=lazy, cache_directory=cache_directory)
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
 
         # Add the relations as new tokens.
-        self._tokenizer.tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer.tokenizer)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
+        self._token_indexers = token_indexers or {
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
@@ -135,11 +137,13 @@ class RocHierarchyReader(DatasetReader):
         for field in ["conclusions", "negative_conclusions"]:
 
             if field in text_dict:
-                fields[field] = TextField(self._tokenizer.tokenize(text_dict[field]), token_indexers=self._token_indexers)
+                fields[field] = TextField(self._tokenizer.tokenize(text_dict[field]),
+                                          token_indexers=self._token_indexers)
 
         passages_list = []
         for p in text_dict["passages"]:
             passages_list.append(TextField(self._tokenizer.tokenize(p), token_indexers=self._token_indexers))
+
         fields["passages"] = ListField(passages_list)
 
         fields["metadata"] = MetadataField(text_dict)
@@ -152,13 +156,12 @@ class RocHierarchyReader(DatasetReader):
             csv_reader = csv.DictReader(csv_file)
             orig_row_num = 0
             for row in csv_reader:
-                    row["dataset"] = "roc_hierarchy"
+                row["dataset"] = "roc_hierarchy"
 
-                    process_roc_row(orig_row_num, row)
+                process_roc_row(orig_row_num, row)
 
-                    yield self.text_to_instance(row)
+                yield self.text_to_instance(row)
 
-                    orig_row_num += 1
+                orig_row_num += 1
 
             logger.info(f'ROC dataset {file_path} has  {orig_row_num} examples.')
-

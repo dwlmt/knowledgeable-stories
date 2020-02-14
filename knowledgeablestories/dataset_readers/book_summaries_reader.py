@@ -1,17 +1,14 @@
-import ast
 import csv
 from typing import Dict, Iterator, Optional
 
 import more_itertools
+from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
+from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.token_indexers import PretrainedTransformerIndexer
+# Categories for relations in the commonsense reasoning dataset.
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
-
-from allennlp.data import DatasetReader, TokenIndexer, Instance,  Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
-from allennlp.data.token_indexers import  PretrainedTransformerIndexer
-
-# Categories for relations in the commonsense reasoning dataset.
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter, SpacyTokenizer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
@@ -20,17 +17,19 @@ from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_re
 class CmuAbstractBookReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
-                 cache_directory: Optional[str] = None,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 60,
+                 max_token_len: int = 512,
                  max_sentence_grouping: int = 6,
                  start_and_end_tokens=False) -> None:
-        super().__init__(lazy=lazy, cache_directory=cache_directory)
+        super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
+        self._tokenizer._tokenizer.pad_id = 0
         self._batch_size = batch_size
+        self._max_token_len = max_token_len
         self._max_sentence_grouping = max_sentence_grouping
 
         self._sentence_splitter = sentence_splitter
@@ -38,11 +37,12 @@ class CmuAbstractBookReader(DatasetReader):
         self._batch_size = batch_size
 
         # Add the relations as new tokens.
-        self._tokenizer.tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer.tokenizer)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
+        self._token_indexers = token_indexers or {
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
@@ -56,8 +56,9 @@ class CmuAbstractBookReader(DatasetReader):
     def _read(self, file_path: str) -> Iterator[Instance]:
 
         with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
-            csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["wikipedia_id","freebase_id","title",
-                                                                              "author","publication_date","genres","story_text"])
+            csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["wikipedia_id", "freebase_id", "title",
+                                                                              "author", "publication_date", "genres",
+                                                                              "story_text"])
             orig_row_num = 0
             batch_row_num = 0
             for line in csv_reader:
@@ -80,8 +81,11 @@ class CmuAbstractBookReader(DatasetReader):
     def _convert_to_textfield(self, tokens):
         text_field_list = []
         for tokens in tokens:
+            tokens = self._tokenizer.tokenize(tokens)
+            if len(tokens) > self._max_token_len:
+                tokens = tokens[0: self._max_token_len]
             text_field_list.append(
-                TextField(self._tokenizer.tokenize(tokens), token_indexers=self._token_indexers))
+                TextField(tokens, token_indexers=self._token_indexers))
         text_list_field = ListField(text_field_list)
         return text_list_field
 
@@ -97,10 +101,11 @@ class CmuBookLMReader(CmuAbstractBookReader):
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
     """
+
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "cmu_movie_lm"
+        text_dict["dataset"] = "cmu_book_lm"
 
         text = text_dict["story_text"]
         n = self._max_sentence_grouping
@@ -119,6 +124,7 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
     """
+
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 

@@ -1,6 +1,8 @@
 local dataset_root = std.extVar("DATASET_ROOT");
 local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
-local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
+local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
+local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
+local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 
 {
   "dataset_reader": {
@@ -8,13 +10,11 @@ local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
              "writing_prompts_lm": {
-                "type": "writing_prompts_lm",
-                "cache_directory": dataset_cache_root + "/baseline/writing_prompts_lm/"
+                "type": "writing_prompts_lm"
 
             },
             "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy",
-                  "cache_directory": dataset_cache_root + "/baseline/writing_prompts_hierarchy/"
+                "type": "writing_prompts_hierarchy"
 
             }
         },
@@ -86,11 +86,9 @@ local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
     "grad_norm": 2.0,
     "shuffle": true,
     "summary_interval": 500,
-    "cuda_device": [
-      0, 1, 2, 3
-    ],
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
+    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
       "lr": 0.01,

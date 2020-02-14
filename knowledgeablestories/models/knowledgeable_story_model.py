@@ -1,23 +1,14 @@
+from typing import List, Dict, Optional, Any, Tuple
+
 import torch
-from allennlp.common.checks import check_dimensions_match
 from allennlp.data import Vocabulary
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models import Model
-from allennlp.modules import TextFieldEmbedder, LanguageModelHead, Seq2SeqEncoder, Seq2VecEncoder
-from allennlp.data import Vocabulary
-
-from typing import Iterator, List, Dict, Optional, Any, Tuple
-
-from allennlp.modules.encoder_base import _EncoderBase
-from allennlp.nn import RegularizerApplicator, InitializerApplicator, util
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
+from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
-from pytorch_transformers import GPT2LMHeadModel
 from torch import nn
-from torch.nn import CrossEntropyLoss, Parameter, CosineEmbeddingLoss
 from transformers.modeling_auto import AutoModelWithLMHead
-
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 EOS_TOKEN_IDS = [50256, 0]
 
@@ -34,26 +25,26 @@ class KnowStoryModel(Model):
                  dropout: float = 0.0,
                  passage_distance_weights: Tuple[float] = [1.0],
                  loss_weights={"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0},
-                 passage_disc_loss_cosine = False,
-                 dataset_config={"atomic_lm": {"generate_text" : 10, "bleu" : True},"roc_lm": {}, "roc_hierarchy": {},
-                                 "writing_prompts_lm": {}, "writing_prompts_hierarchy": {}},
-                 generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True, "num_beams": 1},
-                 metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20], "hierarchy_accuracy_top_k": [1, 5]},
+                 passage_disc_loss_cosine=False,
+                 dataset_config={"atomic_lm": {"generate_text": 10, "bleu": True}, "roc_lm": {}, "roc_hierarchy": {},
+                                 "writing_prompts_lm": {}, "writing_prompts_hierarchy": {},
+                                 "cmu_book_lm": {}, "cmu_book_hierarchy": {},
+                                 "cmu_movie_lm": {}, "cmu_movie_hierarchy": {}},
+                 generation_config={"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True,
+                                    "num_beams": 1},
+                 metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
+                                "hierarchy_accuracy_top_k": [1, 5]},
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
                  ) -> None:
         super().__init__(vocab, regularizer)
-
-        self._tokenizer = PretrainedTransformerTokenizer(model_name="gpt2", max_length=1024)
-        # Add the relations as new tokens.
-        self._tokenizer.tokenizer.add_tokens(token_tags)
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
 
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
 
-        self._passage_distance_weights =  passage_distance_weights
+        self._passage_distance_weights = passage_distance_weights
         self._loss_weights = loss_weights
         self._passage_disc_loss_cosine = passage_disc_loss_cosine
 
@@ -105,7 +96,8 @@ class KnowStoryModel(Model):
 
             if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
                 self._metrics[f"{dataset_name}_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
-                self._metrics[f"{dataset_name}_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0), exclude_indices=set(EOS_TOKEN_IDS))
+                self._metrics[f"{dataset_name}_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0),
+                                                               exclude_indices=set(EOS_TOKEN_IDS))
 
         if initializer is not None:
             initializer(self)
@@ -121,7 +113,7 @@ class KnowStoryModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        #logger.info(metadata)
+        # logger.info(metadata)
 
         output = {}
         dataset_name = metadata[0]["dataset"]
@@ -137,8 +129,7 @@ class KnowStoryModel(Model):
                     hidden_states = passages_output[2][-1]
 
                 encoded_sentences_list = []
-                for hs, pm in zip(hidden_states, passages_mask,):
-
+                for hs, pm in zip(hidden_states, passages_mask, ):
                     encoded_sentences = self._encode_sentences(hs, pm)
                     encoded_sentences_list.append(encoded_sentences)
 
@@ -148,16 +139,15 @@ class KnowStoryModel(Model):
 
                     passages_encoded = self._encode_passages(encoded_sentences_batch, passages_mask)
 
-                    passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded, passages_encoded,
+                    passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded,
+                                                                                            passages_encoded,
                                                                                             dataset_name)
                     output = {**output, **disc_output_dict}
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
                     if not self.training and conclusions != None and negative_conclusions != None:
-
                         self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                                  passages_encoded, passages_mask)
-
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
@@ -178,7 +168,6 @@ class KnowStoryModel(Model):
                     self._metrics[f"{dataset_name}_perplexity"](lm_loss)
 
                     if "generate_text" in self._dataset_config[dataset_name]:
-
                         generated_text = self._generate_text(dataset_name, premises)
 
                         prem_tokens = premises["tokens"]
@@ -239,7 +228,7 @@ class KnowStoryModel(Model):
                                                                             negative_conclusions_mask)
 
             negative_encoded_sentences_batch = encoded_sentences_batch.clone()
-            #logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
+            # logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
             negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
             negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
 
@@ -248,7 +237,7 @@ class KnowStoryModel(Model):
             correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
                                                          torch.squeeze(passages_encoded[:, 4, :]), dim=1)
             wrong_similarity = torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
-                                                         torch.squeeze(negative_passages_encoded[:, 4, :]),dim=1)
+                                                       torch.squeeze(negative_passages_encoded[:, 4, :]), dim=1)
 
             res = torch.squeeze((correct_similarity > wrong_similarity).float())
 
@@ -275,7 +264,7 @@ class KnowStoryModel(Model):
         encoded_two_flat = encoded_two.view(batch_size * sentence_num, feature_size)
 
         logits = self.calculate_logits(encoded_one_flat,
-                                                   encoded_two_flat)
+                                       encoded_two_flat)
 
         dot_product_mask = (
                 1.0 - torch.diag(torch.ones(logits.shape[0]).to(encoded_one.device), 0).float())
@@ -301,7 +290,7 @@ class KnowStoryModel(Model):
                 if not self.training:
 
                     encoded_sentences_correct = encoded_one_flat[
-                                                       i:, ]
+                                                i:, ]
                     encoded_target_correct = encoded_two_flat[:encoded_two_flat.shape[0] - i, :]
 
                     for top_k in self._metric_config["lm_accuracy_top_k"]:
@@ -334,7 +323,7 @@ class KnowStoryModel(Model):
     def calculate_logits(self, embeddings_one, embeddings_two):
         if not self._passage_disc_loss_cosine:
             logits = torch.matmul(embeddings_one,
-                                              torch.t(embeddings_two))
+                                  torch.t(embeddings_two))
         else:
             logits = self._cosine_similarity(embeddings_one, embeddings_two)
         return logits
@@ -370,7 +359,6 @@ class KnowStoryModel(Model):
 
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
-
     def _generate_text(self, dataset_name, premises):
         num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
         generated_text = self._lm_model.generate(
@@ -397,9 +385,8 @@ class KnowStoryModel(Model):
                 for h in text_hyp:
                     for c in text_conc:
 
-                        if len([x for x in h.tolist() if x not in EOS_TOKEN_IDS]) > 0 and  len(h.tolist()) > 1 \
-                                and len([x for x in c.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(c.tolist()) > 1 :
-
+                        if len([x for x in h.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(h.tolist()) > 1 \
+                                and len([x for x in c.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(c.tolist()) > 1:
                             h_unsqueezed = h.unsqueeze(dim=0).long()
                             c_unsqueezed = c.unsqueeze(dim=0).long()
 
@@ -412,7 +399,7 @@ class KnowStoryModel(Model):
 
         for k, v in metrics.items():
 
-            if isinstance(v,Dict):
+            if isinstance(v, Dict):
                 if "BLEU" in v:
                     metrics[k] = v["BLEU"]
 

@@ -1,4 +1,3 @@
-
 # These are the special token ids for relationships and that have semantic meaning.
 
 token_tags = []

@@ -1,16 +1,13 @@
 from itertools import groupby
+from string import punctuation
 from typing import Dict, Iterator, Optional
 
 import more_itertools
-from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
-
-from allennlp.nn.util import logger
-
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
 from allennlp.data.fields import TextField, MetadataField, ListField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
-
-from string import punctuation
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
+from allennlp.nn.util import logger
 
 punc = set(punctuation) - set('.')
 
@@ -35,33 +32,39 @@ def strip_repeating_punctuation(tokens):
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
-                 cache_directory: Optional[str] = None,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 60,
                  max_sentence_grouping: int = 6,
-                 start_and_end_tokens = False) -> None:
-        super().__init__(lazy=lazy, cache_directory=cache_directory)
+                 max_token_len: int = 512,
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
         self._batch_size = batch_size
         self._max_sentence_grouping = max_sentence_grouping
+        self._max_token_len = max_token_len
 
         self._sentence_splitter = sentence_splitter
 
+        self._batch_size = batch_size
+
         # Add the relations as new tokens.
-        self._tokenizer.tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer.tokenizer)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
-        self._token_indexers = token_indexers or {"tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=1024)}
-        self._token_indexers["tokens"].tokenizer = self._tokenizer.tokenizer
+        self._token_indexers = token_indexers or {
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
-        split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
+        split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if
+                           not s.isspace() and len(s) > 5]
         return split_sentences
 
     def _read(self, file_path: str) -> Iterator[Instance]:
@@ -70,20 +73,21 @@ class WritingPromptsAbstractReader(DatasetReader):
             orig_row_num = 0
             batch_row_num = 0
             for line in text_file:
-                    row = {}
-                    row["orig_row_num"] = orig_row_num
-                    row["batch_row_num"] = batch_row_num
+                row = {}
+                row["orig_row_num"] = orig_row_num
+                row["batch_row_num"] = batch_row_num
 
-                    line = line.replace("<newline>", " ")
-                    text_sentences = self.convert_text_to_sentences(line)
+                line = line.replace("<newline>", " ")
+                text_sentences = self.convert_text_to_sentences(line)
+                print(text_sentences)
 
-                    for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
-                        row["story_text"] = sentence_batch
+                for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
+                    row["story_text"] = sentence_batch
 
-                        yield self.text_to_instance(row)
-                        batch_row_num += 1
+                    yield self.text_to_instance(row)
+                    batch_row_num += 1
 
-                    orig_row_num += 1
+                orig_row_num += 1
 
             logger.info(f'Writing Prompts dataset {file_path} has  {orig_row_num} examples.')
 
@@ -93,8 +97,11 @@ class WritingPromptsAbstractReader(DatasetReader):
     def _convert_to_textfield(self, tokens):
         text_field_list = []
         for tokens in tokens:
+            tokens = self._tokenizer.tokenize(tokens)
+            if len(tokens) > self._max_token_len:
+                tokens = tokens[0: self._max_token_len]
             text_field_list.append(
-                TextField(self._tokenizer.tokenize(tokens,), token_indexers=self._token_indexers))
+                TextField(tokens, token_indexers=self._token_indexers))
         text_list_field = ListField(text_field_list)
         return text_list_field
 
@@ -104,6 +111,7 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
     """
+
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
@@ -126,6 +134,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
 
     """
+
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 

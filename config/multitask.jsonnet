@@ -1,6 +1,7 @@
 local dataset_root = std.extVar("DATASET_ROOT");
 local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
-local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
+local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
+local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 
 {
   "dataset_reader": {
@@ -75,11 +76,9 @@ local embedder_vocab_size = std.extVar("EMBEDDER_VOCAB_SIZE");
     "grad_norm": 2.0,
     "shuffle": true,
     "summary_interval": 500,
-    "cuda_device": [
-      0
-    ],
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
+    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
       "lr": 0.01,

@@ -1,17 +1,13 @@
-import os
 import pathlib
-from typing import cast
 
-import pytest
-
+from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
-from allennlp.common.testing import AllenNlpTestCase, test_case
-from allennlp.data.fields import TextField
-from allennlp.data.instance import Instance
+from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.roc_reader import RocLMReader, RocHierarchyReader
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
+
 
 class TestRocLMDatasetReader(AllenNlpTestCase):
     def test_read_train(self):
@@ -28,6 +24,9 @@ class TestRocLMDatasetReader(AllenNlpTestCase):
         for instance in instances:
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
 
     def test_read_test(self):
         reader = RocLMReader()
@@ -41,8 +40,10 @@ class TestRocLMDatasetReader(AllenNlpTestCase):
         assert len(instances) == 50
 
         for instance in instances:
-            print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
 
     def test_read_train_hierarchy(self):
         reader = RocHierarchyReader()
@@ -58,6 +59,9 @@ class TestRocLMDatasetReader(AllenNlpTestCase):
         for instance in instances:
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
 
     def test_read_test_hierarchy(self):
         reader = RocHierarchyReader()
@@ -73,3 +77,7 @@ class TestRocLMDatasetReader(AllenNlpTestCase):
         for instance in instances:
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            print(instance.get_padding_lengths())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)

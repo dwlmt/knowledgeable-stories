@@ -6,6 +6,7 @@ import pytest
 
 from allennlp.common.util import ensure_list
 from allennlp.common.testing import AllenNlpTestCase
+from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.book_summaries_reader import CmuBookHierarchyReader, CmuBookLMReader
 from knowledgeablestories.dataset_readers.movie_summaries_reader import CmuMovieLMReader, CmuMovieHierarchyReader
@@ -24,11 +25,14 @@ class TestMovieSummariesDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 29
+        assert len(instances) == 25
 
         for instance in instances:
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
 
 
     def test_lm(self):
@@ -40,8 +44,11 @@ class TestMovieSummariesDatasetReader(AllenNlpTestCase):
 
         print(instances)
 
-        assert len(instances) == 29
+        assert len(instances) == 25
 
         for instance in instances:
             print(instance)
             print(instance["metadata"].metadata)
+            instance.index_fields(Vocabulary())
+            instance_tensor_dict = instance.as_tensor_dict()
+            print(instance_tensor_dict)
