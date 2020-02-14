@@ -3,7 +3,6 @@ import pathlib
 from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
 
-from knowledgeablestories.dataset_readers.movie_summaries_reader import CmuMovieLMReader, CmuMovieHierarchyReader
 from knowledgeablestories.dataset_readers.writing_prompts_reader import WritingPromptsLMReader, \
     WritingPromptsHierarchyReader
 

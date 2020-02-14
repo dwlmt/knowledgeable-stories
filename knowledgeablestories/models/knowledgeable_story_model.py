@@ -44,9 +44,9 @@ class KnowStoryModel(Model):
                  ) -> None:
         super().__init__(vocab, regularizer)
 
-        self._tokenizer = PretrainedTransformerTokenizer(model_name="gpt2")
+        self._tokenizer = PretrainedTransformerTokenizer(model_name="gpt2", max_length=1024)
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder

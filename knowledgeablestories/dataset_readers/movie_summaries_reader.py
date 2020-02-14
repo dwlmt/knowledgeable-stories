@@ -21,23 +21,21 @@ class CmuAbstractMovieReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
                  cache_directory: Optional[str] = None,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 50,
-                 lm_token_chunking: int = 100,
-                 max_sentence_length: int = 55,
-                 min_sentence_length: int = 2,
-                 tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
-                 start_and_end_tokens = False) -> None:
+                 batch_size: int = 60,
+                 max_sentence_grouping: int = 6,
+                 start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, cache_directory=cache_directory)
+
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
+        self._batch_size = batch_size
+        self._max_sentence_grouping = max_sentence_grouping
 
         self._sentence_splitter = sentence_splitter
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
-
         self._batch_size = batch_size
-        self._lm_token_chunking = lm_token_chunking
-        self._max_sentence_length = max_sentence_length
-        self._min_sentence_length = min_sentence_length
 
         # Add the relations as new tokens.
         self._tokenizer.tokenizer.add_tokens(token_tags)
@@ -105,9 +103,10 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
 
         text_dict["dataset"] = "cmu_movie_lm"
 
-        story_text = text_dict["story_text"]
-        grouped_tokens = more_itertools.chunked(more_itertools.collapse(story_text), self._lm_token_chunking)
-        text_field_list = self._convert_to_textfield(grouped_tokens)
+        text = text_dict["story_text"]
+        n = self._max_sentence_grouping
+        group_sentences = [" ".join(text[i * n:(i + 1) * n]) for i in range((len(text) + n - 1) // n)]
+        text_field_list = self._convert_to_textfield(group_sentences)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
