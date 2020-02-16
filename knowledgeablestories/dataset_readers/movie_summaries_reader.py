@@ -21,7 +21,7 @@ class CmuAbstractMovieReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 60,
-                 max_token_len: int = 512,
+                 max_token_len: int = 256,
                  max_sentence_grouping: int = 6,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
@@ -96,10 +96,24 @@ class CmuAbstractMovieReader(DatasetReader):
 
 @DatasetReader.register("cmu_movie_lm")
 class CmuMovieLMReader(CmuAbstractMovieReader):
+
     """
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
     """
+    def __init__(self,
+                 lazy: bool = False,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
+                 batch_size: int = 48,
+                 max_sentence_grouping: int = 4,
+                 max_token_len: int = 256,
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+                         sentence_splitter=sentence_splitter, batch_size=batch_size,
+                         max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -123,6 +137,20 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
     Dataset reader for the CMU Movie Summary Corpus - http://www.cs.cmu.edu/~ark/personas/
 
     """
+
+    def __init__(self,
+                 lazy: bool = False,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
+                 batch_size: int = 8,
+                 max_sentence_grouping: int = 6,
+                 max_token_len: int = 256,
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+                         sentence_splitter=sentence_splitter, batch_size=batch_size,
+                         max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}

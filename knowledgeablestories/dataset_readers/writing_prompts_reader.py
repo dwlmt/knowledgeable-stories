@@ -35,9 +35,9 @@ class WritingPromptsAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 60,
-                 max_sentence_grouping: int = 6,
-                 max_token_len: int = 512,
+                 batch_size: int = 48,
+                 max_sentence_grouping: int = 4,
+                 max_token_len: int = 256,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
 
@@ -79,7 +79,6 @@ class WritingPromptsAbstractReader(DatasetReader):
 
                 line = line.replace("<newline>", " ")
                 text_sentences = self.convert_text_to_sentences(line)
-                print(text_sentences)
 
                 for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
                     row["story_text"] = sentence_batch
@@ -108,6 +107,21 @@ class WritingPromptsAbstractReader(DatasetReader):
 
 @DatasetReader.register("writing_prompts_lm")
 class WritingPromptsLMReader(WritingPromptsAbstractReader):
+
+    def __init__(self,
+                 lazy: bool = False,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
+                 batch_size: int = 8,
+                 max_sentence_grouping: int = 6,
+                 max_token_len: int = 256,
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+                         sentence_splitter= sentence_splitter, batch_size=batch_size, max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+
+
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
     """
@@ -130,6 +144,21 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
 
 @DatasetReader.register("writing_prompts_hierarchy")
 class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
+
+    def __init__(self,
+                 lazy: bool = False,
+                 tokenizer: Tokenizer = None,
+                 token_indexers: Dict[str, TokenIndexer] = None,
+                 sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
+                 batch_size: int = 60,
+                 max_sentence_grouping: int = 6,
+                 max_token_len: int = 256,
+                 start_and_end_tokens=False) -> None:
+        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+                         sentence_splitter=sentence_splitter, batch_size=batch_size,
+                         max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
 
