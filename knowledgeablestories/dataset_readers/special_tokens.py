@@ -2,6 +2,9 @@
 
 token_tags = []
 
+# Special character to model blank knowledgebase tokens.
+token_tags += ["zBlank"]
+
 # These are all the atomic dataset values.
 atomic_categories = []
 atomic_categories += ["oEffect"]
@@ -16,5 +19,8 @@ atomic_categories += ["xWant"]
 
 token_tags.extend(atomic_categories)
 
-# Special character to
-token_tags += ["zBlank"]
+# Use the Atomic labelling format but just add one generic tag.
+swag_categories = []
+swag_categories += ["oxNext"]
+
+token_tags.extend(swag_categories)

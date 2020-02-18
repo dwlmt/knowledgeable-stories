@@ -150,7 +150,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 60,
+                 batch_size: int = 48,
                  max_sentence_grouping: int = 6,
                  max_token_len: int = 256,
                  start_and_end_tokens=False) -> None:
