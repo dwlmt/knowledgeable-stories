@@ -23,21 +23,39 @@ class KnowStoryModel(Model):
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
                  dropout: float = 0.0,
-                 passage_distance_weights: Tuple[float] = [1.0],
-                 loss_weights={"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0},
+                 passage_distance_weights=None,
+                 loss_weights=None,
                  passage_disc_loss_cosine=False,
-                 dataset_config={"atomic_lm": {"generate_text": 10, "bleu": True}, "roc_lm": {}, "roc_hierarchy": {},
-                                 "writing_prompts_lm": {}, "writing_prompts_hierarchy": {},
-                                 "cmu_book_lm": {}, "cmu_book_hierarchy": {},
-                                 "cmu_movie_lm": {}, "cmu_movie_hierarchy": {}},
-                 generation_config={"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True,
-                                    "num_beams": 1},
-                 metric_config={"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
-                                "hierarchy_accuracy_top_k": [1, 5]},
+                 dataset_config=None,
+                 generation_config=None,
+                 metric_config=None,
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
                  ) -> None:
         super().__init__(vocab, regularizer)
+
+        if passage_distance_weights is None:
+            passage_distance_weights = [1.0]
+
+        if loss_weights is None:
+            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0}
+
+        if metric_config is None:
+            metric_config = {"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
+                             "hierarchy_accuracy_top_k": [1, 5]}
+
+        if generation_config is None:
+            generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True,
+                                 "num_beams": 1}
+
+        if dataset_config is None:
+            dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
+                              "roc_lm": {}, "roc_hierarchy": {},
+                              "writing_prompts_lm": {}, "writing_prompts_hierarchy": {},
+                              "cmu_book_lm": {}, "cmu_book_hierarchy": {},
+                              "cmu_movie_lm": {}, "cmu_movie_hierarchy": {},
+                              "cbt_movie_lm": {}, "cbt_movie_hierarchy": {}}
+
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder

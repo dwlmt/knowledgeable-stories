@@ -9,23 +9,24 @@ from allennlp.common.testing import AllenNlpTestCase
 from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.book_summaries_reader import CmuBookHierarchyReader, CmuBookLMReader
+from knowledgeablestories.dataset_readers.cbt_reader import CbtHierarchyReader, CbtLMReader
 from knowledgeablestories.dataset_readers.movie_summaries_reader import CmuMovieLMReader, CmuMovieHierarchyReader
 
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
 
-class TestBookSummariesDatasetReader(AllenNlpTestCase):
+class TestCbtDatasetReader(AllenNlpTestCase):
 
     def test_hierarchy(self):
-        reader = CmuBookHierarchyReader()
+        reader = CbtHierarchyReader()
         instances = reader.read(
-            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/booksummaries_20.txt"
+            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/cbt_2.txt"
         )
         instances = ensure_list(instances)
 
         print(instances)
 
-        assert len(instances) == 25
+        assert len(instances) == 657
 
         for instance in instances:
             print(instance)
@@ -36,15 +37,15 @@ class TestBookSummariesDatasetReader(AllenNlpTestCase):
 
 
     def test_lm(self):
-        reader = CmuBookLMReader()
+        reader = CbtLMReader()
         instances = reader.read(
-            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/booksummaries_20.txt"
+            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/cbt_2.txt"
         )
         instances = ensure_list(instances)
 
         print(instances)
 
-        assert len(instances) == 25
+        assert len(instances) == 657
 
         for instance in instances:
             print(instance)
