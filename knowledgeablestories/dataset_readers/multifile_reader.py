@@ -24,9 +24,9 @@ class MultifileAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 60,
-                 max_token_len: int = 256,
-                 max_sentence_grouping: int = 6,
+                 batch_size: int = 50,
+                  max_token_len: int = 128,
+                 max_sentence_grouping: int = 5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
 
@@ -99,9 +99,9 @@ class MultifileLMReader(MultifileAbstractReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 48,
-                 max_sentence_grouping: int = 4,
-                 max_token_len: int = 256,
+                 batch_size: int = 50,
+                 max_sentence_grouping: int = 5,
+                  max_token_len: int = 128,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
@@ -130,9 +130,9 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 48,
-                 max_sentence_grouping: int = 4,
-                 max_token_len: int = 256,
+                 batch_size: int = 50,
+                 max_sentence_grouping: int = 5,
+                  max_token_len: int = 128,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
