@@ -24,6 +24,7 @@ echo ${dt}
 export STUDENT_ID=${USER}
 
 export CLUSTER_HOME="/home/${STUDENT_ID}"
+export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
 export EMBEDDER_VOCAB_SIZE=50269
 export NUM_GPUS=4
 export NUM_CPUS=12
