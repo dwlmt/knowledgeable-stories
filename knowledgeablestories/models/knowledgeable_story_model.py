@@ -332,14 +332,17 @@ class KnowStoryModel(Model):
 
     def _encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
+            self._sentence_seq2vec_encoder._module.flatten_parameters()
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
-        elif self._sentence_seq2vec_encoder != None:
-            encoded_sentences = get_final_encoder_states(self._sentence_seq2vec_encoder(hidden_states, mask), mask)
+        elif self._sentence_seq2seq_encoder != None:
+            self._sentence_seq2seq_encoder._module.flatten_parameters()
+            encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
     def _encode_passages(self, hidden_states, mask):
         passages_sentence_lengths = torch.sum(mask, dim=2)
         mask = passages_sentence_lengths > 0
+        self._passage_seq2seq_encoder._module.flatten_parameters()
         encoded_passages = self._passage_seq2seq_encoder(hidden_states, mask)
         return encoded_passages
 
