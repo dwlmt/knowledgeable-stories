@@ -106,7 +106,7 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 50,
+                 batch_size: int = 6,
                  max_sentence_grouping: int = 5,
                   max_token_len: int = 128,
                  start_and_end_tokens=False) -> None:
@@ -143,9 +143,9 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 8,
+                 batch_size: int = 50,
                  max_sentence_grouping: int = 5,
-                  max_token_len: int = 128,
+                 max_token_len: int = 64,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
