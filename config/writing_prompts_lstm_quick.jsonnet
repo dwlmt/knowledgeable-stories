@@ -3,8 +3,8 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local NUM_READER_CPUS = NUM_CPUS - 2;
-local NUM_ITERATOR_CPUS = NUM_CPUS - 2;
+local NUM_ITERATOR_CPUS = 3;
+local NUM_READER_CPUS = NUM_CPUS - NUM_ITERATOR_CPUS;
 local WP_BASE_BATCH_SIZE = 2;
 
 {
