@@ -36,7 +36,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.5,
+      "factor": 0.1,
       "patience": 0
     }
   }

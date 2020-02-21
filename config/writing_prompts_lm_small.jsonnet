@@ -24,7 +24,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
       "type": "lstm",
       "input_size": 768,
       "hidden_size": 768,
-      "num_layers": 2,
+      "num_layers": 4,
       "dropout": 0.0,
     },
   },
@@ -48,7 +48,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.5,
+      "factor": 0.1,
       "patience": 3
     }
   }
