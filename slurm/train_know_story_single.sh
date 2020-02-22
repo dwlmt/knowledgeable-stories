@@ -4,7 +4,7 @@
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
 #SBATCH --gres=gpu:4
-#SBATCH --mem=64  # Memory
+#SBATCH --mem=64g  # Memory
 #SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
 # Set EXP_BASE_NAME and BATCH_FILE_PATH
