@@ -3,28 +3,20 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local NUM_ITERATOR_CPUS = 3;
-local NUM_READER_CPUS = NUM_CPUS - NUM_ITERATOR_CPUS;
-local WP_BASE_BATCH_SIZE = 2;
+local TEXT_BASE_BATCH_SIZE = 2;
 
 {
   "dataset_reader": {
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-              "writing_prompts_lm": {
-                "type": "multiprocess_unreleased",
-                "base_reader": {
-                    "type": "writing_prompts_lm",
-                },
-                "num_workers": NUM_READER_CPUS,
+             "writing_prompts_lm": {
+                "type": "writing_prompts_lm"
+
             },
             "writing_prompts_hierarchy": {
-                "type": "multiprocess_unreleased",
-                "base_reader": {
-                   "type": "writing_prompts_hierarchy",
-                },
-                "num_workers": NUM_READER_CPUS,
+                "type": "writing_prompts_hierarchy"
+
             }
         },
   },
@@ -32,23 +24,16 @@ local WP_BASE_BATCH_SIZE = 2;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "instances_per_epoch": 5000,
+   "batches_per_epoch": 10000,
+   "sampling_rates": [0.5, 0.5],
    "iterators": {
-      "writing_prompts_lm": {
-           "type": "multiprocess_unreleased",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": NUM_ITERATOR_CPUS,
+       "writing_prompts_lm": {
+            "type": "basic",
+            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
        },
        "writing_prompts_hierarchy": {
-           "type": "multiprocess_unreleased",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": NUM_ITERATOR_CPUS,
+            "type": "basic",
+            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
        },
     },
   },
@@ -56,33 +41,26 @@ local WP_BASE_BATCH_SIZE = 2;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "instances_per_epoch": 500,
+   "batches_per_epoch": 1000,
+   "sampling_rates": [0.5, 0.5],
    "iterators": {
-        "writing_prompts_lm": {
-           "type": "multiprocess_unreleased",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": NUM_ITERATOR_CPUS,
+       "writing_prompts_lm": {
+            "type": "basic",
+            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
        },
        "writing_prompts_hierarchy": {
-           "type": "multiprocess_unreleased",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": NUM_ITERATOR_CPUS,
+            "type": "basic",
+            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
        },
     },
   },
   "train_data_path": {
-        "writing_prompts_lm": dataset_root + "/WritingPrompts/valid_split/*",
-        "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid_split/*",
+        "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
+        "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
   },
   "validation_data_path": {
-        "writing_prompts_lm": dataset_root + "/WritingPrompts/valid_split/*",
-        "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid_split/*",
+        "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
+        "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
   },
   "model": {
     "type": "knowledgeable_stories",
@@ -107,7 +85,7 @@ local WP_BASE_BATCH_SIZE = 2;
     },
   },
   "trainer": {
-    "num_epochs": 10,
+    "num_epochs": 100,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 2.0,

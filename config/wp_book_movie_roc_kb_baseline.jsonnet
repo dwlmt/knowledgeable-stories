@@ -40,34 +40,6 @@ local KB_BASE_BATCH_SIZE = 8;
             },
             "swag_know_lm" : {
                 "type": "swag_know_lm"
-            },
-            "schmoop_lm": {
-                "type": "multiprocess",
-                "base_reader": {
-                    "type": "multifile_lm",
-                },
-                "num_workers": 1,
-            },
-            "schmoop_hierarchy": {
-                "type": "multiprocess",
-                "base_reader": {
-                    "type": "multifile_hierarchy",
-                },
-                "num_workers": 1,
-            },
-            "bookscorpus_lm": {
-                "type": "multiprocess",
-                "base_reader": {
-                    "type": "multifile_lm",
-                },
-                "num_workers": 1,
-            },
-            "bookscorpus_hierarchy": {
-                "type": "multiprocess",
-                "base_reader": {
-                    "type": "multifile_hierarchy",
-                },
-                "num_workers": 1,
             }
 
         },
@@ -75,150 +47,98 @@ local KB_BASE_BATCH_SIZE = 8;
   "iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
-   "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy"],
+   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
    "iterate_forever": false,
+   "batches_per_epoch": 10000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 5000,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 5000,
        },
        "cmu_movie_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_book_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "roc_lm": {
             "type": "basic",
             "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "roc_hierarchy": {
             "type": "basic",
             "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "atomic": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "swag_know_lm": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
-       },
-       "schmoop_lm": {
-           "type": "multiprocess",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": 1,
-       },
-       "schmoop_hierarchy": {
-            "type": "multiprocess",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": 1,
-       },
-       "bookscorpus_lm": {
-           "type": "multiprocess",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": 1,
-       },
-       "bookscorpus_hierarchy": {
-            "type": "multiprocess",
-            "base_iterator": {
-                "type": "basic",
-                "batch_size": WP_BASE_BATCH_SIZE * NUM_GPUS,
-            },
-            "num_workers": 1,
        },
     },
   },
   "validation_iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
-   "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy"],
+   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
    "iterate_forever": false,
+   "batches_per_epoch": 1000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 500,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 500,
        },
        "cmu_movie_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_book_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
         "roc_lm": {
             "type": "basic",
             "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "roc_hierarchy": {
             "type": "basic",
             "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "atomic": {
             "type": "basic",
             "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "swag_know_lm": {
             "type": "basic",
             "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
     },
   },
@@ -233,10 +153,6 @@ local KB_BASE_BATCH_SIZE = 8;
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
         "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
-        "schmoop_lm": dataset_root + "/schmoop/stories/*/*",
-        "schmoop_hierarchy": dataset_root + "/schmoop/stories/*/*",
-        "bookscorpus_lm": dataset_root + "/WritingPrompts/BooksCorpus/*",
-        "bookscorpus_hierarchy": dataset_root + "/WritingPrompts/BooksCorpus/*",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
@@ -247,11 +163,8 @@ local KB_BASE_BATCH_SIZE = 8;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_valid",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
+        "atomic": dataset_root + "/atomic/v4_atomic_dev.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
-        "schmoop_lm": dataset_root + "/schmoop/stories/*/*",
-        "schmoop_hierarchy": dataset_root + "/schmoop/stories/*/*",
-        "bookscorpus_lm": dataset_root + "/WritingPrompts/BooksCorpus/*",
-        "bookscorpus_hierarchy": dataset_root + "/WritingPrompts/BooksCorpus/*",
   },
   "model": {
     "type": "knowledgeable_stories",

@@ -43,7 +43,7 @@ class SwagKnowDatasetReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        #video - id, fold - ind, startphrase, gold - ending, distractor - 0, distractor - 1, distractor - 2, distractor - 3, gold - source, gold - type, distractor - 0 - type, distractor - 1 - type, distractor - 2 - type, distractor - 3 - type, sent1, sent2
+        text_dict["dataset"] = "atomic_lm"
 
         premise = f"{text_dict['startphrase']} oxNext"
         conclusion = f"{text_dict['gold-ending']}"

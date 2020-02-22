@@ -64,6 +64,7 @@ class MultifileAbstractReader(DatasetReader):
             text_sentences = []
             for line in file:
                 if not line.isspace():
+                    line = line.replace("\n", " ")
                     sentences = self._sentence_splitter.split_sentences(line)
                     text_sentences.extend(sentences)
 

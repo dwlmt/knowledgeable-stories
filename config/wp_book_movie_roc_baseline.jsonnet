@@ -43,46 +43,39 @@ local ROC_BASE_BATCH_SIZE = 8;
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy"],
    "iterate_forever": false,
+   "batches_per_epoch": 10000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 5000,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 5000,
        },
        "cmu_movie_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_book_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "roc_lm": {
             "type": "basic",
             "batch_size": ROC_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
        "roc_hierarchy": {
             "type": "basic",
             "batch_size": ROC_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 2500,
        },
     },
   },
@@ -91,46 +84,39 @@ local ROC_BASE_BATCH_SIZE = 8;
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy"],
    "iterate_forever": false,
+   "batches_per_epoch": 1000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 500,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 500,
        },
        "cmu_movie_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_book_lm": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
         "roc_lm": {
             "type": "basic",
             "batch_size": ROC_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
        "roc_hierarchy": {
             "type": "basic",
             "batch_size": ROC_BASE_BATCH_SIZE * NUM_GPUS,
-            "instances_per_epoch": 250,
        },
     },
   },

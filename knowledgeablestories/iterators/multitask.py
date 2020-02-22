@@ -68,13 +68,13 @@ class MultiTaskDataIterator(DataIterator):
                  iterators: Dict[str, DataIterator],
                  names_to_index: List[str],
                  iterate_forever: bool = False,
-                 instances_per_epoch: int = None,
+                 batches_per_epoch: int = None,
                  sampling_rates: List[float] = None) -> None:
         self.iterators = iterators
         self.names_to_index = names_to_index
         self.sampling_rates = sampling_rates
         self.iterate_forever = iterate_forever
-        self.instances_per_epoch = instances_per_epoch
+        self.batches_per_epoch = batches_per_epoch
 
     def __call__(self,
                  multitask_dataset: MultitaskDataset,
@@ -99,8 +99,8 @@ class MultiTaskDataIterator(DataIterator):
         if self.iterate_forever:
             total_batches_per_epoch = 1000000000
 
-        if self.instances_per_epoch:
-            total_batches_per_epoch = self.instances_per_epoch
+        if self.batches_per_epoch:
+            total_batches_per_epoch = self.batches_per_epoch
 
         if self.sampling_rates is not None:
             p = np.array(self.sampling_rates, dtype=np.float)
