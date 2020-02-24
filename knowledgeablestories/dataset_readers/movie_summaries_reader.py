@@ -11,6 +11,7 @@ from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
 
@@ -77,17 +78,6 @@ class CmuAbstractMovieReader(DatasetReader):
 
             logger.info(f'Movie summaries dataset {file_path} has  {orig_row_num} examples.')
 
-    def _convert_to_textfield(self, tokens):
-        text_field_list = []
-        for tokens in tokens:
-            tokens = self._tokenizer.tokenize(tokens)
-            if len(tokens) > self._max_token_len:
-                tokens = tokens[0: self._max_token_len]
-            text_field_list.append(
-                TextField(tokens, token_indexers=self._token_indexers))
-        text_list_field = ListField(text_field_list)
-        return text_list_field
-
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
@@ -121,9 +111,8 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
         text_dict["dataset"] = "cmu_movie_lm"
 
         text = text_dict["story_text"]
-        n = self._max_sentence_grouping
-        group_sentences = [" ".join(text[i * n:(i + 1) * n]) for i in range((len(text) + n - 1) // n)]
-        text_field_list = self._convert_to_textfield(group_sentences)
+        group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
+        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -158,7 +147,7 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
         text_dict["dataset"] = "cmu_movie_hierarchy"
 
         story_text = text_dict["story_text"]
-        text_field_list = self._convert_to_textfield(story_text)
+        text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)

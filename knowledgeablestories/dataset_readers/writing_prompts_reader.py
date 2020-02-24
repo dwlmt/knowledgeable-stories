@@ -9,6 +9,8 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
+from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
+
 punc = set(punctuation) - set('.')
 
 # Categories for relations in the commonsense reasoning dataset.
@@ -93,18 +95,6 @@ class WritingPromptsAbstractReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         raise NotImplementedError
 
-    def _convert_to_textfield(self, tokens):
-        text_field_list = []
-        for tokens in tokens:
-            tokens = self._tokenizer.tokenize(tokens)
-            if len(tokens) > self._max_token_len:
-                tokens = tokens[0: self._max_token_len]
-            text_field_list.append(
-                TextField(tokens, token_indexers=self._token_indexers))
-        text_list_field = ListField(text_field_list)
-        return text_list_field
-
-
 @DatasetReader.register("writing_prompts_lm")
 class WritingPromptsLMReader(WritingPromptsAbstractReader):
 
@@ -132,9 +122,8 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
         text_dict["dataset"] = "writing_prompts_lm"
 
         text = text_dict["story_text"]
-        n = self._max_sentence_grouping
-        group_sentences = [" ".join(text[i * n:(i + 1) * n]) for i in range((len(text) + n - 1) // n)]
-        text_field_list = self._convert_to_textfield(group_sentences)
+        group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
+        text_field_list =  convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -170,7 +159,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         text_dict["dataset"] = "writing_prompts_hierarchy"
 
         story_text = text_dict["story_text"]
-        text_field_list = self._convert_to_textfield(story_text)
+        text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
