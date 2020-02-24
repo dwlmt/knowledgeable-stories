@@ -56,7 +56,7 @@ class CbtAbstractReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r', encoding='utf-8', errors='replace') as file:
+        with open(file_path, mode='r', encoding='utf-8', errors='ignore') as file:
 
             orig_row_num = 0
             text_sentences = []

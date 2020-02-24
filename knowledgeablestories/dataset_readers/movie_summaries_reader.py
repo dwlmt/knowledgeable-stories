@@ -55,7 +55,7 @@ class CmuAbstractMovieReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='ignore') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["id", "text"])
             orig_row_num = 0
             batch_row_num = 0

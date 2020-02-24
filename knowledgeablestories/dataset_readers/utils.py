@@ -1,3 +1,5 @@
+import string
+
 from allennlp.data.fields import TextField, ListField
 from whatthelang import WhatTheLang
 
@@ -16,8 +18,9 @@ def is_english(text: str):
     else:
         return False
 
-
-def removeNonAscii(s): return "".join(i for i in s if ord(i)<128)
+printable = set(string.printable)
+def remove_non_printable(s):
+    ''.join(filter(lambda x: x in printable, s))
 
 def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
     text_field_list = []

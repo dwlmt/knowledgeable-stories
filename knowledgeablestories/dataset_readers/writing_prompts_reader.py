@@ -9,7 +9,8 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
+from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
+    remove_non_printable
 
 punc = set(punctuation) - set('.')
 
@@ -71,24 +72,29 @@ class WritingPromptsAbstractReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r', encoding='utf-8', errors='replace') as text_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='ignore') as text_file:
             orig_row_num = 0
             batch_row_num = 0
             for line in text_file:
-                row = {}
-                row["orig_row_num"] = orig_row_num
-                row["batch_row_num"] = batch_row_num
 
-                line = line.replace("<newline>", " ")
-                text_sentences = self.convert_text_to_sentences(line)
+                if is_english(line):
 
-                for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
-                    row["story_text"] = sentence_batch
+                    line = remove_non_printable(line)
 
-                    yield self.text_to_instance(row)
-                    batch_row_num += 1
+                    row = {}
+                    row["orig_row_num"] = orig_row_num
+                    row["batch_row_num"] = batch_row_num
 
-                orig_row_num += 1
+                    line = line.replace("<newline>", " ")
+                    text_sentences = self.convert_text_to_sentences(line)
+
+                    for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
+                        row["story_text"] = sentence_batch
+
+                        yield self.text_to_instance(row)
+                        batch_row_num += 1
+
+                    orig_row_num += 1
 
             logger.info(f'Writing Prompts dataset {file_path} has  {orig_row_num} examples.')
 

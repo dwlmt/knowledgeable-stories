@@ -56,7 +56,7 @@ class CmuAbstractBookReader(DatasetReader):
 
     def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with open(file_path, mode='r', encoding='utf-8', errors='replace') as csv_file:
+        with open(file_path, mode='r', encoding='utf-8', errors='ignore') as csv_file:
             csv_reader = csv.DictReader(csv_file, delimiter='\t', fieldnames=["wikipedia_id", "freebase_id", "title",
                                                                               "author", "publication_date", "genres",
                                                                               "story_text"])
