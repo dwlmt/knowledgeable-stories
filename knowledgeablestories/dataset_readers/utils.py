@@ -1,4 +1,5 @@
 import string
+from itertools import groupby
 
 from allennlp.data.fields import TextField, ListField
 from whatthelang import WhatTheLang
@@ -20,7 +21,7 @@ def is_english(text: str):
 
 printable = set(string.printable)
 def remove_non_printable(s):
-    ''.join(filter(lambda x: x in printable, s))
+    return ''.join(filter(lambda x: x in printable, s))
 
 def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
     text_field_list = []
@@ -35,3 +36,16 @@ def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
 
 def group_into_n_sentences(text, n):
     return [" ".join(text[i * n:(i + 1) * n]) for i in range((len(text) + n - 1) // n)]
+
+punc = set(string.punctuation) - set('.')
+
+def strip_repeating_punctuation(tokens):
+    # Strip repeating characters.
+    newtext = []
+    for k, g in groupby(tokens):
+        if k in punc:
+            newtext.append(k)
+        else:
+            newtext.extend(g)
+    tokens = ''.join(newtext)
+    return tokens

@@ -1,0 +1,1 @@
+from knowledgeablestories.predictors.knowledgeable_predictor import KnowledgeablePredictor

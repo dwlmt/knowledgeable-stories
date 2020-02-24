@@ -10,27 +10,11 @@ from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
-    remove_non_printable
-
-punc = set(punctuation) - set('.')
-
+    remove_non_printable, strip_repeating_punctuation
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
-
-
-def strip_repeating_punctuation(tokens):
-    # Strip repeating characters.
-    newtext = []
-    for k, g in groupby(tokens):
-        if k in punc:
-            newtext.append(k)
-        else:
-            newtext.extend(g)
-    tokens = ''.join(newtext)
-    return tokens
-
 
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,

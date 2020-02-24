@@ -1,24 +1,39 @@
 from typing import List, Dict, Optional, Any, Tuple
 
 import torch
+from allennlp.common import Params
 from allennlp.data import Vocabulary
 from allennlp.models import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
+
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
 EOS_TOKEN_IDS = [50256, 0]
 
-
 @Model.register("knowledgeable_stories")
 class KnowStoryModel(Model):
+
+    '''
+    @classmethod
+    def from_params(cls, vocab, params: Params) -> 'KnowStoryModel':
+        embedder_vocab_size = params.pop("embedder_vocab_size", None)
+        sentence_seq2seq_encoder = params.pop("sentence_seq2seq_encoder", None)
+        sentence_seq2vec_encoder = params.pop("sentence_seq2vec_encoder", None)
+        passage_seq2seq_encoder = params.pop("passage_seq2seq_encoder", None)
+        return KnowStoryModel(vocab=vocab, embedder_vocab_size=embedder_vocab_size,
+                              sentence_seq2seq_encoder=sentence_seq2seq_encoder,
+                              sentence_seq2vec_encoder=sentence_seq2vec_encoder,
+                              passage_seq2seq_encoder=passage_seq2seq_encoder)
+    '''
+
     def __init__(self,
                  vocab: Vocabulary,
-                 lm_name: str = "gpt2",
                  embedder_vocab_size: int = None,
+                 lm_name: str = "gpt2",
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
@@ -33,6 +48,7 @@ class KnowStoryModel(Model):
                  initializer: InitializerApplicator = None,
                  ) -> None:
         super().__init__(vocab, regularizer)
+
 
         if passage_distance_weights is None:
             passage_distance_weights = [1.0]
@@ -136,6 +152,8 @@ class KnowStoryModel(Model):
         output = {}
         dataset_name = metadata[0]["dataset"]
 
+        preidction_mode = metadata[0].pop("prediction", False)
+
         loss = torch.tensor(0.0).cuda()
 
         if passages != None and "passage_disc_loss" in self._loss_weights:
@@ -190,18 +208,6 @@ class KnowStoryModel(Model):
                         prem_tokens = premises["tokens"]
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
-
-            ''' WIP to train lower level task encoder.
-            if "sentence_disc_loss" in self._loss_weights and premises != None \
-                    and conclusions != None:
-                # Get only the last layer.
-
-                premises_encoded = self._encode_sentences_from_textfield(premises)
-                conclusions_encoded = self._encode_sentences_from_textfield(conclusions)
-
-                logger.info("Premises", premises_encoded.size())
-                logger.info("Conclusions", conclusions_encoded.size())
-            '''
 
         output["loss"] = loss.cuda()
 
