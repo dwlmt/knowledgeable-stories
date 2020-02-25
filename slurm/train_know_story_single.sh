@@ -4,7 +4,7 @@
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
 #SBATCH --gres=gpu:4
-#SBATCH --mem=64g  # Memory
+#SBATCH --mem=32g  # Memory
 #SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
 # Set EXP_BASE_NAME and BATCH_FILE_PATH
@@ -27,7 +27,7 @@ echo ${dt}
 export STUDENT_ID=${USER}
 
 export CLUSTER_HOME="/home/${STUDENT_ID}"
-export DATASET_ROOT="${CLUSTER_HOME}/datasets/story_datasets/"
+export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
 export EMBEDDER_VOCAB_SIZE=50268
 export NUM_GPUS=4
 export NUM_CPUS=12
@@ -54,6 +54,22 @@ export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 export CACHE_DIR="${SCRATCH_HOME}/${EXP_ID}_cache"
 
+if [ ! -v COPY_DATASET ]; then
+  export DATASET_ROOT=${DATASET_SOURCE}
+else
+  export DATASET_ROOT="${SCRATCH_HOME}/${EXP_ID}_dataset"
+fi
+
+echo "============"
+echo "Copy Datasets locally ========"
+
+if [ ! -v COPY_DATASET ]; then
+  echo "Don't copy dataset"
+else
+  mkdir -p ${DATASET_ROOT}
+  rsync -avuzhP "${DATASET_SOURCE}/" "${DATASET_ROOT}/"
+fi
+
 # Ensure the scratch home exists and CD to the experiment root level.
 cd "${EXP_ROOT}" # helps AllenNLP behave
 
@@ -77,6 +93,12 @@ rsync -avuzhP "${SERIAL_DIR}/" "${HEAD_EXP_DIR}/" # Copy output onto headnode
 
 rm -rf "${SERIAL_DIR}"
 rm -rf "${CACHE_DIR}"
+
+if [ ! -v COPY_DATASET ]; then
+  echo "No dataset to delete"
+else
+  rm -rf ${DATASET_ROOT}
+fi
 
 echo "============"
 echo "results synced"
