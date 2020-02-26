@@ -1,25 +1,25 @@
-from typing import List, Dict, Optional, Any, Tuple
+from typing import List, Dict, Optional, Any
 
 import torch
-from allennlp.common import Params
 from allennlp.data import Vocabulary
 from allennlp.models import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, TextFieldEmbedder
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
+from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
-
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
 EOS_TOKEN_IDS = [50256, 0]
 
-@Model.register("knowledgeable_stories")
-class KnowStoryModel(Model):
 
+@Model.register("know_stories")
+class KnowledgeableStoriesModel(Model):
     '''
     @classmethod
-    def from_params(cls, vocab, params: Params) -> 'KnowStoryModel':
+    def from_params(cls, params: Params, **kwargs) -> 'KnowStoryModel':
+
         embedder_vocab_size = params.pop("embedder_vocab_size", None)
         sentence_seq2seq_encoder = params.pop("sentence_seq2seq_encoder", None)
         sentence_seq2vec_encoder = params.pop("sentence_seq2vec_encoder", None)
@@ -28,7 +28,7 @@ class KnowStoryModel(Model):
                               sentence_seq2seq_encoder=sentence_seq2seq_encoder,
                               sentence_seq2vec_encoder=sentence_seq2vec_encoder,
                               passage_seq2seq_encoder=passage_seq2seq_encoder)
-    '''
+        '''
 
     def __init__(self,
                  vocab: Vocabulary,
@@ -38,17 +38,16 @@ class KnowStoryModel(Model):
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
                  dropout: float = 0.0,
-                 passage_distance_weights=None,
-                 loss_weights=None,
-                 passage_disc_loss_cosine=False,
-                 dataset_config=None,
-                 generation_config=None,
-                 metric_config=None,
+                 passage_distance_weights: list = None,
+                 loss_weights: dict = None,
+                 passage_disc_loss_cosine: bool = False,
+                 dataset_config: dict = None,
+                 generation_config: dict = None,
+                 metric_config: dict = None,
                  regularizer: Optional[RegularizerApplicator] = None,
                  initializer: InitializerApplicator = None,
                  ) -> None:
-        super().__init__(vocab, regularizer)
-
+        super().__init__(vocab=vocab, regularizer=regularizer)
 
         if passage_distance_weights is None:
             passage_distance_weights = [1.0]
@@ -72,7 +71,6 @@ class KnowStoryModel(Model):
                               "cmu_movie_lm": {}, "cmu_movie_hierarchy": {},
                               "cbt_movie_lm": {}, "cbt_movie_hierarchy": {}}
 
-
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
 
@@ -87,8 +85,6 @@ class KnowStoryModel(Model):
         self._metric_config = metric_config
 
         self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
-        # Need to turn on the hidden states.
-        #self._lm_model.transformer.output_hidden_states = True
 
         self._cosine_similarity = nn.CosineSimilarity()
         self._l2_distance = nn.PairwiseDistance(p=2)
@@ -138,6 +134,7 @@ class KnowStoryModel(Model):
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
+                passages_hidden_state: torch.Tensor = None,
                 premises: Dict[str, torch.Tensor] = None,
                 conclusions: Dict[str, torch.Tensor] = None,
                 negative_conclusions: Dict[str, torch.Tensor] = None,
@@ -147,42 +144,53 @@ class KnowStoryModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        # logger.info(metadata)
+        logger.info(metadata)
 
         output = {}
         dataset_name = metadata[0]["dataset"]
 
-        preidction_mode = metadata[0].pop("prediction", False)
+        prediction_mode = metadata[0].pop("prediction", False)
 
-        loss = torch.tensor(0.0).cuda()
+        loss = torch.tensor(0.0)
+        if torch.cuda.is_available():
+            loss = loss.cuda()
 
         if passages != None and "passage_disc_loss" in self._loss_weights:
 
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
                 with torch.no_grad():
-                    hidden_states_mask, hidden_states = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
+                    lm_mask, lm_hidden_state = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
 
-                encoded_sentences_list = []
-                for hs, pm in zip(hidden_states, hidden_states_mask, ):
-                    encoded_sentences = self._encode_sentences(hs, pm)
-                    encoded_sentences_list.append(encoded_sentences)
-
-                encoded_sentences_batch = torch.stack(encoded_sentences_list)
+                encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
                 if self._passage_seq2seq_encoder != None:
 
-                    passages_encoded = self._encode_passages(encoded_sentences_batch, hidden_states_mask)
+                    passages_encoded, passages_mask, passages_hidden_state = \
+                        self._encode_passages(encoded_sentences_batch, lm_mask, prediction_mode,
+                                              previous_hidden_state=passages_hidden_state)
 
                     passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded,
                                                                                             passages_encoded,
-                                                                                            dataset_name)
+                                                                                            dataset_name,
+                                                                                            prediction_mode)
+
+                    if prediction_mode:
+                        output["passages_encoded"] = passages_encoded
+                        output["passages_mask"] = passages_mask
+                        #output["passages_hidden_state"] = torch.unsqueeze(passages_hidden_state, dim=0).expand(
+                        #    passages_encoded.size(0), -1, -1, -1, -1)
+                        output["sentences_encoded"] = encoded_sentences_batch
+                        output["lm_encoded"] = lm_hidden_state
+                        output["lm_mask"] = lm_mask
+
                     output = {**output, **disc_output_dict}
+
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
                     if not self.training and conclusions != None and negative_conclusions != None:
                         self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
-                                                                 passages_encoded, hidden_states_mask)
+                                                                 passages_encoded, lm_mask)
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
@@ -192,8 +200,9 @@ class KnowStoryModel(Model):
 
             loss += lm_loss * self._loss_weights["lm_loss"]
 
-            with torch.no_grad():
-                if not self.training or self._metric_config["training_metrics"]:
+            if not self.training or self._metric_config["training_metrics"]:
+
+                with torch.no_grad():
 
                     self._negative_arguments_evaluation_if_required(dataset_name, arguments, negative_arguments)
 
@@ -209,9 +218,19 @@ class KnowStoryModel(Model):
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
-        output["loss"] = loss.cuda()
+        if torch.cuda.is_available():
+            loss = loss.cuda()
+        output["loss"] = loss
 
         return output
+
+    def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
+        encoded_sentences_list = []
+        for hs, pm in zip(lm_hidden_state, lm_mask):
+            encoded_sentences = self._encode_sentences(hs, pm)
+            encoded_sentences_list.append(encoded_sentences)
+        encoded_sentences_batch = torch.stack(encoded_sentences_list)
+        return encoded_sentences_batch
 
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
         # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
@@ -226,12 +245,25 @@ class KnowStoryModel(Model):
             dist_l2 = self._l2_distance(encoded_source, encoded_target)
             self._metrics[f"{dataset_name}_disc_correct_distance_l2_avg_{i}"](dist_l2.mean().item())
 
+    def _similarity_distances(self, encoded_source, encoded_target):
+        # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
+        # normalised ones.
+        with torch.no_grad():
+            metrics = []
+
+            for x, y in zip(torch.split(encoded_source, 1), torch.split(encoded_target, 1)):
+                cosine = self._cosine_similarity(x, y)
+                dist_l1 = self._l1_distance(x, y)
+                dist_l2 = self._l2_distance(x, y)
+                metrics.append({f"cosine": cosine.item(), f"l1": dist_l1.item(), f"l2": dist_l2.item()})
+            return metrics
+
     def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
                                             passages_mask):
         # Special hacking just to allow output predictions on the ROC corpus.
         if "roc" in dataset_name:
 
-            negative_conclusions_mask,  negative_conclusions_hidden_states = self.lm_mask_and_hidden_states(conclusions)
+            negative_conclusions_mask, negative_conclusions_hidden_states = self.lm_mask_and_hidden_states(conclusions)
             negative_conclusions_encoded_sentences = self._encode_sentences(negative_conclusions_hidden_states,
                                                                             negative_conclusions_mask)
 
@@ -240,7 +272,7 @@ class KnowStoryModel(Model):
             negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
             negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
 
-            negative_passages_encoded = self._encode_passages(negative_encoded_sentences_batch, passages_mask)
+            negative_passages_encoded, _, _ = self._encode_passages(negative_encoded_sentences_batch, passages_mask)
 
             correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
                                                          torch.squeeze(passages_encoded[:, 4, :]), dim=1)
@@ -259,9 +291,7 @@ class KnowStoryModel(Model):
         passages_output = self._lm_model.transformer(passages_tokens)
         return passages_mask, passages_output[0]
 
-    def _calculate_disc_passage_loss(self, encoded_one, encoded_two, dataset_name):
-
-        # print("Disc Loss")
+    def _calculate_disc_passage_loss(self, encoded_one, encoded_two, dataset_name, prediction_mode):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(encoded_one.device)
@@ -293,9 +323,9 @@ class KnowStoryModel(Model):
 
             loss += nll_loss * distance_weight * self._loss_weights["passage_disc_loss"]  # Add the loss and scale it.
 
-            with torch.no_grad():
+            if not self.training and not prediction_mode:
 
-                if not self.training:
+                with torch.no_grad():
 
                     encoded_sentences_correct = encoded_one_flat[
                                                 i:, ]
@@ -316,6 +346,26 @@ class KnowStoryModel(Model):
                     self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
 
         return loss, output_dict
+
+    def prediction_distance_metrics(self, passages_encoded):
+
+        output_dict = {}
+
+        predictions_metrics_dict = {}
+        for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
+            with torch.no_grad():
+                encoded_sentences_correct = passages_encoded[
+                                            i:, ]
+                encoded_target_correct = passages_encoded[:passages_encoded.shape[0] - i, :]
+
+                sim = self._similarity_distances(encoded_sentences_correct, encoded_target_correct)
+
+                predictions_metrics_dict[f"{i}"] = sim
+
+        if len(predictions_metrics_dict) > 0:
+            output_dict = predictions_metrics_dict
+
+        return output_dict
 
     def _batch_group_mask(self, batch_size, sentence_num, i=1):
         """ Mask out the last row in each batch as will not have a prediction for for the next row.
@@ -338,19 +388,28 @@ class KnowStoryModel(Model):
 
     def _encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
-            self._sentence_seq2vec_encoder._module.flatten_parameters()
+            #self._sentence_seq2vec_encoder._module.flatten_parameters()
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
-            self._sentence_seq2seq_encoder._module.flatten_parameters()
+            #self._sentence_seq2seq_encoder._module.flatten_parameters()
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
-    def _encode_passages(self, hidden_states, mask):
+    def _encode_passages(self, inputs, mask, prediction_mode=None, previous_hidden_state=None):
+
+
         passages_sentence_lengths = torch.sum(mask, dim=2)
         mask = passages_sentence_lengths > 0
-        self._passage_seq2seq_encoder._module.flatten_parameters()
-        encoded_passages = self._passage_seq2seq_encoder(hidden_states, mask)
-        return encoded_passages
+        #self._passage_seq2seq_encoder._module.flatten_parameters()
+
+        encoded_passages = self._passage_seq2seq_encoder(inputs, mask)#, previous_hidden_state)
+
+        hidden_state = None
+        if False and prediction_mode and isinstance(self._passage_seq2seq_encoder, PytorchSeq2SeqWrapper):
+            t = self._passage_seq2seq_encoder._module.forward(encoded_passages)#, previous_hidden_state)
+            hidden_state = torch.stack(t[1])
+
+        return encoded_passages, mask, hidden_state
 
     def _negative_arguments_evaluation_if_required(self, dataset_name, arguments, negative_arguments):
         if negative_arguments != None:
