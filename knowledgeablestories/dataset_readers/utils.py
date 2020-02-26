@@ -1,3 +1,4 @@
+import re
 import string
 from itertools import groupby
 
@@ -20,8 +21,18 @@ def is_english(text: str):
         return False
 
 printable = set(string.printable)
-def remove_non_printable(s):
-    return ''.join(filter(lambda x: x in printable, s))
+allowed_punct_set = {".",",","'",'""',":",";","-","!","?","[","]","{","}","(",")","*","/","\\","_", "‘","’","“","”"}
+def cleanup_text(text, ascii=True):
+    
+    mod_text = text.replace("\n", " ")
+    if ascii:
+        mod_text = re.sub(r'[^\x00-\x7F]', ' ', mod_text)
+    else:
+        mod_text = ''.join(filter(lambda x: x in printable, mod_text))
+
+    mod_text = "".join([c for c in mod_text if c.isalnum() or c.isspace() or c in allowed_punct_set])
+
+    return " ".join(mod_text.split())
 
 def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
     text_field_list = []
