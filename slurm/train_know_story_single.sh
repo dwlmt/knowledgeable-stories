@@ -3,9 +3,9 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:4
-#SBATCH --mem=32g  # Memory
-#SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
+#SBATCH --gres=gpu:1
+#SBATCH --mem=16g  # Memory
+#SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
 
 # Set EXP_BASE_NAME and BATCH_FILE_PATH
 
@@ -29,8 +29,8 @@ export STUDENT_ID=${USER}
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
 export EMBEDDER_VOCAB_SIZE=50268
-export NUM_GPUS=4
-export NUM_CPUS=12
+export NUM_GPUS=1
+export NUM_CPUS=8
 
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 
@@ -47,6 +47,8 @@ do
 done
 
 echo ${SCRATCH_HOME}
+
+#rm -rf "${SCRATCH_HOME}/*"
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
