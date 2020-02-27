@@ -32,7 +32,7 @@ def cleanup_text(text, ascii=True):
 
     mod_text = "".join([c for c in mod_text if c.isalnum() or c.isspace() or c in allowed_punct_set])
 
-    return " ".join(mod_text.split())
+    return " ".join([t for t in mod_text.split() if len(t) < 25])
 
 def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
     text_field_list = []
