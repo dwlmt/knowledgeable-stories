@@ -3,7 +3,9 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local TEXT_BASE_BATCH_SIZE = 2;
+local PASSAGE_BASE_BATCH_SIZE = 2;
+local LM_BASE_BATCH_SIZE = 1;
+local MAX_INSTANCES_IN_MEMORY = 64;
 
 {
   "dataset_reader": {
@@ -11,12 +13,17 @@ local TEXT_BASE_BATCH_SIZE = 2;
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
              "writing_prompts_lm": {
-                "type": "writing_prompts_lm"
+                "type": "writing_prompts_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
 
             },
             "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy"
-
+                "type": "writing_prompts_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             }
         },
   },
@@ -24,16 +31,18 @@ local TEXT_BASE_BATCH_SIZE = 2;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 10000,
+   "batches_per_epoch": 50000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
-            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
@@ -41,16 +50,18 @@ local TEXT_BASE_BATCH_SIZE = 2;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 1000,
+   "batches_per_epoch": 5000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
-            "batch_size": TEXT_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
@@ -63,7 +74,7 @@ local TEXT_BASE_BATCH_SIZE = 2;
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
   },
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
@@ -85,11 +96,11 @@ local TEXT_BASE_BATCH_SIZE = 2;
     },
   },
   "trainer": {
-    "num_epochs": 100,
+    "num_epochs": 1000,
     "validation_metric": "-loss",
     "patience": 2,
-    "grad_norm": 2.0,
-    "shuffle": true,
+    "grad_norm": 5.0,
+    "shuffle": false,
     "summary_interval": 500,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
