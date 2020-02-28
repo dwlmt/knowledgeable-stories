@@ -213,6 +213,18 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "model": {
     "type": "know_stories",
+    "dataset_config": {
+        "writing_prompts_lm": {},
+        "writing_prompts_hierarchy": {},
+        "roc_lm": {},
+        "roc_hierarchy": {},
+        "cmu_book_lm": {},
+        "cmu_book_hierarchy": {},
+        "cmu_movie_lm": {},
+        "cmu_movie_hierarchy": {},
+        "atomic": {},
+        "swag_know_lm": {},
+    },
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",

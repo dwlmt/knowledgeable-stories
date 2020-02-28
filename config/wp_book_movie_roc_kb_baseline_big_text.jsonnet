@@ -57,6 +57,18 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "lazy": true,
                 "batch_size" : 100,
             },
+            "cbt_lm": {
+               "type": "cbt_lm",
+               "lazy": true,
+               "batch_size" : 10,
+               "max_sentence_grouping": 10,
+               "max_token_len": 256,
+            },
+            "cbt_hierarchy": {
+                "type": "cbt_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
+            },
             "atomic" : {
                 "type": "atomic"
             },
@@ -114,7 +126,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy",  "filmcorpus_lm", "filmcorpus_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": 100000,
-   "sampling_rates":  [1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0],
+   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -142,6 +154,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_book_hierarchy": {
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_lm": {
+            "type": "basic",
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
@@ -223,7 +245,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": 10000,
-   "sampling_rates":  [1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0, 1.0 / 16.0],
+   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
    "iterators": {
         "writing_prompts_lm": {
             "type": "basic",
@@ -251,6 +273,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_book_hierarchy": {
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_lm": {
+            "type": "basic",
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
@@ -334,14 +366,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_train",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
+        "cbt_lm": dataset_root + dataset_root + "/CBTest/data/cbt_train.txt",
+        "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_train.txt",
         "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
         "schmoop_lm": dataset_root + "/schmoop/stories//*//*",
         "schmoop_hierarchy": dataset_root + "/schmoop/stories//*//*",
         "bookscorpus_lm": dataset_root + "/WritingPrompts/BooksCorpus/*",
         "bookscorpus_hierarchy": dataset_root + "/WritingPrompts/BooksCorpus/*",
-        "filmscorpus_lm": dataset_root + "/WritingPrompts/FilmsCorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
-        "filmscorpus_hierarchy": dataset_root + "/WritingPrompts/FilmsCorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
+        "filmcorpus_lm": dataset_root + "/WritingPrompts/filmcorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
+        "filmcorpus_hierarchy": dataset_root + "/WritingPrompts/filmcorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
@@ -352,13 +386,15 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_valid",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
+        "cbt_lm": dataset_root + dataset_root + "/CBTest/data/cbt_valid.txt",
+        "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_valid.txt",
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
         "schmoop_lm": dataset_root + "/schmoop/stories//*//*",
         "schmoop_hierarchy": dataset_root + "/schmoop/stories//*//*",
         "bookscorpus_lm": dataset_root + "/WritingPrompts/BooksCorpus/*",
         "bookscorpus_hierarchy": dataset_root + "/WritingPrompts/BooksCorpus/*",
-        "filmscorpus_lm": dataset_root + "/WritingPrompts/FilmsCorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
-        "filmscorpus_hierarchy": dataset_root + "/WritingPrompts/FilmsCorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
+        "filmcorpus_lm": dataset_root + "/WritingPrompts/filmcorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
+        "filmcorpus_hierarchy": dataset_root + "/WritingPrompts/filmcorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
   },
   "model": {
     "type": "know_stories",
@@ -379,6 +415,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "bookscorpus_hierarchy": {},
         "filmcorpus_lm" : {},
         "filmcorpus_hierarchy": {},
+        "cbt_lm": {}, 
+        "cbt_hierarchy": {}
     },
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
