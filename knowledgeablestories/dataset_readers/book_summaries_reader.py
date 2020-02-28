@@ -24,6 +24,7 @@ class CmuAbstractBookReader(DatasetReader):
                  batch_size: int = 50,
                  max_token_len: int = 128,
                  max_sentence_grouping: int = 5,
+                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
 
@@ -36,6 +37,7 @@ class CmuAbstractBookReader(DatasetReader):
         self._sentence_splitter = sentence_splitter
 
         self._batch_size = batch_size
+        self._slide = slide
 
         # Add the relations as new tokens.
         self._tokenizer._tokenizer.add_tokens(token_tags)
@@ -69,7 +71,9 @@ class CmuAbstractBookReader(DatasetReader):
 
                 text_sentences = self.convert_text_to_sentences(line["story_text"])
 
-                for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
+                for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
+                                                                   step=int(round(self._batch_size * self._slide)),
+                                                                   fillvalue=" ")):
                     line["story_text"] = sentence_batch
 
                     yield self.text_to_instance(line)
@@ -100,11 +104,14 @@ class CmuBookLMReader(CmuAbstractBookReader):
                  batch_size: int = 6,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
+                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+                         max_token_len=max_token_len,
+                         slide = slide,
+                         start_and_end_tokens=start_and_end_tokens)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -134,13 +141,14 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
-                 max_sentence_grouping: int = 5,
-                 max_token_len: int = 64,
+                 max_token_len = 64,
+                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
-                         max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+                         max_token_len=max_token_len,
+                        slide = slide,
+                         start_and_end_tokens=start_and_end_tokens)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}

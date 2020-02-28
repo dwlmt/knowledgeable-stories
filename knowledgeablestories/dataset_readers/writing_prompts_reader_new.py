@@ -25,11 +25,10 @@ class WritingPromptsAbstractReader(DatasetReader):
                  batch_size: int = 50,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
-                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", max_length=max_token_len)
         self._batch_size = batch_size
         self._max_sentence_grouping = max_sentence_grouping
         self._max_token_len = max_token_len
@@ -37,23 +36,22 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._sentence_splitter = sentence_splitter
 
         self._batch_size = batch_size
-        self._slide = slide
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2",max_length=max_token_len)}
 
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
         self._start_and_end_tokens = start_and_end_tokens
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if
-                           not s.isspace() and sum([c.isalnum() for c in s]) > 5]
+                           not s.isspace() and len(s) > 5]
         return split_sentences
 
     def _read(self, file_path: str) -> Iterator[Instance]:
@@ -65,17 +63,16 @@ class WritingPromptsAbstractReader(DatasetReader):
 
                 if is_english(line):
 
-                    line = line.replace("<newline>", " ")
                     line = cleanup_text(line)
 
                     row = {}
                     row["orig_row_num"] = orig_row_num
                     row["batch_row_num"] = batch_row_num
 
+                    line = line.replace("<newline>", " ")
                     text_sentences = self.convert_text_to_sentences(line)
 
-                    for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size, 
-                                                                       step=int(round(self._batch_size * self._slide)),fillvalue=" ")):
+                    for sentence_batch in list(more_itertools.chunked(text_sentences, self._batch_size)):
                         row["story_text"] = sentence_batch
 
                         yield self.text_to_instance(row)
@@ -88,22 +85,21 @@ class WritingPromptsAbstractReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         raise NotImplementedError
 
-@DatasetReader.register("writing_prompts_lm")
-class WritingPromptsLMReader(WritingPromptsAbstractReader):
+@DatasetReader.register("writing_prompts_lm_new")
+class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
 
     def __init__(self,
                  lazy: bool = False,
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 10,
+                 batch_size: int = 6,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
-                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter= sentence_splitter, batch_size=batch_size, max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, slide= slide, start_and_end_tokens=start_and_end_tokens)
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
 
 
     """
@@ -125,8 +121,8 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
         return Instance(fields)
 
 
-@DatasetReader.register("writing_prompts_hierarchy")
-class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
+@DatasetReader.register("writing_prompts_hierarchy_new")
+class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
 
     def __init__(self,
                  lazy: bool = False,
@@ -134,14 +130,13 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
+                 max_sentence_grouping: int = 5,
                  max_token_len: int = 64,
-                 slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
-                         max_token_len=max_token_len, 
-                         slide = slide,
-                         start_and_end_tokens=start_and_end_tokens)
+                         max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
