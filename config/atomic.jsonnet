@@ -12,7 +12,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "validation_data_path":  dataset_root + "/atomic/v4_atomic_dev.csv",
   "test_data_path":  dataset_root + "/atomic/v4_atomic_tst.csv",
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": 50268
   },
   "iterator": {
@@ -23,7 +23,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     "num_epochs": 50,
     "validation_metric": "-loss",
     "patience": 3,
-    "grad_norm": 2.0,
+    "grad_norm": 5.0,
     "shuffle": true,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,

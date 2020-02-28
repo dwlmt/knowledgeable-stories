@@ -11,7 +11,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "train_data_path": dataset_root + "/ROCStories/roc_train_50.csv",
   "validation_data_path":  dataset_root + "/ROCStories/roc_val_50.csv",
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": 50268
   },
   "iterator": {

@@ -11,7 +11,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "train_data_path": dataset_root + "/WritingPrompts/writing_prompts_25",
   "validation_data_path":  dataset_root + "/WritingPrompts/writing_prompts_25",
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",

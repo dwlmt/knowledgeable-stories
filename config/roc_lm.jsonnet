@@ -11,7 +11,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "train_data_path": dataset_root + "/ROCStories/ROCStories_winter2017 - ROCStories_winter2017.csv",
   "validation_data_path":  dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": 50268
   },
   "iterator": {
@@ -22,7 +22,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     "num_epochs": 50,
     "validation_metric": "-loss",
     "patience": 3,
-    "grad_norm": 2.0,
+    "grad_norm": 5.0,
     "shuffle": true,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,

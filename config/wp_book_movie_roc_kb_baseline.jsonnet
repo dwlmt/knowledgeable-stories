@@ -4,36 +4,62 @@ local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 local PASSAGE_BASE_BATCH_SIZE = 2;
-local KB_BASE_BATCH_SIZE = 8;
+local LM_BASE_BATCH_SIZE = 1;
+local KB_BASE_BATCH_SIZE = 4;
+local MAX_INSTANCES_IN_MEMORY = 64;
 
 {
   "dataset_reader": {
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-            "writing_prompts_lm": {
-                "type": "writing_prompts_lm"
+              "writing_prompts_lm": {
+                "type": "writing_prompts_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
             },
             "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy"
+                "type": "writing_prompts_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             },
             "roc_lm": {
-                "type": "roc_lm"
+                "type": "roc_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
             },
             "roc_hierarchy": {
-                "type": "roc_hierarchy"
+                "type": "roc_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             },
             "cmu_movie_lm": {
-                "type": "cmu_movie_lm"
+                "type": "cmu_movie_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
             },
             "cmu_movie_hierarchy": {
-                "type": "cmu_movie_hierarchy"
+                "type": "cmu_movie_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             },
              "cmu_book_lm": {
-                "type": "cmu_book_lm"
+                "type": "cmu_book_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
             },
             "cmu_book_hierarchy": {
-                "type": "cmu_book_hierarchy"
+                "type": "cmu_book_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             },
             "atomic" : {
                 "type": "atomic"
@@ -41,55 +67,66 @@ local KB_BASE_BATCH_SIZE = 8;
             "swag_know_lm" : {
                 "type": "swag_know_lm"
             }
-
         },
   },
   "iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
+   "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
    "iterate_forever": false,
-   "batches_per_epoch": 10000,
+   "batches_per_epoch": 50000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_movie_lm": {
             "type": "basic",
-            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_book_lm": {
             "type": "basic",
-            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "roc_lm": {
             "type": "basic",
-            "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "roc_hierarchy": {
             "type": "basic",
-            "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "atomic": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "swag_know_lm": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
@@ -97,48 +134,60 @@ local KB_BASE_BATCH_SIZE = 8;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
+   "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
    "iterate_forever": false,
-   "batches_per_epoch": 1000,
+   "batches_per_epoch": 5000,
    "iterators": {
-       "writing_prompts_lm": {
+         "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_movie_lm": {
             "type": "basic",
-            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_movie_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "cmu_book_lm": {
             "type": "basic",
-            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+
        },
        "cmu_book_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
-        "roc_lm": {
+       "roc_lm": {
             "type": "basic",
-            "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "roc_hierarchy": {
             "type": "basic",
-            "batch_size": KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "atomic": {
             "type": "basic",
-            "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "swag_know_lm": {
             "type": "basic",
-            "batch_size":  PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
@@ -167,7 +216,7 @@ local KB_BASE_BATCH_SIZE = 8;
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
   },
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",
@@ -188,7 +237,7 @@ local KB_BASE_BATCH_SIZE = 8;
     "num_epochs": 100,
     "validation_metric": "-loss",
     "patience": 2,
-    "grad_norm": 2.0,
+    "grad_norm": 5.0,
     "shuffle": true,
     "summary_interval": 500,
     "model_save_interval": 7200.0,

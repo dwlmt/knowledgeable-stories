@@ -13,7 +13,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "test_data_path":  dataset_root + "/atomic/v4_atomic_small.csv",
   "evaluate_on_test": true,
   "model": {
-    "type": "knowledgeable_stories",
+    "type": "know_stories",
     "embedder_vocab_size": 50268
   },
   "iterator": {
