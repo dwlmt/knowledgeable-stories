@@ -28,14 +28,10 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "roc_lm": {
                 "type": "roc_lm",
                 "lazy": true,
-                "batch_size" : 10,
-                "max_sentence_grouping": 10,
-                "max_token_len": 256,
             },
             "roc_hierarchy": {
                 "type": "roc_hierarchy",
                 "lazy": true,
-                "batch_size" : 100,
             },
             "cmu_movie_lm": {
                 "type": "cmu_movie_lm",
