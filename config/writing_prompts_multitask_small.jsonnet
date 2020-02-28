@@ -85,7 +85,7 @@ local WP_BASE_BATCH_SIZE = 2;
     },
   },
   "trainer": {
-    "num_epochs": 100,
+    "num_epochs": 1000,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,
