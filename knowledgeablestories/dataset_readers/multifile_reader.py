@@ -25,8 +25,8 @@ class MultifileAbstractReader(DatasetReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 50,
-                 max_token_len: int = 128,
+                 batch_size: int = 100,
+                 max_token_len: int = 256,
                  max_sentence_grouping: int = 5,
                  slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
@@ -95,9 +95,9 @@ class MultifileLMReader(MultifileAbstractReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 6,
-                 max_sentence_grouping: int = 5,
-                 max_token_len: int = 64,
+                 batch_size: int = 10,
+                 max_sentence_grouping: int = 10,
+                 max_token_len: int = 256,
                  slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
@@ -114,7 +114,7 @@ class MultifileLMReader(MultifileAbstractReader):
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
-        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len)
+        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -128,8 +128,8 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
-                 batch_size: int = 50,
-                 max_token_len: int = 128,
+                 batch_size: int = 100,
+                 max_token_len: int = 64,
                  slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
