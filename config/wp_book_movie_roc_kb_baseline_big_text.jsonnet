@@ -121,12 +121,12 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
-   "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy",  "filmcorpus_lm", "filmcorpus_hierarchy"],
+    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
+   "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
+   "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": 100000,
-   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
+   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -241,11 +241,11 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   "validation_iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
+   "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm",
    "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": 10000,
-   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
+   "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
    "iterators": {
         "writing_prompts_lm": {
             "type": "basic",
