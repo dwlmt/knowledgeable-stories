@@ -1,3 +1,4 @@
+import collections
 from typing import List, Dict, Optional, Any
 
 import torch
@@ -11,8 +12,7 @@ from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Ave
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
-EOS_TOKEN_IDS = [50256, 0]
-
+END_OF_TEXT_TOKEN_IDS = set([50256, 0])
 
 @Model.register("know_stories")
 class KnowledgeableStoriesModel(Model):
@@ -60,8 +60,8 @@ class KnowledgeableStoriesModel(Model):
                              "hierarchy_accuracy_top_k": [1, 5]}
 
         if generation_config is None:
-            generation_config = {"temperature": 1.0, "top_k": 50, "max_length": 100, "do_sample": True,
-                                 "num_beams": 1}
+            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 1.0, "max_length": 100, "do_sample": True,
+                                 "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS), "repetition_penalty": None}
 
         if dataset_config is None:
             dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
@@ -69,7 +69,7 @@ class KnowledgeableStoriesModel(Model):
                               "writing_prompts_lm": {}, "writing_prompts_hierarchy": {},
                               "cmu_book_lm": {}, "cmu_book_hierarchy": {},
                               "cmu_movie_lm": {}, "cmu_movie_hierarchy": {},
-                              "cbt_movie_lm": {}, "cbt_movie_hierarchy": {}}
+                              "cbt_lm": {}, "cbt_hierarchy": {}}
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
@@ -125,16 +125,15 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_cloze_accuracy"] = Average()
 
             if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
-                self._metrics[f"{dataset_name}_bleu"] = BLEU(exclude_indices=set(EOS_TOKEN_IDS))
+                self._metrics[f"{dataset_name}_bleu"] = BLEU(exclude_indices=END_OF_TEXT_TOKEN_IDS)
                 self._metrics[f"{dataset_name}_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0),
-                                                               exclude_indices=set(EOS_TOKEN_IDS))
+                                                               exclude_indices=END_OF_TEXT_TOKEN_IDS)
 
         if initializer is not None:
             initializer(self)
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
-                passages_hidden_state: torch.Tensor = None,
                 premises: Dict[str, torch.Tensor] = None,
                 conclusions: Dict[str, torch.Tensor] = None,
                 negative_conclusions: Dict[str, torch.Tensor] = None,
@@ -144,7 +143,7 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        logger.info(metadata)
+        #logger.info(metadata)
 
         output = {}
         dataset_name = metadata[0]["dataset"]
@@ -160,15 +159,14 @@ class KnowledgeableStoriesModel(Model):
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
                 with torch.no_grad():
-                    lm_mask, lm_hidden_state = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
+                    lm_hidden_state, lm_mask= self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
                 if self._passage_seq2seq_encoder != None:
 
-                    passages_encoded, passages_mask, passages_hidden_state = \
-                        self._encode_passages(encoded_sentences_batch, lm_mask, prediction_mode,
-                                              previous_hidden_state=passages_hidden_state)
+                    passages_encoded, passages_mask = \
+                        self.encode_passages(encoded_sentences_batch, lm_mask)
 
                     passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded,
                                                                                             passages_encoded,
@@ -178,11 +176,10 @@ class KnowledgeableStoriesModel(Model):
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
                         output["passages_mask"] = passages_mask
-                        #output["passages_hidden_state"] = torch.unsqueeze(passages_hidden_state, dim=0).expand(
-                        #    passages_encoded.size(0), -1, -1, -1, -1)
                         output["sentences_encoded"] = encoded_sentences_batch
                         output["lm_encoded"] = lm_hidden_state
                         output["lm_mask"] = lm_mask
+                        output["token_ids"] = passages["tokens"]
 
                     output = {**output, **disc_output_dict}
 
@@ -212,7 +209,8 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics[f"{dataset_name}_perplexity"](lm_loss)
 
                     if "generate_text" in self._dataset_config[dataset_name]:
-                        generated_text = self._generate_text(dataset_name, premises)
+                        num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
+                        generated_text = self.generate_text(premises["tokens"], num_of_sequences)
 
                         prem_tokens = premises["tokens"]
 
@@ -227,7 +225,7 @@ class KnowledgeableStoriesModel(Model):
     def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
         encoded_sentences_list = []
         for hs, pm in zip(lm_hidden_state, lm_mask):
-            encoded_sentences = self._encode_sentences(hs, pm)
+            encoded_sentences = self.encode_sentences(hs, pm)
             encoded_sentences_list.append(encoded_sentences)
         encoded_sentences_batch = torch.stack(encoded_sentences_list)
         return encoded_sentences_batch
@@ -263,16 +261,16 @@ class KnowledgeableStoriesModel(Model):
         # Special hacking just to allow output predictions on the ROC corpus.
         if "roc" in dataset_name:
 
-            negative_conclusions_mask, negative_conclusions_hidden_states = self.lm_mask_and_hidden_states(conclusions)
-            negative_conclusions_encoded_sentences = self._encode_sentences(negative_conclusions_hidden_states,
-                                                                            negative_conclusions_mask)
+            negative_conclusions_hidden_states , negative_conclusions_mask = self.lm_mask_and_hidden_states(conclusions["tokens"])
+            negative_conclusions_encoded_sentences = self.encode_sentences(negative_conclusions_hidden_states,
+                                                                           negative_conclusions_mask)
 
             negative_encoded_sentences_batch = encoded_sentences_batch.clone()
             # logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
             negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
             negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
 
-            negative_passages_encoded, _, _ = self._encode_passages(negative_encoded_sentences_batch, passages_mask)
+            negative_passages_encoded, _ = self.encode_passages(negative_encoded_sentences_batch, passages_mask)
 
             correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
                                                          torch.squeeze(passages_encoded[:, 4, :]), dim=1)
@@ -285,11 +283,10 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
-        passages_tokens = text["tokens"]
-        passages_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
-        self._lm_model = self._lm_model.to(passages_tokens.device)
-        passages_output = self._lm_model.transformer(passages_tokens)
-        return passages_mask, passages_output[0]
+        passages_mask = get_text_field_mask({"tokens": text}, num_wrapping_dims=num_wrapping_dims)
+        self._lm_model = self._lm_model.to(text.device)
+        passages_output = self._lm_model.transformer(text)
+        return passages_output[0], passages_mask
 
     def _calculate_disc_passage_loss(self, encoded_one, encoded_two, dataset_name, prediction_mode):
 
@@ -302,7 +299,7 @@ class KnowledgeableStoriesModel(Model):
         encoded_two_flat = encoded_two.view(batch_size * sentence_num, feature_size)
 
         logits = self.calculate_logits(encoded_one_flat,
-                                       encoded_two_flat)
+                                       encoded_two_flat, self._passage_disc_loss_cosine)
 
         dot_product_mask = (
                 1.0 - torch.diag(torch.ones(logits.shape[0]).to(encoded_one.device), 0).float())
@@ -378,38 +375,34 @@ class KnowledgeableStoriesModel(Model):
 
         return batch_group
 
-    def calculate_logits(self, embeddings_one, embeddings_two):
-        if not self._passage_disc_loss_cosine:
+    def calculate_logits(self, embeddings_one, embeddings_two, cosine):
+        if not cosine:
             logits = torch.matmul(embeddings_one,
                                   torch.t(embeddings_two))
         else:
             logits = self._cosine_similarity(embeddings_one, embeddings_two)
         return logits
 
-    def _encode_sentences(self, hidden_states, mask):
+    def encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
-            #self._sentence_seq2vec_encoder._module.flatten_parameters()
+            self._sentence_seq2vec_encoder._module.flatten_parameters()
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
-            #self._sentence_seq2seq_encoder._module.flatten_parameters()
+            self._sentence_seq2seq_encoder._module.flatten_parameters()
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
-    def _encode_passages(self, inputs, mask, prediction_mode=None, previous_hidden_state=None):
+    def encode_passages(self, inputs, mask = None):
 
+        if mask is not None:
+            passages_sentence_lengths = torch.sum(mask, dim=2)
+            mask = passages_sentence_lengths > 0
 
-        passages_sentence_lengths = torch.sum(mask, dim=2)
-        mask = passages_sentence_lengths > 0
-        #self._passage_seq2seq_encoder._module.flatten_parameters()
+        self._passage_seq2seq_encoder._module.flatten_parameters()
 
-        encoded_passages = self._passage_seq2seq_encoder(inputs, mask)#, previous_hidden_state)
+        encoded_passages = self._passage_seq2seq_encoder(inputs, mask)
 
-        hidden_state = None
-        if False and prediction_mode and isinstance(self._passage_seq2seq_encoder, PytorchSeq2SeqWrapper):
-            t = self._passage_seq2seq_encoder._module.forward(encoded_passages)#, previous_hidden_state)
-            hidden_state = torch.stack(t[1])
-
-        return encoded_passages, mask, hidden_state
+        return encoded_passages, mask
 
     def _negative_arguments_evaluation_if_required(self, dataset_name, arguments, negative_arguments):
         if negative_arguments != None:
@@ -429,19 +422,25 @@ class KnowledgeableStoriesModel(Model):
 
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
-    def _generate_text(self, dataset_name, premises):
-        num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
-        generated_text = self._lm_model.generate(
-            input_ids=premises["tokens"],
-            max_length=self._generation_config["max_length"],
-            temperature=self._generation_config["temperature"],
-            top_k=self._generation_config["top_k"],
-            do_sample=self._generation_config["do_sample"],
-            num_beams=self._generation_config["num_beams"],
-            eos_token_ids=EOS_TOKEN_IDS,
+    def generate_text(self, existing_tokens, num_of_sequences = 10, override_gen_config = None):
+
+        gen_config = self._generation_config
+        if override_gen_config:
+            gen_config = collections.ChainMap(override_gen_config, gen_config)
+
+        output_sequences = self._lm_model.generate(
+            input_ids=existing_tokens,
+            max_length=gen_config["max_length"],
+            temperature=gen_config["temperature"],
+            top_k=gen_config["top_k"],
+            top_p=gen_config["top_p"],
+            do_sample=gen_config["do_sample"],
+            num_beams=gen_config["num_beams"],
+            eos_token_ids=gen_config["eos_token_ids"],
+            repetition_penalty=gen_config["repetition_penalty"],
             num_return_sequences=num_of_sequences,
         )
-        return generated_text
+        return output_sequences
 
     def _bleu_score_if_required(self, dataset_name, prem, conclusions, generated_text):
         if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
@@ -449,14 +448,14 @@ class KnowledgeableStoriesModel(Model):
 
             for i in range(conc.size(0)):
 
-                text_hyp = generated_text[i, ..., len([p for p in prem[i].tolist() if p not in EOS_TOKEN_IDS]):]
+                text_hyp = generated_text[i, ..., len([p for p in prem[i].tolist() if p not in END_OF_TEXT_TOKEN_IDS]):]
                 text_conc = conc[i]
 
                 for h in text_hyp:
                     for c in text_conc:
 
-                        if len([x for x in h.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(h.tolist()) > 1 \
-                                and len([x for x in c.tolist() if x not in EOS_TOKEN_IDS]) > 0 and len(c.tolist()) > 1:
+                        if len([x for x in h.tolist() if x not in END_OF_TEXT_TOKEN_IDS]) > 0 and len(h.tolist()) > 1 \
+                                and len([x for x in c.tolist() if x not in END_OF_TEXT_TOKEN_IDS]) > 0 and len(c.tolist()) > 1:
                             h_unsqueezed = h.unsqueeze(dim=0).long()
                             c_unsqueezed = c.unsqueeze(dim=0).long()
 

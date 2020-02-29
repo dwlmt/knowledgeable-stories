@@ -3,7 +3,7 @@ import pathlib
 from allennlp.common.testing import ModelTestCase, AllenNlpTestCase
 
 from knowledgeablestories.dataset_readers.atomic_reader import AtomicDatasetReader
-from knowledgeablestories.models import KnowStoryModel
+from knowledgeablestories.models import KnowledgeableStoriesModel
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
 
