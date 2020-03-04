@@ -13,6 +13,7 @@ from allennlp.models import Model
 from allennlp.predictors.predictor import Predictor
 from overrides import overrides
 from torch import nn
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
@@ -34,6 +35,8 @@ class KnowledgeablePredictor(Predictor):
         self._cosine_similarity = nn.CosineSimilarity()
         self._l2_distance = nn.PairwiseDistance(p=2)
         self._l1_distance = nn.PairwiseDistance(p=1)
+
+        self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=5))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
@@ -90,7 +93,11 @@ class KnowledgeablePredictor(Predictor):
         previous_tensor_dict = None
         for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
+            print(inputs)
             copied_inputs = copy.deepcopy(inputs)
+
+            self._vader_polarity(sentence_batch)
+
             copied_inputs["sentences"] = sentence_batch
 
             instance = self._json_to_instance(copied_inputs)
@@ -104,9 +111,9 @@ class KnowledgeablePredictor(Predictor):
 
             self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
-            for s_index, sentence in enumerate(sentence_batch, start=1):
+            for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
 
-                input_tokens = previous_tokens + current_tokens[: s_index]
+                input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
                 generated_sequences = self.generate_sentences(input_tokens)
                 print("GENERATED", generated_sequences)
@@ -114,7 +121,7 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
 
                 print("Current Sentences Encoded Tensor", cached_dict["sentences_encoded"].size())
-                merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_index, ...]
+                merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
                 if previous_tensor_dict:
                     merged_sentences_encoded = torch.cat(
                         [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
@@ -148,14 +155,26 @@ class KnowledgeablePredictor(Predictor):
                     generated_sequences = [g for i, g in enumerate(generated_sequences) if i in set(top_k_idx.tolist())]
                     probs, log_probs = self._logits_to_probs(logits)
 
+                self._vader_polarity(generated_sequences)
+
                 cosine = self._cosine_similarity(context_representation, final_encoded_representations)
                 l1 = self._l1_distance(context_representation, final_encoded_representations)
                 l2 = self._l2_distance(context_representation, final_encoded_representations)
-                for cosine_item, l1_item, l2_item, logits_item, probs_item, log_probs_item, g_item in zip(cosine, l1, l2, logits, probs, log_probs, generated_sequences):
-                    parent = {"cosine": cosine_item, "l1": l1_item, "l2": l2_item,
-                              "logit": logits_item, "probability": probs_item, "log_probability": log_probs_item}
+                dot_product = torch.stack([torch.dot(x, y) for x,y in zip(context_representation, final_encoded_representations)])
 
-                    g_item["parent_metrics"] = parent
+                for cosine_item, l1_item, l2_item, dot_item, logits_item, probs_item, log_probs_item, g_item in zip(cosine, l1, l2, dot_product, logits, probs, log_probs, generated_sequences):
+                    parent = {"cosine": cosine_item.item(), "l1": l1_item.item(), "l2": l2_item.item(), "dot_product": dot_item.item(),
+                              "logit": logits_item.item(), "probability": probs_item.item(), "log_probability": log_probs_item.item()}
+
+
+                    g_item["parent_relation_metrics"] = parent
+
+                sentence_batch[s_upper_bound - 1]["sentences"] = generated_sequences
+
+                context_sentiment = sentence_batch[s_upper_bound - 1]["sentiment_polarity"]
+                for sent in sentence_batch[s_upper_bound - 1]["sentences"]:
+                    sentiment_variance = (context_sentiment - sent["sentiment_polarity"]) ** 2.0
+                    sent["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
 
 
             all_sentences.append(sentence_batch)
@@ -168,6 +187,11 @@ class KnowledgeablePredictor(Predictor):
         inputs["sentences"] = all_sentences
 
         return inputs
+
+    def _vader_polarity(self, sentence_batch):
+        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in sentence_batch]
+        for s, p in zip(sentence_batch, sentiment_polarity):
+            s["sentiment_polarity"] = p
 
     def _logits_to_probs(self, logits):
         probs = self._softmax(logits)
