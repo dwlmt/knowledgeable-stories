@@ -179,7 +179,7 @@ class KnowledgeableStoriesModel(Model):
                         output["sentences_encoded"] = encoded_sentences_batch
                         output["lm_encoded"] = lm_hidden_state
                         output["lm_mask"] = lm_mask
-                        output["token_ids"] = passages["tokens"]
+                        output["tokens"] = passages["tokens"]
 
                     output = {**output, **disc_output_dict}
 

@@ -5,7 +5,7 @@ import more_itertools
 import torch
 from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import Instance, DatasetReader
-from allennlp.data.fields import MetadataField, ListField, TextField, ArrayField
+from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import SentenceSplitter, PretrainedTransformerTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
@@ -40,11 +40,11 @@ class KnowledgeablePredictor(Predictor):
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=5))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
-        self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE_SIZE", default=5))
+        self._branch_size = int(os.getenv("PREDICTOR_BRANCH_SIZE", default=5))
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
 
-        self._num_levels = int(os.getenv("PREDICTOR_NUM_LEVELS", default=1))
+        self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
 
@@ -93,7 +93,6 @@ class KnowledgeablePredictor(Predictor):
         previous_tensor_dict = None
         for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
-            print(inputs)
             copied_inputs = copy.deepcopy(inputs)
 
             self._vader_polarity(sentence_batch)
@@ -105,81 +104,30 @@ class KnowledgeablePredictor(Predictor):
             output_dict = self.predict_instance(instance)
 
             cached_dict = self.convert_output_to_tensors(output_dict)
-            current_tokens = cached_dict["token_ids"]
+            current_tokens = cached_dict["tokens"]
 
             passages_encoded_tensor = cached_dict["passages_encoded"]
 
             self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
             for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
-
+                parent = sentence_batch[s_upper_bound - 1]
                 input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
-                generated_sequences = self.generate_sentences(input_tokens)
-                print("GENERATED", generated_sequences)
-
-                encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
-
-                print("Current Sentences Encoded Tensor", cached_dict["sentences_encoded"].size())
                 merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+
                 if previous_tensor_dict:
                     merged_sentences_encoded = torch.cat(
                         [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
-                merged_sentences_encoded = merged_sentences_encoded[
-                                           max(0, merged_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
+                generated_sequences = self.tree_generation(parent, input_tokens, merged_sentences_encoded,
+                                                           self._num_levels_rollout)
 
-
-                context_encoded_representation, final_encoded_representations = self._final_encoded_representations(encoded_sentences_tensor,
-                                                                                    merged_sentences_encoded)
-
-                context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(final_encoded_representations.size(0),-1)
-
-                if torch.cuda.is_available():
-                    final_encoded_representations = final_encoded_representations.cuda()
-                    context_representation = context_representation.cuda()
-
-                logits = self._model.calculate_logits(context_representation, final_encoded_representations, self._encoder_cosine)
-                probs, log_probs = self._logits_to_probs(logits)
-
-                if len(generated_sequences) > self._beam_size:
-                    ''' If there are more continuations generated than cut the least probable.
-                    '''
-
-                    top_k, top_k_idx = torch.topk(log_probs, k=self._beam_size, sorted=False)
-
-                    logits = torch.index_select(logits, 0, top_k_idx)
-                    final_encoded_representations = torch.index_select(final_encoded_representations, 0, top_k_idx)
-                    context_representation = torch.index_select(context_representation, 0, top_k_idx)
-
-                    generated_sequences = [g for i, g in enumerate(generated_sequences) if i in set(top_k_idx.tolist())]
-                    probs, log_probs = self._logits_to_probs(logits)
-
-                self._vader_polarity(generated_sequences)
-
-                cosine = self._cosine_similarity(context_representation, final_encoded_representations)
-                l1 = self._l1_distance(context_representation, final_encoded_representations)
-                l2 = self._l2_distance(context_representation, final_encoded_representations)
-                dot_product = torch.stack([torch.dot(x, y) for x,y in zip(context_representation, final_encoded_representations)])
-
-                for cosine_item, l1_item, l2_item, dot_item, logits_item, probs_item, log_probs_item, g_item in zip(cosine, l1, l2, dot_product, logits, probs, log_probs, generated_sequences):
-                    parent = {"cosine": cosine_item.item(), "l1": l1_item.item(), "l2": l2_item.item(), "dot_product": dot_item.item(),
-                              "logit": logits_item.item(), "probability": probs_item.item(), "log_probability": log_probs_item.item()}
-
-
-                    g_item["parent_relation_metrics"] = parent
-
-                sentence_batch[s_upper_bound - 1]["sentences"] = generated_sequences
-
-                context_sentiment = sentence_batch[s_upper_bound - 1]["sentiment_polarity"]
-                for sent in sentence_batch[s_upper_bound - 1]["sentences"]:
-                    sentiment_variance = (context_sentiment - sent["sentiment_polarity"]) ** 2.0
-                    sent["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
-
+                parent["sentences"] = generated_sequences
 
             all_sentences.append(sentence_batch)
 
-            previous_tokens += cached_dict["token_ids"]
+            previous_tokens += cached_dict["tokens"]
             previous_tensor_dict = cached_dict
 
             story_idx += 1
@@ -188,8 +136,98 @@ class KnowledgeablePredictor(Predictor):
 
         return inputs
 
+    def tree_generation(self, parent, input_tokens, existing_sentences_encoded, num_levels_rollout):
+
+        generated_sequences = self.generate_sentences(input_tokens)
+
+        existing_sentences_encoded = existing_sentences_encoded[
+                                     max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
+
+        encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
+
+        print("Final encoded input", encoded_sentences_tensor.size(), existing_sentences_encoded.size())
+        context_encoded_representation, final_encoded_representations = self._final_encoded_representations(
+            encoded_sentences_tensor,
+            existing_sentences_encoded)
+        context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
+            final_encoded_representations.size(0), -1)
+        if torch.cuda.is_available():
+            final_encoded_representations = final_encoded_representations.cuda()
+            context_representation = context_representation.cuda()
+        logits = self._model.calculate_logits(context_representation, final_encoded_representations,
+                                              self._encoder_cosine)
+        probs, log_probs = self._logits_to_probs(logits)
+
+        ''' If there are more continuations generated than cut the least probable.
+                   '''
+        chain_log_probs, chain_probs = self._chain_probs_from_parent(parent, probs, log_probs)
+
+        if len(generated_sequences) > self._branch_size:
+            top_k, top_k_idx = torch.topk(chain_log_probs, k=self._branch_size, sorted=False)
+
+            logits = torch.index_select(logits, 0, top_k_idx)
+            final_encoded_representations = torch.index_select(final_encoded_representations, 0, top_k_idx)
+            context_representation = torch.index_select(context_representation, 0, top_k_idx)
+
+            generated_sequences = [g for i, g in enumerate(generated_sequences) if i in set(top_k_idx.tolist())]
+            probs, log_probs = self._logits_to_probs(logits)
+
+            chain_log_probs, chain_probs = self._chain_probs_from_parent(parent, probs, log_probs)
+
+        self._vader_polarity(generated_sequences)
+        cosine = self._cosine_similarity(context_representation, final_encoded_representations)
+        l1 = self._l1_distance(context_representation, final_encoded_representations)
+        l2 = self._l2_distance(context_representation, final_encoded_representations)
+        dot_product = torch.stack(
+            [torch.dot(x, y) for x, y in zip(context_representation, final_encoded_representations)])
+
+        metric_dict = {"cosine": cosine, "l1": l1, "l2": l2, "dot_product": dot_product,
+                       "logit": logits, "probability": probs, "log_probability": log_probs,
+                       "chain_probability": chain_probs, "chain_log_probability": chain_log_probs}
+
+        for (k, v) in metric_dict.items():
+
+            for v_scalar, gen_seq in zip(v, generated_sequences):
+                if "parent_relation_metrics" not in gen_seq:
+                    gen_seq["parent_relation_metrics"] = {}
+
+                gen_seq["parent_relation_metrics"][k] = v_scalar.item()
+
+        context_sentiment = parent["sentiment_polarity"]
+
+        for sent in generated_sequences:
+            sentiment_variance = (context_sentiment - sent["sentiment_polarity"]) ** 2.0
+            sent["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
+
+        num_levels_rollout -= 1
+
+        print("Num levels rollout", num_levels_rollout)
+        if num_levels_rollout > 0:
+            # If more levels to rollout then call recursively for each level.
+
+            for i, current_seq in enumerate(generated_sequences):
+                input_tokens.append(current_seq["tokens"])
+                print("Merged Encoded", existing_sentences_encoded.size(), encoded_sentences_tensor.size())
+                merged_sentences_encoded = torch.cat(
+                    (existing_sentences_encoded, torch.unsqueeze(encoded_sentences_tensor[-1, i, ...], dim=0)), dim=0)
+                current_seq["sentences"] = self.tree_generation(current_seq, input_tokens, merged_sentences_encoded,
+                                                                num_levels_rollout)
+
+        return generated_sequences
+
+    def _chain_probs_from_parent(self, parent, probs, log_probs):
+        if "parent_relation_metrics" in parent:
+
+            chain_probs = probs * parent["parent_relation_metrics"]["chain_probability"]
+            chain_log_probs = log_probs + parent["parent_relation_metrics"]["chain_log_probability"]
+        else:
+            chain_probs = probs
+            chain_log_probs = log_probs
+        return chain_log_probs, chain_probs
+
     def _vader_polarity(self, sentence_batch):
-        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in sentence_batch]
+        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
+                              sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
             s["sentiment_polarity"] = p
 
@@ -212,7 +250,6 @@ class KnowledgeablePredictor(Predictor):
 
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
-
 
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
             encoded_passages = encoded_passages.cpu()
@@ -277,7 +314,6 @@ class KnowledgeablePredictor(Predictor):
 
         flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
 
-
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
@@ -327,12 +363,14 @@ class KnowledgeablePredictor(Predictor):
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
                                                                            clean_up_tokenization_spaces=True)
                         generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+
+        print("GENERATED", generated_sequences)
         return generated_sequences
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
         for field in ["passages_encoded", "passages_mask", "sentences_encoded",
-                      "lm_encoded", "lm_mask", "token_ids"]:
+                      "lm_encoded", "lm_mask", "tokens"]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
