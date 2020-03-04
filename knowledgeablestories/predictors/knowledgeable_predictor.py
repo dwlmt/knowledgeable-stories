@@ -206,11 +206,15 @@ class KnowledgeablePredictor(Predictor):
             # If more levels to rollout then call recursively for each level.
 
             for i, current_seq in enumerate(generated_sequences):
-                input_tokens.append(current_seq["tokens"])
-                print("Merged Encoded", existing_sentences_encoded.size(), encoded_sentences_tensor.size())
+                merged_input_tokens = copy.deepcopy(input_tokens)
+                print(input_tokens)
+                merged_input_tokens.append(current_seq["tokens"])
+                print(merged_input_tokens)
+
                 merged_sentences_encoded = torch.cat(
                     (existing_sentences_encoded, torch.unsqueeze(encoded_sentences_tensor[-1, i, ...], dim=0)), dim=0)
-                current_seq["sentences"] = self.tree_generation(current_seq, input_tokens, merged_sentences_encoded,
+
+                current_seq["sentences"] = self.tree_generation(current_seq, merged_input_tokens, merged_sentences_encoded,
                                                                 num_levels_rollout)
 
         return generated_sequences
@@ -312,7 +316,11 @@ class KnowledgeablePredictor(Predictor):
 
     def generate_sentences(self, previous_tokens):
 
-        flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
+        print(previous_tokens)
+        if previous_tokens is not None and isinstance(previous_tokens[0],(list, tuple)):
+            flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
+        else:
+            flat_previous_tokens = previous_tokens
 
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
