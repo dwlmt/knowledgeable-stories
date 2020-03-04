@@ -39,9 +39,16 @@ def add_coreference_features(args):
                         f'WHERE sentence.story_id = {story_id} and sentence_lang.lang = "en" '
                         f'and sentence_lang.nonsense = false and sentence_lang.ascii_chars=true and sentence.sentence_len >= 2 ORDER BY id')]
 
-                    story_json_dict["sentences"] = sentences
+                    extracted_sentences = []
+                    for s in sentences:
+                        ext_map = {}
+                        for f in ["sentence_num","text"]:
+                            ext_map[f] = s[f]
+                        extracted_sentences.append(ext_map)
 
-                    if len(sentences) > 0:
+                    story_json_dict["sentences"] = extracted_sentences
+
+                    if len(extracted_sentences) > 0:
                         writer.write(story_json_dict)
 
 
