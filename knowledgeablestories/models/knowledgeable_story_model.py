@@ -250,10 +250,10 @@ class KnowledgeableStoriesModel(Model):
             metrics = []
 
             for x, y in zip(torch.split(encoded_source, 1), torch.split(encoded_target, 1)):
-                cosine = self._cosine_similarity(x, y)
+                cosine = 1.0 - self._cosine_similarity(x, y)
                 dist_l1 = self._l1_distance(x, y)
                 dist_l2 = self._l2_distance(x, y)
-                metrics.append({f"cosine": cosine.item(), f"l1": dist_l1.item(), f"l2": dist_l2.item()})
+                metrics.append({f"cosine_distance": cosine.item(), f"l1_distance": dist_l1.item(), f"l2_distance": dist_l2.item()})
             return metrics
 
     def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,

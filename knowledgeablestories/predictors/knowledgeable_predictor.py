@@ -13,6 +13,7 @@ from allennlp.models import Model
 from allennlp.predictors.predictor import Predictor
 from overrides import overrides
 from torch import nn
+from torch.distributions import Categorical
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
@@ -43,7 +44,7 @@ class KnowledgeablePredictor(Predictor):
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
 
-        self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=2))
+        self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
 
@@ -94,7 +95,7 @@ class KnowledgeablePredictor(Predictor):
         previous_tensor_dict = None
         for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
-            print(inputs.keys())
+            print(inputs)
             copied_inputs = copy.deepcopy(inputs)
 
             self._vader_polarity(sentence_batch)
@@ -126,6 +127,8 @@ class KnowledgeablePredictor(Predictor):
                                      self._num_levels_rollout)
 
                 # TODO: Suspense measures over the tree here.
+                print(parent)
+
 
                 if not self._retain_full_output:
                     del parent["sentences"]
@@ -241,10 +244,10 @@ class KnowledgeablePredictor(Predictor):
                     gen_seq["parent"],
                     prob,
                     log_prob)
-                gen_seq["parent_relation_metrics"]["prob"] = prob
-                gen_seq["parent_relation_metrics"]["log_prob"] = log_prob
-                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_probs
-                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_probs
+                gen_seq["parent_relation_metrics"]["prob"] = prob.item()
+                gen_seq["parent_relation_metrics"]["log_prob"] = log_prob.item()
+                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_probs.item()
+                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_probs.item()
 
         self._vader_polarity(filtered_list)
 
@@ -255,7 +258,12 @@ class KnowledgeablePredictor(Predictor):
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
             final_encoded_representation = torch.unsqueeze(gen_seq["final_encoded_representation"], dim=0)
 
+            if torch.cuda.is_available():
+                context_representation = context_representation.cuda()
+                final_encoded_representation = final_encoded_representation.cuda()
+
             cosine = 1.0 - self._cosine_similarity(context_representation, final_encoded_representation)
+
             l1 = self._l1_distance(context_representation, final_encoded_representation)
             l2 = self._l2_distance(context_representation, final_encoded_representation)
             dot_product = torch.dot(torch.squeeze(context_representation, dim=0),
@@ -269,6 +277,7 @@ class KnowledgeablePredictor(Predictor):
                     gen_seq["parent_relation_metrics"] = {}
 
                 gen_seq["parent_relation_metrics"][k] = v.item()
+                gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v.item())
 
             context_sentiment = parent["sentiment_polarity"]
 
@@ -286,26 +295,24 @@ class KnowledgeablePredictor(Predictor):
 
         num_levels_rollout -= 1
 
-        if num_levels_rollout > 0:
+        for gen_seq in filtered_list:
             parent_list = []
             input_tokens_batch = []
             existing_sentences_encoded_batch = []
 
-            for gen_seq in filtered_list:
+            parent_list.append(gen_seq)
+            merged_input_tokens = gen_seq["merged_tokens"]
+            input_tokens_batch.append(merged_input_tokens)
 
+            existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
 
-                parent_list.append(gen_seq["parent"])
-                merged_input_tokens = gen_seq["merged_tokens"]
-                input_tokens_batch.append(merged_input_tokens)
+            existing_sentences_encoded_batch.append(existing_sentences_encoded)
 
-                existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
+            del gen_seq["parent"]
+            del gen_seq["merged_tokens"]
+            del gen_seq["encoded_sentences_tensor"]
 
-                existing_sentences_encoded_batch.append(existing_sentences_encoded)
-
-                del gen_seq["parent"]
-                del gen_seq["merged_tokens"]
-                del gen_seq["encoded_sentences_tensor"]
-
+        if num_levels_rollout > 0:
             self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout)
 
     def _chain_probs_from_parent(self, parent, probs, log_probs):
@@ -317,6 +324,14 @@ class KnowledgeablePredictor(Predictor):
             chain_probs = probs
             chain_log_probs = log_probs
         return chain_log_probs, chain_probs
+
+    def _chain_distance_from_parent(self, parent, measure_name, measure):
+        if "parent_relation_metrics" in parent:
+
+            chain_measure = measure + parent["parent_relation_metrics"][measure_name]
+        else:
+            chain_measure = measure
+        return chain_measure
 
     def _vader_polarity(self, sentence_batch):
         sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
