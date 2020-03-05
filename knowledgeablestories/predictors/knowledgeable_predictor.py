@@ -22,7 +22,6 @@ END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
 
-
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
@@ -40,11 +39,11 @@ class KnowledgeablePredictor(Predictor):
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=5))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
-        self._branch_size = int(os.getenv("PREDICTOR_BRANCH_SIZE", default=5))
+        self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=5))
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
 
-        self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
+        self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=2))
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
 
@@ -52,18 +51,20 @@ class KnowledgeablePredictor(Predictor):
         gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=50))
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=1.0))
-        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=10000))
+        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "num_beams": gen_num_beams, "eos_token_ids": [50256, 764, 0]}
 
+        self._retain_full_output = bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default=True))
+
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=10))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=100))
 
-        self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=1024))
+        self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
         self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
 
@@ -93,6 +94,7 @@ class KnowledgeablePredictor(Predictor):
         previous_tensor_dict = None
         for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
+            print(inputs.keys())
             copied_inputs = copy.deepcopy(inputs)
 
             self._vader_polarity(sentence_batch)
@@ -120,10 +122,13 @@ class KnowledgeablePredictor(Predictor):
                     merged_sentences_encoded = torch.cat(
                         [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
-                generated_sequences = self.tree_generation(parent, input_tokens, merged_sentences_encoded,
-                                                           self._num_levels_rollout)
+                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                     self._num_levels_rollout)
 
-                parent["sentences"] = generated_sequences
+                # TODO: Suspense measures over the tree here.
+
+                if not self._retain_full_output:
+                    del parent["sentences"]
 
             all_sentences.append(sentence_batch)
 
@@ -136,94 +141,178 @@ class KnowledgeablePredictor(Predictor):
 
         return inputs
 
-    def tree_generation(self, parent, input_tokens, existing_sentences_encoded, num_levels_rollout):
+    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout):
 
-        generated_sequences = self.generate_sentences(input_tokens)
+        log_prob_tensor_list = []
+        all_level_list = []
+        for parent, input_tokens, existing_sentences_encoded in zip(parent_list, input_tokens_batch,
+                                                                    existing_sentences_encoded_batch):
 
-        existing_sentences_encoded = existing_sentences_encoded[
-                                     max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
+            generated_sequences = self.generate_sentences(input_tokens)
 
-        encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
+            existing_sentences_encoded = existing_sentences_encoded[
+                                         max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
 
-        print("Final encoded input", encoded_sentences_tensor.size(), existing_sentences_encoded.size())
-        context_encoded_representation, final_encoded_representations = self._final_encoded_representations(
-            encoded_sentences_tensor,
-            existing_sentences_encoded)
-        context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
-            final_encoded_representations.size(0), -1)
-        if torch.cuda.is_available():
-            final_encoded_representations = final_encoded_representations.cuda()
-            context_representation = context_representation.cuda()
-        logits = self._model.calculate_logits(context_representation, final_encoded_representations,
-                                              self._encoder_cosine)
-        probs, log_probs = self._logits_to_probs(logits)
+            encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
 
-        ''' If there are more continuations generated than cut the least probable.
-                   '''
-        chain_log_probs, chain_probs = self._chain_probs_from_parent(parent, probs, log_probs)
-
-        if len(generated_sequences) > self._branch_size:
-            top_k, top_k_idx = torch.topk(chain_log_probs, k=self._branch_size, sorted=False)
-
-            logits = torch.index_select(logits, 0, top_k_idx)
-            final_encoded_representations = torch.index_select(final_encoded_representations, 0, top_k_idx)
-            context_representation = torch.index_select(context_representation, 0, top_k_idx)
-
-            generated_sequences = [g for i, g in enumerate(generated_sequences) if i in set(top_k_idx.tolist())]
+            print("Final encoded input", encoded_sentences_tensor.size(), existing_sentences_encoded.size())
+            context_encoded_representation, final_encoded_representation = self._final_encoded_representations(
+                encoded_sentences_tensor,
+                existing_sentences_encoded)
+            context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
+                final_encoded_representation.size(0), -1)
+            if torch.cuda.is_available():
+                final_encoded_representation = final_encoded_representation.cuda()
+                context_representation = context_representation.cuda()
+            logits = self._model.calculate_logits(context_representation, final_encoded_representation,
+                                                  self._encoder_cosine)
             probs, log_probs = self._logits_to_probs(logits)
 
+            ''' If there are more continuations generated than cut the least probable.
+                       '''
             chain_log_probs, chain_probs = self._chain_probs_from_parent(parent, probs, log_probs)
 
-        self._vader_polarity(generated_sequences)
-        cosine = self._cosine_similarity(context_representation, final_encoded_representations)
-        l1 = self._l1_distance(context_representation, final_encoded_representations)
-        l2 = self._l2_distance(context_representation, final_encoded_representations)
-        dot_product = torch.stack(
-            [torch.dot(x, y) for x, y in zip(context_representation, final_encoded_representations)])
+            log_prob_tensor_list.append(chain_log_probs)
 
-        metric_dict = {"cosine": cosine, "l1": l1, "l2": l2, "dot_product": dot_product,
-                       "logit": logits, "probability": probs, "log_probability": log_probs,
-                       "chain_probability": chain_probs, "chain_log_probability": chain_log_probs}
+            for i, gen_seq in enumerate(generated_sequences, start=0):
+                gen_seq["parent"] = parent
 
-        for (k, v) in metric_dict.items():
+                merged_input_tokens = copy.deepcopy(input_tokens)
+                merged_input_tokens.append(gen_seq["tokens"])
 
-            for v_scalar, gen_seq in zip(v, generated_sequences):
+                gen_seq["merged_tokens"] = merged_input_tokens
+
+                merged_sentences_encoded = torch.cat(
+                    (existing_sentences_encoded, torch.unsqueeze(
+                        encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) *
+                                                      encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
+
+                gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
+
+            metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
+                           "chain_prob": chain_probs, "chain_log_prob": chain_log_probs,
+                           "context_representation": context_representation,
+                           "final_encoded_representation": final_encoded_representation}
+
+            for (k, v) in metric_dict.items():
+
+                for value, gen_seq in zip(v, generated_sequences):
+                    if "parent_relation_metrics" not in gen_seq:
+                        gen_seq["parent_relation_metrics"] = {}
+
+                    if k in ["context_representation", "final_encoded_representation"]:
+                        gen_seq[k] = value.cpu()
+                    else:
+                        if len(value.size()) > 0:
+                            gen_seq["parent_relation_metrics"][k] = value.cpu()
+                        else:
+                            gen_seq["parent_relation_metrics"][k] = value.item()
+
+            all_level_list.extend(generated_sequences)
+
+        # If needed then filter the beem for the whole level.
+        filtered_list = []
+        log_prob_tensor = torch.cat(log_prob_tensor_list)
+        if log_prob_tensor.size(0) > self._beam_size:
+            top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size)
+            log_prob_threshold = top_k_tensor[-1]
+            for gen_seq in all_level_list:
+                if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold:
+                    filtered_list.append(gen_seq)
+        else:
+            filtered_list = all_level_list
+
+        # Recalculate probabilities for the reduced beam.
+        if len(filtered_list) < len(all_level_list):
+
+            logits_list = []
+            for gen_seq in generated_sequences:
+                logits_list.append(gen_seq["parent_relation_metrics"]["logit"])
+
+            logits = torch.FloatTensor(logits_list)
+
+            if torch.cuda.is_available():
+                logits = logits.cuda()
+
+            probs, log_probs = self._logits_to_probs(logits)
+
+            for gen_seq, prob, log_prob in zip(filtered_list, probs, log_probs):
+                chain_log_probs, chain_probs = self._chain_probs_from_parent(
+                    gen_seq["parent"],
+                    prob,
+                    log_prob)
+                gen_seq["parent_relation_metrics"]["prob"] = prob
+                gen_seq["parent_relation_metrics"]["log_prob"] = log_prob
+                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_probs
+                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_probs
+
+        self._vader_polarity(filtered_list)
+
+        for i, gen_seq in enumerate(filtered_list):
+
+            gen_seq["index"] = i
+
+            context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
+            final_encoded_representation = torch.unsqueeze(gen_seq["final_encoded_representation"], dim=0)
+
+            cosine = 1.0 - self._cosine_similarity(context_representation, final_encoded_representation)
+            l1 = self._l1_distance(context_representation, final_encoded_representation)
+            l2 = self._l2_distance(context_representation, final_encoded_representation)
+            dot_product = torch.dot(torch.squeeze(context_representation, dim=0),
+                                    torch.squeeze(final_encoded_representation, dim=0))
+
+            metric_dict = {"cosine_dist": cosine, "l1_dist": l1, "l2_dist": l2, "dot_product": dot_product}
+
+            for (k, v) in metric_dict.items():
+
                 if "parent_relation_metrics" not in gen_seq:
                     gen_seq["parent_relation_metrics"] = {}
 
-                gen_seq["parent_relation_metrics"][k] = v_scalar.item()
+                gen_seq["parent_relation_metrics"][k] = v.item()
 
-        context_sentiment = parent["sentiment_polarity"]
+            context_sentiment = parent["sentiment_polarity"]
 
-        for sent in generated_sequences:
-            sentiment_variance = (context_sentiment - sent["sentiment_polarity"]) ** 2.0
-            sent["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
+            sentiment_variance = (context_sentiment - gen_seq["sentiment_polarity"]) ** 2.0
+            gen_seq["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
+
+            parent = gen_seq["parent"]
+            if "sentences" not in gen_seq["parent"]:
+                parent["sentences"] = []
+
+            parent["sentences"].append(gen_seq)
+
+            del gen_seq["context_representation"]
+            del gen_seq["final_encoded_representation"]
 
         num_levels_rollout -= 1
 
-        print("Num levels rollout", num_levels_rollout)
         if num_levels_rollout > 0:
-            # If more levels to rollout then call recursively for each level.
+            parent_list = []
+            input_tokens_batch = []
+            existing_sentences_encoded_batch = []
 
-            for i, current_seq in enumerate(generated_sequences):
-                merged_input_tokens = copy.deepcopy(input_tokens)
-                print(input_tokens)
-                merged_input_tokens.append(current_seq["tokens"])
-                print(merged_input_tokens)
+            for gen_seq in filtered_list:
 
-                merged_sentences_encoded = torch.cat(
-                    (existing_sentences_encoded, torch.unsqueeze(encoded_sentences_tensor[-1, i, ...], dim=0)), dim=0)
 
-                current_seq["sentences"] = self.tree_generation(current_seq, merged_input_tokens, merged_sentences_encoded,
-                                                                num_levels_rollout)
+                parent_list.append(gen_seq["parent"])
+                merged_input_tokens = gen_seq["merged_tokens"]
+                input_tokens_batch.append(merged_input_tokens)
 
-        return generated_sequences
+                existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
+
+                existing_sentences_encoded_batch.append(existing_sentences_encoded)
+
+                del gen_seq["parent"]
+                del gen_seq["merged_tokens"]
+                del gen_seq["encoded_sentences_tensor"]
+
+            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout)
 
     def _chain_probs_from_parent(self, parent, probs, log_probs):
         if "parent_relation_metrics" in parent:
 
-            chain_probs = probs * parent["parent_relation_metrics"]["chain_probability"]
-            chain_log_probs = log_probs + parent["parent_relation_metrics"]["chain_log_probability"]
+            chain_probs = probs * parent["parent_relation_metrics"]["chain_prob"]
+            chain_log_probs = log_probs + parent["parent_relation_metrics"]["chain_log_prob"]
         else:
             chain_probs = probs
             chain_log_probs = log_probs
@@ -316,8 +405,7 @@ class KnowledgeablePredictor(Predictor):
 
     def generate_sentences(self, previous_tokens):
 
-        print(previous_tokens)
-        if previous_tokens is not None and isinstance(previous_tokens[0],(list, tuple)):
+        if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
         else:
             flat_previous_tokens = previous_tokens
