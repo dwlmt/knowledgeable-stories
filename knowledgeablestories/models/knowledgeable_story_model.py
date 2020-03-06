@@ -253,7 +253,8 @@ class KnowledgeableStoriesModel(Model):
                 cosine = 1.0 - self._cosine_similarity(x, y)
                 dist_l1 = self._l1_distance(x, y)
                 dist_l2 = self._l2_distance(x, y)
-                metrics.append({f"cosine_distance": cosine.item(), f"l1_distance": dist_l1.item(), f"l2_distance": dist_l2.item()})
+                metrics.append({f"ely_surprise_cosine_dist": cosine.item(),
+                                f"ely_surprise_l1_dist": dist_l1.item(), f"ely_surprise_l2_dist": dist_l2.item()})
             return metrics
 
     def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,

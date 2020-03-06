@@ -23,6 +23,7 @@ END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
 
+
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
@@ -38,8 +39,8 @@ class KnowledgeablePredictor(Predictor):
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
-        self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=5))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
+        self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=10))
         self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=5))
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
@@ -67,6 +68,8 @@ class KnowledgeablePredictor(Predictor):
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
+        self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
+
         self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
 
         # Add the relations as new tokens.
@@ -79,70 +82,134 @@ class KnowledgeablePredictor(Predictor):
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
-        if "text" not in inputs and "sentences" not in inputs:
-            raise ValueError("'text' or 'sentences' must be provided.")
+        with torch.no_grad():
 
-        self._split_sentences_if_required(inputs)
+            if "text" not in inputs and "sentences" not in inputs:
+                raise ValueError("'text' or 'sentences' must be provided.")
 
-        total_story_len = len(inputs["sentences"])
-        story_idx = 0
+            self._split_sentences_if_required(inputs)
 
-        ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
-        '''
-        all_sentences = []
+            original_sentences = inputs["sentences"]
+            total_story_len = len(inputs["sentences"])
+            story_idx = 0
 
-        previous_tokens = []
-        previous_tensor_dict = None
-        for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
+            ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
+            '''
+            all_processed_sentences = []
 
-            print(inputs)
-            copied_inputs = copy.deepcopy(inputs)
+            previous_tokens = []
+            previous_tensor_dict = None
+            previous_prediction_metrics = {}
+            for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
-            self._vader_polarity(sentence_batch)
+                print(inputs)
+                copied_inputs = copy.deepcopy(inputs)
 
-            copied_inputs["sentences"] = sentence_batch
+                self._vader_polarity(sentence_batch)
 
-            instance = self._json_to_instance(copied_inputs)
+                copied_inputs["sentences"] = sentence_batch
 
-            output_dict = self.predict_instance(instance)
+                instance = self._json_to_instance(copied_inputs)
 
-            cached_dict = self.convert_output_to_tensors(output_dict)
-            current_tokens = cached_dict["tokens"]
+                output_dict = self.predict_instance(instance)
 
-            passages_encoded_tensor = cached_dict["passages_encoded"]
+                cached_dict = self.convert_output_to_tensors(output_dict)
+                current_tokens = cached_dict["tokens"]
 
-            self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
+                passages_encoded_tensor = cached_dict["passages_encoded"]
 
-            for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
-                parent = sentence_batch[s_upper_bound - 1]
-                input_tokens = previous_tokens + current_tokens[: s_upper_bound]
+                self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
-                merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+                for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
+                    parent = sentence_batch[s_upper_bound - 1]
+                    input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
-                if previous_tensor_dict:
-                    merged_sentences_encoded = torch.cat(
-                        [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
+                    merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
 
-                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
-                                     self._num_levels_rollout)
+                    if previous_tensor_dict:
+                        merged_sentences_encoded = torch.cat(
+                            [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
-                # TODO: Suspense measures over the tree here.
-                print(parent)
+                    self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                         self._num_levels_rollout)
 
+                    # Retrieve all the sentence
+                    level = 1
+                    sentences = parent["sentences"]
+                    while sentences and len(sentences) > 0:
 
-                if not self._retain_full_output:
-                    del parent["sentences"]
+                        print("Level ", level, sentences)
 
-            all_sentences.append(sentence_batch)
+                        if not "prediction_metrics" in parent:
+                            parent["prediction_metrics"] = {}
 
-            previous_tokens += cached_dict["tokens"]
-            previous_tensor_dict = cached_dict
+                        if f"{level}" not in parent["prediction_metrics"]:
+                            parent["prediction_metrics"][f"{level}"] = {}
 
-            story_idx += 1
+                        # Per level convert the required 
+                        fields_to_extract = ["chain_log_prob", "chain_prob", "chain_l1_dist", "chain_cosine_dist",
+                                             "chain_l2_dist", "chain_sentiment_variance"]
+                        fields_to_extract_dict = {}
 
-        inputs["sentences"] = all_sentences
+                        for f in fields_to_extract:
 
-        return inputs
+                            field_list = [s["parent_relation_metrics"][f] for s in sentences]
+                            field_tensor = torch.FloatTensor(field_list)
+
+                            if torch.cuda.is_available():
+                                field_tensor = field_tensor.cuda()
+
+                            # Normalize the distances is the metric is several steps ahead.
+                            if f in ["chain_l1_dist", "chain_cosine_dist", "chain_l2_dist", "chain_sentiment_variance"]:
+                                field_tensor = field_tensor / float(level)
+
+                            fields_to_extract_dict[f] = field_tensor
+
+                        entropy = Categorical(torch.exp(fields_to_extract_dict["chain_log_prob"])).entropy().item()
+                        parent["prediction_metrics"][f"{level}"]["entropy"] = entropy
+
+                        if "prediction_metrics" in previous_prediction_metrics:
+                            if f"{level}" in previous_prediction_metrics["prediction_metrics"]:
+                                parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = max(
+                                    previous_prediction_metrics["prediction_metrics"][f"{level}"]["entropy"] -
+                                    parent["prediction_metrics"][f"{level}"]["entropy"], 0.0)
+
+                        for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
+                            log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(fields_to_extract_dict[f])
+                            log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(self._sentiment_weighting * \
+                                                                fields_to_extract_dict["chain_sentiment_variance"])
+                            parent["prediction_metrics"][f"{level}"]["ely_suspense"] = torch.exp(log_variance_tensor).sum().item()
+                            parent["prediction_metrics"][f"{level}"][
+                                "ely_suspense_alpha"] = torch.exp(log_variance_sent_adjusted_tensor).sum().item()
+
+                        # Retrieve child sentences if available.
+                        child_sentences = []
+                        for sentence in sentences:
+                            if "sentences" in sentence:
+                                child_sentences.extend(sentence["sentences"])
+                        sentences = child_sentences
+
+                        print("Level ", level, sentences)
+                        print(parent["prediction_metrics"])
+
+                        level += 1
+
+                    if not self._retain_full_output:
+                        del parent["sentences"]
+
+                    story_idx += 1
+                    previous_prediction_metrics = parent["prediction_metrics"]
+
+                all_processed_sentences.append(sentence_batch)
+
+                previous_tokens += cached_dict["tokens"]
+                previous_tensor_dict = cached_dict
+
+                story_idx += 1
+
+            inputs["sentences"] = all_processed_sentences
+
+            return inputs
 
     def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout):
 
@@ -158,7 +225,6 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
 
-            print("Final encoded input", encoded_sentences_tensor.size(), existing_sentences_encoded.size())
             context_encoded_representation, final_encoded_representation = self._final_encoded_representations(
                 encoded_sentences_tensor,
                 existing_sentences_encoded)
@@ -269,20 +335,23 @@ class KnowledgeablePredictor(Predictor):
             dot_product = torch.dot(torch.squeeze(context_representation, dim=0),
                                     torch.squeeze(final_encoded_representation, dim=0))
 
-            metric_dict = {"cosine_dist": cosine, "l1_dist": l1, "l2_dist": l2, "dot_product": dot_product}
+            context_sentiment = parent["sentiment"]
+            sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
+            gen_seq["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
+
+            metric_dict = {"cosine_dist": cosine, "l1_dist": l1, "l2_dist": l2, "dot_product": dot_product,
+                           "sentiment_variance": sentiment_variance}
 
             for (k, v) in metric_dict.items():
 
                 if "parent_relation_metrics" not in gen_seq:
                     gen_seq["parent_relation_metrics"] = {}
 
-                gen_seq["parent_relation_metrics"][k] = v.item()
-                gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v.item())
+                if isinstance(v, torch.Tensor):
+                    v = v.item()
 
-            context_sentiment = parent["sentiment_polarity"]
-
-            sentiment_variance = (context_sentiment - gen_seq["sentiment_polarity"]) ** 2.0
-            gen_seq["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
+                gen_seq["parent_relation_metrics"][k] = v
+                gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v)
 
             parent = gen_seq["parent"]
             if "sentences" not in gen_seq["parent"]:
@@ -327,8 +396,10 @@ class KnowledgeablePredictor(Predictor):
 
     def _chain_distance_from_parent(self, parent, measure_name, measure):
         if "parent_relation_metrics" in parent:
-
-            chain_measure = measure + parent["parent_relation_metrics"][measure_name]
+            if f"chain_{measure_name}" in parent["parent_relation_metrics"]:
+                chain_measure = measure + parent["parent_relation_metrics"][f"chain_{measure_name}"]
+            else:
+                chain_measure = measure + parent["parent_relation_metrics"][measure_name]
         else:
             chain_measure = measure
         return chain_measure
@@ -337,7 +408,7 @@ class KnowledgeablePredictor(Predictor):
         sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
                               sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
-            s["sentiment_polarity"] = p
+            s["sentiment"] = p
 
     def _logits_to_probs(self, logits):
         probs = self._softmax(logits)
