@@ -213,7 +213,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "model": {
     "type": "know_stories",
-    "lm_name": "gpt-medium",
+    "lm_name": "gpt2-medium",
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},

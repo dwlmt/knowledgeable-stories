@@ -144,7 +144,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
         text_dict["dataset"] = "multifile_hierarchy"
 
         story_text = text_dict["story_text"]
-        text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len)
+        text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
