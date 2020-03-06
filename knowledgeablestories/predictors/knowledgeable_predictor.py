@@ -152,7 +152,7 @@ class KnowledgeablePredictor(Predictor):
                                              "chain_l2_dist", "chain_sentiment_variance"]
                         fields_to_extract_dict = {}
 
-                        gold = [s["chain_prob"][f] for s in sentences if "gold" in s and s["gold"] == True]
+                        gold = [s["parent_relation_metrics"]["chain_prob"][f] for s in sentences if "gold" in s and s["gold"] == True]
                         if len(gold) > 0:
                             parent["prediction_metrics"][f"{level}"]["hale_surprise"] = gold[0]
 
