@@ -13,7 +13,11 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-            "writing_prompts_lm": {
+            "dataset_reader": {
+    "type": "multitask_reader",
+    "datasets_for_vocab_creation": [],
+    "dataset_readers": {
+             "writing_prompts_lm": {
                 "type": "writing_prompts_lm",
                 "lazy": true,
                 "batch_size" : 10,
@@ -70,18 +74,17 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "batch_size" : 100,
             },
             "atomic" : {
-                "type": "atomic",
+                "type": "atomic"
                 "lazy": true,
             },
             "swag_know_lm" : {
-                "type": "swag_know_lm",
+                "type": "swag_know_lm"
                 "lazy": true,
             },
             "schmoop_lm": {
                 "type": "sharded_simple",
                 "base_reader": {
                     "type": "multifile_lm",
-                    "lazy": true,
                 },
             },
             "schmoop_hierarchy": {
@@ -130,6 +133,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "batches_per_epoch": 100000,
    "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
    "iterators": {
+       "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
@@ -230,7 +234,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "iterate_forever": false,
    "batches_per_epoch": 10000,
    "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
-  "iterators": {
+   "iterators": {
+       "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
@@ -352,7 +357,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_valid",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
-        "cbt_lm": dataset_root + "/CBTest/data/cbt_valid.txt",
+        "cbt_lm": dataset_root +  "/CBTest/data/cbt_valid.txt",
         "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_valid.txt",
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
         "schmoop_lm": dataset_root + "/schmoop/stories//*//*",
@@ -364,6 +369,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "model": {
     "type": "know_stories",
+    "lm_name": "gpt2-medium",
      "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
@@ -387,16 +393,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
+      "input_size": 1024,
+      "hidden_size": 1024,
       "num_layers": 3,
       "dropout": 0.0,
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
-      "num_layers": 4,
+      "input_size": 1024,
+      "hidden_size": 1024,
+      "num_layers": 6,
       "dropout": 0.0,
     },
   },

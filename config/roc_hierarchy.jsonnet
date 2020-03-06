@@ -23,7 +23,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     "validation_metric": "-loss",
     "patience": 3,
     "grad_norm": 5.0,
-    "shuffle": true,
+    "shuffle": false,
     "model_save_interval": 7200.0,
    "num_serialized_models_to_keep": 2,
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,

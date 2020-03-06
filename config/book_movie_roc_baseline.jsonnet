@@ -143,7 +143,7 @@ local LM_BASE_BATCH_SIZE = 1;
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,
-    "shuffle": true,
+    "shuffle": false,
     "summary_interval": 500,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
@@ -156,8 +156,8 @@ local LM_BASE_BATCH_SIZE = 1;
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.1,
-      "patience": 1
+      "factor": 0.25,
+      "patience": 0
     }
   }
 }

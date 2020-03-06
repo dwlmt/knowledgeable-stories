@@ -5,6 +5,7 @@ local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
+local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = 64;
 
 {
@@ -12,55 +13,80 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-             "writing_prompts_lm": {
+              "writing_prompts_lm": {
                 "type": "writing_prompts_lm",
                 "lazy": true,
                 "batch_size" : 10,
                 "max_sentence_grouping": 10,
                 "max_token_len": 256,
-
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
                 "batch_size" : 100,
+            },
+            "atomic" : {
+                "type": "atomic"
+            },
+            "swag_know_lm" : {
+                "type": "swag_know_lm"
             }
         },
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "atomic", "swag_know_lm"],
+   "sampling_rates": [1.0 / 4.0 , 1.0 / 4.0 , 1.0 / 4.0 , 1.0 / 4.0 ],
    "iterate_forever": false,
    "batches_per_epoch": 50000,
-   "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "atomic": {
+            "type": "basic",
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "swag_know_lm": {
+            "type": "basic",
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "atomic", "swag_know_lm"],
+   "sampling_rates": [1.0 / 4.0 , 1.0 / 4.0 , 1.0 / 4.0 , 1.0 / 4.0 ],
    "iterate_forever": false,
-   "batches_per_epoch": 5000,
-   "sampling_rates": [0.5, 0.5],
+   "batches_per_epoch": 100000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "atomic": {
+            "type": "basic",
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "swag_know_lm": {
+            "type": "basic",
+            "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
@@ -68,35 +94,48 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   "train_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
+        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
+        "atomic": dataset_root + "/atomic/v4_atomic_dev.csv",
+        "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
   },
   "model": {
     "type": "know_stories",
-    "embedder_vocab_size": embedder_vocab_size,
+    "lm_name": "gpt2-medium",
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+        "roc_lm": {},
+        "roc_hierarchy": {},
+        "cmu_book_lm": {},
+        "cmu_book_hierarchy": {},
+        "cmu_movie_lm": {},
+        "cmu_movie_hierarchy": {},
+        "atomic": {},
+        "swag_know_lm": {},
     },
+    "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
+      "input_size": 1024,
+      "hidden_size": 1024,
       "num_layers": 3,
       "dropout": 0.0,
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
-      "num_layers": 4,
+      "input_size": 1024,
+      "hidden_size": 1024,
+      "num_layers": 6,
       "dropout": 0.0,
     },
   },
   "trainer": {
-    "num_epochs": 1000,
+    "num_epochs": 10000,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,

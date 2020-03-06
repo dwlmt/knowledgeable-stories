@@ -31,7 +31,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 50000,
+   "batches_per_epoch": 100000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -50,7 +50,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 5000,
+   "batches_per_epoch": 10000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -75,24 +75,29 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "model": {
     "type": "know_stories",
+    "lm_name": "gpt2-medium",
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
     },
-    "sentence_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
-      "num_layers": 3,
-      "dropout": 0.0,
-    },
+    "sentence_seq2seq_encoder": {
+     "type": "stacked_self_attention",
+     "input_dim": 1024,
+     "hidden_dim": 1024,
+     "projection_dim": 512,
+     "num_attention_heads": 6,
+     "num_layers": 2,
+     "dropout_prob": 0.1
+     },
     "passage_seq2seq_encoder": {
-      "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "stacked_self_attention",
+     "input_dim": 512,
+     "hidden_dim": 512,
+     "projection_dim": 512,
+     "num_attention_heads": 6,
+     "num_layers": 6,
+     "dropout_prob": 0.1
     },
   },
   "trainer": {

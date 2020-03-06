@@ -3,97 +3,103 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
+local PASSAGE_BASE_BATCH_SIZE = 2;
+local LM_BASE_BATCH_SIZE = 1;
+local MAX_INSTANCES_IN_MEMORY = 64;
 
 {
   "dataset_reader": {
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-            "roc_lm": {
-                "type": "roc_lm"
-
-            },
-            "roc_hierarchy": {
-                "type": "roc_hierarchy"
-
-            },
-            "atomic": {
-                "type": "atomic"
-
-            },
              "writing_prompts_lm": {
-                "type": "writing_prompts_lm"
+                "type": "writing_prompts_lm",
+                "lazy": true,
+                "batch_size" : 10,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
 
             },
             "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy"
-
+                "type": "writing_prompts_hierarchy",
+                "lazy": true,
+                "batch_size" : 100,
             }
         },
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["roc_lm", "roc_hierarchy", "atomic", "writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
+   "batches_per_epoch": 100000,
+   "sampling_rates": [0.5, 0.5],
    "iterators": {
-       "roc_lm": {
-            "type": "basic",
-            "batch_size": 32
-       },
-       "roc_hierarchy": {
-            "type": "basic",
-            "batch_size": 32
-       },
-       "atomic": {
-            "type": "basic",
-            "batch_size": 32
-       },
        "writing_prompts_lm": {
             "type": "basic",
-            "batch_size": 4
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "writing_prompts_hierarchy": {
             "type": "basic",
-            "batch_size": 4
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+    },
+  },
+  "validation_iterator": {
+   "type": "multitask_iterator",
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "iterate_forever": false,
+   "batches_per_epoch": 10000,
+   "sampling_rates": [0.5, 0.5],
+   "iterators": {
+       "writing_prompts_lm": {
+            "type": "basic",
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "writing_prompts_hierarchy": {
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
   "train_data_path": {
-        "roc_lm": dataset_root + "/ROCStories/ROCStories_train_all.csv",
-        "roc_hierarchy": dataset_root + "/ROCStories/ROCStories_train_all.csv",
-        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
   },
   "validation_data_path": {
-        "roc_lm": dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
-        "roc_hierarchy": dataset_root + "/ROCStories/cloze_test_val__winter2018-cloze_test_ALL_val - 1 - 1.csv",
-        "atomic": dataset_root + "/atomic/v4_atomic_dev.csv",
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
   },
   "model": {
     "type": "know_stories",
+    "lm_name": "gpt2-medium",
     "embedder_vocab_size": embedder_vocab_size,
+    "dataset_config": {
+        "writing_prompts_lm": {},
+        "writing_prompts_hierarchy": {},
+    },
     "sentence_seq2vec_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
+      "input_size": 1024,
+      "hidden_size": 1024,
       "num_layers": 3,
       "dropout": 0.0,
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
-      "num_layers": 4,
+      "input_size": 1024,
+      "hidden_size": 1024,
+      "num_layers": 6,
       "dropout": 0.0,
     },
   },
   "trainer": {
-    "num_epochs": 50,
+    "num_epochs": 1000,
     "validation_metric": "-loss",
-    "patience": 1,
+    "patience": 2,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -108,7 +114,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.1,
+      "factor": 0.25,
       "patience": 0
     }
   }
