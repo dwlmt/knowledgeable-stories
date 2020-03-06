@@ -40,7 +40,8 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=10))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=100))
+
         self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=5))
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
@@ -131,7 +132,7 @@ class KnowledgeablePredictor(Predictor):
                             [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
                     self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
-                                         self._num_levels_rollout)
+                                         self._num_levels_rollout, original_sentences, story_idx)
 
                     # Retrieve all the sentence
                     level = 1
@@ -150,6 +151,10 @@ class KnowledgeablePredictor(Predictor):
                         fields_to_extract = ["chain_log_prob", "chain_prob", "chain_l1_dist", "chain_cosine_dist",
                                              "chain_l2_dist", "chain_sentiment_variance"]
                         fields_to_extract_dict = {}
+
+                        gold = [s["chain_prob"][f] for s in sentences if "gold" in s and s["gold"] == True]
+                        if len(gold) > 0:
+                            parent["prediction_metrics"][f"{level}"]["hale_surprise"] = gold[0]
 
                         for f in fields_to_extract:
 
@@ -175,10 +180,13 @@ class KnowledgeablePredictor(Predictor):
                                     parent["prediction_metrics"][f"{level}"]["entropy"], 0.0)
 
                         for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
-                            log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(fields_to_extract_dict[f])
-                            log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(self._sentiment_weighting * \
-                                                                fields_to_extract_dict["chain_sentiment_variance"])
-                            parent["prediction_metrics"][f"{level}"]["ely_suspense"] = torch.exp(log_variance_tensor).sum().item()
+                            log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(
+                                fields_to_extract_dict[f])
+                            log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(
+                                self._sentiment_weighting * \
+                                fields_to_extract_dict["chain_sentiment_variance"])
+                            parent["prediction_metrics"][f"{level}"]["ely_suspense"] = torch.exp(
+                                log_variance_tensor).sum().item()
                             parent["prediction_metrics"][f"{level}"][
                                 "ely_suspense_alpha"] = torch.exp(log_variance_sent_adjusted_tensor).sum().item()
 
@@ -211,7 +219,8 @@ class KnowledgeablePredictor(Predictor):
 
             return inputs
 
-    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout):
+    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
+                        original_sentences, story_idx):
 
         log_prob_tensor_list = []
         all_level_list = []
@@ -219,6 +228,13 @@ class KnowledgeablePredictor(Predictor):
                                                                     existing_sentences_encoded_batch):
 
             generated_sequences = self.generate_sentences(input_tokens)
+
+            # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
+            if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
+                gold_sentence = original_sentences[story_idx + 1]
+                gold_sentence["tokens"] =  self._tokenizer._tokenizer.encode(gold_sentence["text"])
+                gold_sentence["gold"] = True
+                generated_sequences.append(gold_sentence)
 
             existing_sentences_encoded = existing_sentences_encoded[
                                          max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
@@ -286,7 +302,8 @@ class KnowledgeablePredictor(Predictor):
             top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size)
             log_prob_threshold = top_k_tensor[-1]
             for gen_seq in all_level_list:
-                if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold:
+                if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold or (
+                        "gold" in gen_seq and gen_seq["gold"] == True):
                     filtered_list.append(gen_seq)
         else:
             filtered_list = all_level_list
@@ -382,7 +399,8 @@ class KnowledgeablePredictor(Predictor):
             del gen_seq["encoded_sentences_tensor"]
 
         if num_levels_rollout > 0:
-            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout)
+            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
+                                 original_sentences, story_idx)
 
     def _chain_probs_from_parent(self, parent, probs, log_probs):
         if "parent_relation_metrics" in parent:
