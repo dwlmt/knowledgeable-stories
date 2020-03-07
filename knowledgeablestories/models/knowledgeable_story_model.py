@@ -5,14 +5,16 @@ import torch
 from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
-from allennlp.modules.seq2seq_encoders import PytorchSeq2SeqWrapper
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_text_field_mask, logger, get_final_encoder_states, masked_log_softmax
+from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
+from knowledgeablestories.modules.variational_autoencoder import DenseVAE, vae_loss_fn
+
 END_OF_TEXT_TOKEN_IDS = set([50256, 0])
+
 
 @Model.register("know_stories")
 class KnowledgeableStoriesModel(Model):
@@ -37,6 +39,8 @@ class KnowledgeableStoriesModel(Model):
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
+                 sentence_autoencoder: DenseVAE = None,
+                 passage_autoencoder: DenseVAE = None,
                  dropout: float = 0.0,
                  passage_distance_weights: list = None,
                  loss_weights: dict = None,
@@ -53,7 +57,8 @@ class KnowledgeableStoriesModel(Model):
             passage_distance_weights = [1.0]
 
         if loss_weights is None:
-            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0}
+            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_autoencoder": 0.1,
+                            "passage_autoencoder": 0.1}
 
         if metric_config is None:
             metric_config = {"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
@@ -61,7 +66,8 @@ class KnowledgeableStoriesModel(Model):
 
         if generation_config is None:
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 1.0, "max_length": 100, "do_sample": True,
-                                 "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS), "repetition_penalty": None}
+                                 "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS),
+                                 "repetition_penalty": None}
 
         if dataset_config is None:
             dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
@@ -73,8 +79,10 @@ class KnowledgeableStoriesModel(Model):
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
-
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
+
+        self._sentence_autoencoder = sentence_autoencoder
+        self._passage_autoencoder = passage_autoencoder
 
         self._passage_distance_weights = passage_distance_weights
         self._loss_weights = loss_weights
@@ -129,6 +137,14 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_bleu_2"] = BLEU(ngram_weights=(0.0, 1.0, 0.0, 0.0),
                                                                exclude_indices=END_OF_TEXT_TOKEN_IDS)
 
+            self._metrics["lm_loss"] = Average()
+            self._metrics["passage_disc_loss"] = Average()
+
+            if self._sentence_autoencoder:
+                self._metrics["sentence_autoencoder_loss"] = Average()
+            if self._passage_autoencoder:
+                self._metrics["passage_autoencoder_loss"] = Average()
+
         if initializer is not None:
             initializer(self)
 
@@ -143,7 +159,7 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        #logger.info(metadata)
+        # logger.info(metadata)
 
         output = {}
         dataset_name = metadata[0]["dataset"]
@@ -159,9 +175,20 @@ class KnowledgeableStoriesModel(Model):
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
                 with torch.no_grad():
-                    lm_hidden_state, lm_mask= self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
+
+                if self._sentence_autoencoder:
+                    self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch)
+                    if self.training:
+                        y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
+                        vae_loss = vae_loss_fn(x, y, mu, logvar)
+                        self._metrics["sentence_autoencoder_loss"](vae_loss)
+                        loss += vae_loss * self._loss_weights["sentence_autoencoder"]
+                    elif prediction_mode:
+                        output["sentence_autoencoded_mu"], output[
+                            "sentence_autoencoded_var"] = self._sentence_autoencoder.encode(encoded_sentences_batch)
 
                 if self._passage_seq2seq_encoder != None:
 
@@ -172,6 +199,8 @@ class KnowledgeableStoriesModel(Model):
                                                                                             passages_encoded,
                                                                                             dataset_name,
                                                                                             prediction_mode)
+
+                    self._metrics["passage_disc_loss"](passage_disc_loss)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
@@ -185,6 +214,17 @@ class KnowledgeableStoriesModel(Model):
 
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
+                    if self._passage_autoencoder:
+                        self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded)
+                        if self.training:
+                            y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
+                            vae_loss = vae_loss_fn(x, y, mu, logvar)
+                            self._metrics["passage_autoencoder_loss"](vae_loss)
+                            loss += vae_loss * self._loss_weights["passage_autoencoder"]
+                        elif prediction_mode:
+                            output["passage_autoencoded_mu"], output[
+                                "passage_autoencoded_var"] = self._sentence_autoencoder.encode(passages_encoded)
+
                     if not self.training and conclusions != None and negative_conclusions != None:
                         self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                                  passages_encoded, lm_mask)
@@ -194,6 +234,8 @@ class KnowledgeableStoriesModel(Model):
 
             argument_tokens = arguments["tokens"]
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
+
+            self._metrics["lm_loss"](lm_loss)
 
             loss += lm_loss * self._loss_weights["lm_loss"]
 
@@ -262,7 +304,8 @@ class KnowledgeableStoriesModel(Model):
         # Special hacking just to allow output predictions on the ROC corpus.
         if "roc" in dataset_name:
 
-            negative_conclusions_hidden_states , negative_conclusions_mask = self.lm_mask_and_hidden_states(conclusions["tokens"])
+            negative_conclusions_hidden_states, negative_conclusions_mask = self.lm_mask_and_hidden_states(
+                conclusions["tokens"])
             negative_conclusions_encoded_sentences = self.encode_sentences(negative_conclusions_hidden_states,
                                                                            negative_conclusions_mask)
 
@@ -393,7 +436,7 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
-    def encode_passages(self, inputs, mask = None):
+    def encode_passages(self, inputs, mask=None):
 
         if mask is not None:
             passages_sentence_lengths = torch.sum(mask, dim=2)
@@ -423,7 +466,7 @@ class KnowledgeableStoriesModel(Model):
 
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
-    def generate_text(self, existing_tokens, num_of_sequences = 10, override_gen_config = None):
+    def generate_text(self, existing_tokens, num_of_sequences=10, override_gen_config=None):
 
         gen_config = self._generation_config
         if override_gen_config:
@@ -456,7 +499,8 @@ class KnowledgeableStoriesModel(Model):
                     for c in text_conc:
 
                         if len([x for x in h.tolist() if x not in END_OF_TEXT_TOKEN_IDS]) > 0 and len(h.tolist()) > 1 \
-                                and len([x for x in c.tolist() if x not in END_OF_TEXT_TOKEN_IDS]) > 0 and len(c.tolist()) > 1:
+                                and len([x for x in c.tolist() if x not in END_OF_TEXT_TOKEN_IDS]) > 0 and len(
+                            c.tolist()) > 1:
                             h_unsqueezed = h.unsqueeze(dim=0).long()
                             c_unsqueezed = c.unsqueeze(dim=0).long()
 
