@@ -152,9 +152,9 @@ class KnowledgeablePredictor(Predictor):
                                              "chain_l2_dist", "chain_sentiment_variance"]
                         fields_to_extract_dict = {}
 
-                        gold = [s["parent_relation_metrics"]["chain_prob"] for s in sentences if "gold" in s and s["gold"] == True]
+                        gold = [s["parent_relation_metrics"]["chain_log_prob"] for s in sentences if "gold" in s and s["gold"] == True]
                         if len(gold) > 0:
-                            parent["prediction_metrics"][f"{level}"]["hale_surprise"] = gold[0]
+                            parent["prediction_metrics"][f"{level}"]["hale_surprise"] = - gold[0]
 
                         for f in fields_to_extract:
 
@@ -180,11 +180,16 @@ class KnowledgeablePredictor(Predictor):
                                     parent["prediction_metrics"][f"{level}"]["entropy"], 0.0)
 
                         for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
-                            log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(
-                                fields_to_extract_dict[f])
+
+                            # This is a hack to rescale as the total prob distribution reduces over a number of steps.
+                            total_prob_ratio = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() / 1.0
+                            adjusted_field = torch.log(
+                                fields_to_extract_dict[f] * 1.0 / total_prob_ratio)
+                            log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + adjusted_field
+
+
                             log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(
-                                self._sentiment_weighting * \
-                                (1.0 + fields_to_extract_dict["chain_sentiment_variance"]))
+                                self._sentiment_weighting * (1.0 + fields_to_extract_dict["chain_sentiment_variance"]))
                             parent["prediction_metrics"][f"{level}"][f"ely_suspense_{f}"] = torch.exp(
                                 log_variance_tensor).sum().item()
                             parent["prediction_metrics"][f"{level}"][
@@ -253,11 +258,14 @@ class KnowledgeablePredictor(Predictor):
                                                   self._encoder_cosine)
             probs, log_probs = self._logits_to_probs(logits)
 
-            ''' If there are more continuations generated than cut the least probable.
-                       '''
-            chain_log_probs, chain_probs = self._chain_probs_from_parent(parent, probs, log_probs)
 
-            log_prob_tensor_list.append(chain_log_probs)
+            if num_levels_rollout == self._num_levels_rollout:
+                chain_log_prob = log_probs
+                chain_prob = probs
+            else:
+                chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
+
+            log_prob_tensor_list.append(chain_log_prob)
 
             for i, gen_seq in enumerate(generated_sequences, start=0):
                 gen_seq["parent"] = parent
@@ -275,7 +283,7 @@ class KnowledgeablePredictor(Predictor):
                 gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
 
             metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
-                           "chain_prob": chain_probs, "chain_log_prob": chain_log_probs,
+                           "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                            "context_representation": context_representation,
                            "final_encoded_representation": final_encoded_representation}
 
@@ -323,14 +331,19 @@ class KnowledgeablePredictor(Predictor):
             probs, log_probs = self._logits_to_probs(logits)
 
             for gen_seq, prob, log_prob in zip(filtered_list, probs, log_probs):
-                chain_log_probs, chain_probs = self._chain_probs_from_parent(
-                    gen_seq["parent"],
-                    prob,
-                    log_prob)
+
+                if num_levels_rollout == self._num_levels_rollout:
+                    chain_log_prob = log_prob
+                    chain_prob = prob
+                else:
+                    chain_log_prob, chain_prob = self._chain_probs_from_parent(
+                        gen_seq["parent"],
+                        prob,
+                        log_prob)
                 gen_seq["parent_relation_metrics"]["prob"] = prob.item()
                 gen_seq["parent_relation_metrics"]["log_prob"] = log_prob.item()
-                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_probs.item()
-                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_probs.item()
+                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_prob.item()
+                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_prob.item()
 
         self._vader_polarity(filtered_list)
 
@@ -368,7 +381,11 @@ class KnowledgeablePredictor(Predictor):
                     v = v.item()
 
                 gen_seq["parent_relation_metrics"][k] = v
-                gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v)
+
+                if num_levels_rollout == self._num_levels_rollout:
+                    gen_seq["parent_relation_metrics"][f"chain_{k}"] = v
+                else:
+                    gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v)
 
             parent = gen_seq["parent"]
             if "sentences" not in gen_seq["parent"]:
