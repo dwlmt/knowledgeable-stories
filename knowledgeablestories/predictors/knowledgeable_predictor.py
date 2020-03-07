@@ -184,7 +184,7 @@ class KnowledgeablePredictor(Predictor):
                                 fields_to_extract_dict[f])
                             log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(
                                 self._sentiment_weighting * \
-                                fields_to_extract_dict["chain_sentiment_variance"])
+                                (1.0 + fields_to_extract_dict["chain_sentiment_variance"]))
                             parent["prediction_metrics"][f"{level}"][f"ely_suspense_{f}"] = torch.exp(
                                 log_variance_tensor).sum().item()
                             parent["prediction_metrics"][f"{level}"][
