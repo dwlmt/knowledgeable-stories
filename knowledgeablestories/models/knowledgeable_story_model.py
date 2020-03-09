@@ -6,7 +6,7 @@ from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax
+from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
@@ -14,7 +14,6 @@ from transformers.modeling_auto import AutoModelWithLMHead
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE, vae_loss_fn
 
 END_OF_TEXT_TOKEN_IDS = set([50256, 0])
-
 
 @Model.register("know_stories")
 class KnowledgeableStoriesModel(Model):
@@ -129,7 +128,7 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics[f"{dataset_name}_disc_correct_distance_l1_avg_{i}"] = Average()
                     self._metrics[f"{dataset_name}_disc_correct_distance_l2_avg_{i}"] = Average()
 
-            if "roc" in dataset_name:
+            if "roc" or "atomic" or "swag" in dataset_name:
                 self._metrics[f"{dataset_name}_cloze_accuracy"] = Average()
 
             if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
@@ -200,7 +199,7 @@ class KnowledgeableStoriesModel(Model):
                                                                                             dataset_name,
                                                                                             prediction_mode)
 
-                    self._metrics["passage_disc_loss"](passage_disc_loss)
+                    self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
@@ -219,15 +218,15 @@ class KnowledgeableStoriesModel(Model):
                         if self.training:
                             y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
                             vae_loss = vae_loss_fn(x, y, mu, logvar)
-                            self._metrics["passage_autoencoder_loss"](vae_loss)
+                            self._metrics["passage_autoencoder_loss"](vae_loss.item())
                             loss += vae_loss * self._loss_weights["passage_autoencoder"]
                         elif prediction_mode:
                             output["passage_autoencoded_mu"], output[
                                 "passage_autoencoded_var"] = self._sentence_autoencoder.encode(passages_encoded)
 
                     if not self.training and conclusions != None and negative_conclusions != None:
-                        self._evaluate_roc_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
-                                                                 passages_encoded, lm_mask)
+                        self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
+                                                             passages_encoded, lm_mask)
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
@@ -235,7 +234,7 @@ class KnowledgeableStoriesModel(Model):
             argument_tokens = arguments["tokens"]
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
-            self._metrics["lm_loss"](lm_loss)
+            self._metrics["lm_loss"](lm_loss.item())
 
             loss += lm_loss * self._loss_weights["lm_loss"]
 
@@ -299,32 +298,30 @@ class KnowledgeableStoriesModel(Model):
                                 f"ely_surprise_l1_dist": dist_l1.item(), f"ely_surprise_l2_dist": dist_l2.item()})
             return metrics
 
-    def _evaluate_roc_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
-                                            passages_mask):
-        # Special hacking just to allow output predictions on the ROC corpus.
-        if "roc" in dataset_name:
+    def _evaluate_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
+                                        passages_mask):
 
-            negative_conclusions_hidden_states, negative_conclusions_mask = self.lm_mask_and_hidden_states(
-                conclusions["tokens"])
-            negative_conclusions_encoded_sentences = self.encode_sentences(negative_conclusions_hidden_states,
-                                                                           negative_conclusions_mask)
+        negative_conclusions_hidden_states, negative_conclusions_mask = self.lm_mask_and_hidden_states(
+            conclusions["tokens"])
+        negative_conclusions_encoded_sentences = self.encode_sentences(negative_conclusions_hidden_states,
+                                                                       negative_conclusions_mask)
 
-            negative_encoded_sentences_batch = encoded_sentences_batch.clone()
-            # logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
-            negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
-            negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
+        negative_encoded_sentences_batch = encoded_sentences_batch.clone()
+        # logger.info(f"{negative_encoded_sentences_batch.size()}, {negative_conclusions_encoded_sentences.size()}")
+        negative_encoded_sentences_batch[0: negative_encoded_sentences_batch.size(0),
+        negative_encoded_sentences_batch.size(1) - 1, :] = negative_conclusions_encoded_sentences
 
-            negative_passages_encoded, _ = self.encode_passages(negative_encoded_sentences_batch, passages_mask)
+        negative_passages_encoded, _ = self.encode_passages(negative_encoded_sentences_batch, passages_mask)
 
-            correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
-                                                         torch.squeeze(passages_encoded[:, 4, :]), dim=1)
-            wrong_similarity = torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
-                                                       torch.squeeze(negative_passages_encoded[:, 4, :]), dim=1)
+        correct_similarity = torch.cosine_similarity(torch.squeeze(passages_encoded[:, 3, :]),
+                                                     torch.squeeze(passages_encoded[:, 4, :]), dim=1)
+        wrong_similarity = torch.cosine_similarity(torch.squeeze(negative_passages_encoded[:, 3, :]),
+                                                   torch.squeeze(negative_passages_encoded[:, 4, :]), dim=1)
 
-            res = torch.squeeze((correct_similarity > wrong_similarity).float())
+        res = torch.squeeze((correct_similarity > wrong_similarity).float())
 
-            for r in res.split(1):
-                self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
+        for r in res.split(1):
+            self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
         passages_mask = get_text_field_mask({"tokens": text}, num_wrapping_dims=num_wrapping_dims)
@@ -515,6 +512,15 @@ class KnowledgeableStoriesModel(Model):
 
             if isinstance(v, Dict):
                 if "BLEU" in v:
-                    metrics[k] = v["BLEU"]
+                    v = v["BLEU"]
+                    if isinstance(v, torch.Tensor):
+                        v = v.item()
+                    metrics[k] = v
+
+            if isinstance(v, torch.Tensor):
+                if len(v.size()) == 0:
+                    metrics[k] = v.item()
+                else:
+                    metrics[k] = v.tolist()
 
         return metrics
