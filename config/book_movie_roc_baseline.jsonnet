@@ -157,7 +157,7 @@ local LM_BASE_BATCH_SIZE = 1;
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.25,
-      "patience": 0
+ "patience": 1
     }
   }
 }

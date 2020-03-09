@@ -63,7 +63,7 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
   "trainer": {
     "num_epochs": 50,
     "validation_metric": "-loss",
-    "patience": 3,
+    "patience": 2,
     "grad_norm": 5.0,
     "shuffle": false,
     "model_save_interval": 7200.0,

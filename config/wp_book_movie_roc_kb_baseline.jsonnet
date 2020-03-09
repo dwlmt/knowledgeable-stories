@@ -260,7 +260,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.25,
-      "patience": 0
+ "patience": 1
     }
   }
 }

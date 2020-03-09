@@ -17,8 +17,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "type": "writing_prompts_lm",
                 "lazy": true,
                 "batch_size" : 10,
-                "max_sentence_grouping": 10,
-                "max_token_len": 256,
+                "max_sentence_grouping": 14,
+                "max_token_len": 384,
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
@@ -37,8 +37,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "type": "cmu_movie_lm",
                 "lazy": true,
                 "batch_size" : 10,
-                "max_sentence_grouping": 10,
-                "max_token_len": 256,
+                 "max_sentence_grouping": 14,
+                "max_token_len": 384,
             },
             "cmu_movie_hierarchy": {
                 "type": "cmu_movie_hierarchy",
@@ -49,8 +49,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "type": "cmu_book_lm",
                 "lazy": true,
                 "batch_size" : 10,
-                "max_sentence_grouping": 10,
-                "max_token_len": 256,
+                 "max_sentence_grouping": 14,
+                "max_token_len": 384,
             },
             "cmu_book_hierarchy": {
                 "type": "cmu_book_hierarchy",
@@ -68,10 +68,10 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   "iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
+   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm"],
    "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
    "iterate_forever": false,
-   "batches_per_epoch": 100000,
+   "batches_per_epoch": 50000,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -114,7 +114,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
-       "atomic": {
+       "atomic_lm": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
@@ -129,7 +129,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   "validation_iterator": {
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic", "swag_know_lm"],
+   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm"],
    "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
    "iterate_forever": false,
    "batches_per_epoch": 10000,
@@ -175,7 +175,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
-       "atomic": {
+       "atomic_lm": {
             "type": "basic",
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
@@ -196,7 +196,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_train",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
-        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "atomic_lm": dataset_root + "/atomic/v4_atomic_trn.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
   },
   "validation_data_path": {
@@ -208,7 +208,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_valid",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
-        "atomic": dataset_root + "/atomic/v4_atomic_dev.csv",
+        "atomic_lm": dataset_root + "/atomic/v4_atomic_dev.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
   },
   "model": {
@@ -223,7 +223,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_book_hierarchy": {},
         "cmu_movie_lm": {},
         "cmu_movie_hierarchy": {},
-        "atomic": {},
+        "atomic_lm": {},
         "swag_know_lm": {},
     },
     "embedder_vocab_size": embedder_vocab_size,
@@ -241,6 +241,18 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "num_layers": 6,
       "dropout": 0.0,
     },
+    "sentence_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims":  [512, 256, 128],
+        "negative_slope": 0.1
+    },
+    "passage_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims": [512, 256, 128],
+        "negative_slope": 0.1
+    }
   },
   "trainer": {
     "num_epochs": 1000,
@@ -261,7 +273,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.25,
-      "patience": 0
+ "patience": 1
     }
   }
 }

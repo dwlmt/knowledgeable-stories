@@ -31,7 +31,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 100000,
+   "batches_per_epoch": 50000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -95,6 +95,18 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "num_layers": 6,
       "dropout": 0.0,
     },
+    "sentence_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims":  [512, 256, 128],
+        "negative_slope": 0.1
+    },
+    "passage_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims": [512, 256, 128],
+        "negative_slope": 0.1
+    }
   },
   "trainer": {
     "num_epochs": 1000,
@@ -115,7 +127,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": 0.25,
-      "patience": 0
+ "patience": 1
     }
   }
 }
