@@ -3,7 +3,7 @@ import os
 
 import more_itertools
 import torch
-from allennlp.common.util import JsonDict, sanitize
+from allennlp.common.util import JsonDict, sanitize, logger
 from allennlp.data import Instance, DatasetReader
 from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
@@ -40,9 +40,9 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=100))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
-        self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=5))
+        self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=50))
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
 
@@ -81,6 +81,9 @@ class KnowledgeablePredictor(Predictor):
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
+        #if torch.cuda.is_available():
+        #    self._model = model.cuda()
+
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
         with torch.no_grad():
@@ -103,7 +106,6 @@ class KnowledgeablePredictor(Predictor):
             previous_prediction_metrics = {}
             for sentence_batch in list(more_itertools.chunked(inputs["sentences"], self._split_batch_size)):
 
-                print(inputs)
                 copied_inputs = copy.deepcopy(inputs)
 
                 self._vader_polarity(sentence_batch)
@@ -202,15 +204,15 @@ class KnowledgeablePredictor(Predictor):
                                 child_sentences.extend(sentence["sentences"])
                         sentences = child_sentences
 
-                        print("Level ", level, sentences)
-                        print(parent["prediction_metrics"])
-
                         level += 1
 
                     if not self._retain_full_output:
                         del parent["sentences"]
 
                     story_idx += 1
+
+                    logger.info(f"Position output: {parent}")
+
                     previous_prediction_metrics = parent["prediction_metrics"]
 
                 all_processed_sentences.append(sentence_batch)
@@ -484,6 +486,7 @@ class KnowledgeablePredictor(Predictor):
 
     def _encode_batch_of_sentences(self, generated_sequences):
         encoded_sentences = []
+        first_size = None
         for generated_sequence_batch in more_itertools.chunked(generated_sequences, self._encoders_batch_size):
 
             def lengths(x):
@@ -510,8 +513,16 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask).cpu()
 
+            if not first_size:
+                first_size = encoded_sentences_batch.size()
+            elif encoded_sentences_batch.size() != first_size:
+                blank_encoded = torch.zeros(first_size).float()
+                blank_encoded[0: encoded_sentences_batch.size(0), :] = encoded_sentences_batch
+                encoded_sentences_batch = blank_encoded
+
             encoded_sentences.append(encoded_sentences_batch)
-        encoded_sentences_tensor = torch.stack(encoded_sentences)
+
+        encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
         return encoded_sentences_tensor
 
     def _add_distance_metrics(self, passages_encoded_tensor, sentence_batch):
@@ -540,8 +551,6 @@ class KnowledgeablePredictor(Predictor):
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
         if torch.cuda.is_available():
             previous_tokens_tensor = previous_tokens_tensor.cuda()
-
-        print("PROMPT:", previous_text, flat_previous_tokens)
 
         generated_sequences = []
         retries = 0
@@ -581,7 +590,6 @@ class KnowledgeablePredictor(Predictor):
                                                                            clean_up_tokenization_spaces=True)
                         generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-        print("GENERATED", generated_sequences)
         return generated_sequences
 
     def convert_output_to_tensors(self, output_dict):
