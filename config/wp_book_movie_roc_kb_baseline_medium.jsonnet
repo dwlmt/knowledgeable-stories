@@ -57,7 +57,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
                 "lazy": true,
                 "batch_size" : 100,
             },
-            "atomic" : {
+            "atomic_lm" : {
                 "type": "atomic"
             },
             "swag_know_lm" : {
