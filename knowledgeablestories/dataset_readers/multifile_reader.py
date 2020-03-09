@@ -26,8 +26,8 @@ class MultifileAbstractReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 100,
-                 max_token_len: int = 256,
-                 max_sentence_grouping: int = 5,
+                 max_token_len: int = 384,
+                 max_sentence_grouping: int = 14,
                  slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
