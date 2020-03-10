@@ -224,7 +224,7 @@ class KnowledgeableStoriesModel(Model):
                             output["passage_autoencoded_mu"], output[
                                 "passage_autoencoded_var"] = self._sentence_autoencoder.encode(passages_encoded)
 
-                    if not self.training and conclusions != None and negative_conclusions != None:
+                    if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                              passages_encoded, lm_mask)
 
