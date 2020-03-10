@@ -98,6 +98,12 @@ class KnowledgeablePredictor(Predictor):
 
             original_sentences = inputs["sentences"]
             total_story_len = len(inputs["sentences"])
+
+            # Rollout indices are only to appply the rollout to given positions in the index.
+            rollout_indices = None
+            if rollout_indices in inputs:
+                rollout_indices = inputs["rollout_indices"]
+
             story_idx = 0
 
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
@@ -127,24 +133,27 @@ class KnowledgeablePredictor(Predictor):
                 self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
                 for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
-                    parent = sentence_batch[s_upper_bound - 1]
-                    parent["level"] = 0
+                    
+                    if rollout_indices is None or s_upper_bound - 1 in rollout_indices:
 
-                    input_tokens = previous_tokens + current_tokens[: s_upper_bound]
+                        parent = sentence_batch[s_upper_bound - 1]
+                        parent["level"] = 0
 
-                    merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+                        input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
-                    if previous_tensor_dict:
-                        merged_sentences_encoded = torch.cat(
-                            [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
+                        merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
 
-                    self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
-                                         self._num_levels_rollout, original_sentences, story_idx)
+                        if previous_tensor_dict:
+                            merged_sentences_encoded = torch.cat(
+                                [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
-                    self._calculate_metrics(parent, previous_prediction_metrics)
+                        self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                             self._num_levels_rollout, original_sentences, story_idx)
 
-                    if not self._retain_full_output:
-                        del parent["sentences"]
+                        self._calculate_metrics(parent, previous_prediction_metrics)
+
+                        if not self._retain_full_output:
+                            del parent["sentences"]
 
                     story_idx += 1
 
