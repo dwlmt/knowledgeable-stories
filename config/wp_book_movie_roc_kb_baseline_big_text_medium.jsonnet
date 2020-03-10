@@ -117,12 +117,13 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm"],
-   "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
-   "iterate_forever": false,
-   "batches_per_epoch": 50000,
-   "iterators": {
+    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
+      "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm",
+       "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
+       "iterate_forever": false,
+       "batches_per_epoch": 50000,
+       "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
+     "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
             "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
@@ -208,12 +209,13 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
-   "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm"],
-   "sampling_rates": [1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0, 1.0 / 10.0],
-   "iterate_forever": false,
-   "batches_per_epoch": 10000,
-   "iterators": {
+    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
+      "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm",
+      "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
+      "iterate_forever": false,
+      "batches_per_epoch": 50000,
+      "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
+     "iterators": {
        "writing_prompts_lm": {
           "type": "basic",
           "batch_size":  LM_BASE_BATCH_SIZE * NUM_GPUS,
