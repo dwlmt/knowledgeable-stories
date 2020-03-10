@@ -88,6 +88,9 @@ class KnowledgeablePredictor(Predictor):
         #    self._model = model.cuda()
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
+        return self.rollout_prediction(inputs)
+
+    def rollout_prediction(self, inputs: JsonDict):
 
         with torch.no_grad():
 
@@ -133,7 +136,7 @@ class KnowledgeablePredictor(Predictor):
                 self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
                 for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
-                    
+
                     if rollout_indices is None or s_upper_bound - 1 in rollout_indices:
 
                         parent = sentence_batch[s_upper_bound - 1]
