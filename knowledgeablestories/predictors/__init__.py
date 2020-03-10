@@ -1,1 +1,2 @@
 from knowledgeablestories.predictors.knowledgeable_predictor import KnowledgeablePredictor
+from knowledgeablestories.predictors.knowledgeable_interpret_predictor import  KnowledgeableInterpretPredictor
