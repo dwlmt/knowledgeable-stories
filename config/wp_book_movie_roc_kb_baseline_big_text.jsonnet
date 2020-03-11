@@ -338,7 +338,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": dataset_root + "/MovieSummaries/own_processed/plot_summaries_train",
         "cmu_book_lm": dataset_root + "/booksummaries/booksummaries.txt",
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
-        "cbt_lm": dataset_root + dataset_root + "/CBTest/data/cbt_train.txt",
+        "cbt_lm": dataset_root + "/CBTest/data/cbt_train.txt",
         "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_train.txt",
         "atomic_lm": dataset_root + "/atomic/v4_atomic_trn.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
