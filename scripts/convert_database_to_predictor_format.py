@@ -17,7 +17,7 @@ def add_coreference_features(args):
 
 
     story_ids_to_predict = []
-    if "include_list" in args:
+    if "include_list" in args and args["include_list"] is not None:
         story_id_df = pandas.read_csv(args["include_list"], engine='python')
         story_ids_to_predict = set(story_id_df['story_id'])
 
@@ -29,7 +29,7 @@ def add_coreference_features(args):
 
                 story_id = story["id"]
 
-                if story_id in story_ids_to_predict:
+                if len(story_ids_to_predict) == 0 or story_id in story_ids_to_predict:
 
                     story_json_dict = {}
                     story_json_dict["story_id"] = story_id
