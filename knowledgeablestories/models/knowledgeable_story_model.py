@@ -222,7 +222,8 @@ class KnowledgeableStoriesModel(Model):
                             loss += vae_loss * self._loss_weights["passage_autoencoder"]
                         elif prediction_mode:
                             output["passage_autoencoded_mu"], output[
-                                "passage_autoencoded_var"] = self._sentence_autoencoder.encode(passages_encoded)
+                                "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
+
 
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
