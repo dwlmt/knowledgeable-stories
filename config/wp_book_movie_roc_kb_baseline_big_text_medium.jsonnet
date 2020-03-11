@@ -393,8 +393,6 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "bookscorpus_hierarchy": {},
         "filmcorpus_lm" : {},
         "filmcorpus_hierarchy": {},
-        "cbt_lm": {},
-        "cbt_hierarchy": {}
     },
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
