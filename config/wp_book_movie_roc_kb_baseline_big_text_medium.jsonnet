@@ -65,6 +65,18 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "type": "swag_know_lm",
              "lazy": true,
         },
+         "cbt_lm": {
+           "type": "cbt_lm",
+           "lazy": true,
+           "batch_size" : 10,
+           "max_sentence_grouping": 10,
+           "max_token_len": 256,
+        },
+        "cbt_hierarchy": {
+            "type": "cbt_hierarchy",
+            "lazy": true,
+            "batch_size" : 100,
+        },
         "schmoop_lm": {
             "type": "sharded_simple",
             "lazy": true,
@@ -121,7 +133,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm",
        "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
        "iterate_forever": false,
-       "batches_per_epoch": 50000,
+       "batches_per_epoch": 100000,
        "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
      "iterators": {
        "writing_prompts_lm": {
@@ -175,6 +187,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
+     "cbt_lm": {
+            "type": "basic",
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_hierarchy": {
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
        "schmoop_lm": {
            "type": "basic",
             "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
@@ -213,7 +235,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", "atomic_lm", "swag_know_lm",
       "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
       "iterate_forever": false,
-      "batches_per_epoch": 50000,
+      "batches_per_epoch": 10000,
       "sampling_rates":  [1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0, 1.0 / 18.0],
      "iterators": {
        "writing_prompts_lm": {
@@ -267,6 +289,16 @@ local MAX_INSTANCES_IN_MEMORY = 64;
             "batch_size":  KB_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
+     "cbt_lm": {
+            "type": "basic",
+            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "cbt_hierarchy": {
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
        "schmoop_lm": {
            "type": "basic",
             "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
@@ -310,6 +342,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
         "atomic_lm": dataset_root + "/atomic/v4_atomic_trn.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/train_full.csv",
+        "cbt_lm": dataset_root + dataset_root + "/CBTest/data/cbt_train.txt",
+        "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_train.txt",
         "schmoop_lm": dataset_root + "/schmoop/stories//*//*",
         "schmoop_hierarchy": dataset_root + "/schmoop/stories//*//*",
         "bookscorpus_lm": dataset_root + "/BooksCorpus/*",
@@ -328,6 +362,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_book_hierarchy": dataset_root + "/booksummaries/booksummaries.txt",
         "atomic_lm": dataset_root + "/atomic/v4_atomic_dev.csv",
         "swag_know_lm": dataset_root + "/swagaf/data/val_full.csv",
+        "cbt_lm": dataset_root + dataset_root + "/CBTest/data/cbt_valid.txt",
+        "cbt_hierarchy": dataset_root + "/CBTest/data/cbt_valid.txt",
         "schmoop_lm": dataset_root + "/schmoop/stories//*//*",
         "schmoop_hierarchy": dataset_root + "/schmoop/stories//*//*",
         "bookscorpus_lm": dataset_root + "/BooksCorpus/*",
@@ -389,7 +425,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
   "trainer": {
     "num_epochs": 1000,
     "validation_metric": "-loss",
-    "patience": 2,
+    "patience": 3,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
