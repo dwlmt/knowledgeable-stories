@@ -385,6 +385,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "cmu_movie_hierarchy": {},
         "atomic_lm": {},
         "swag_know_lm": {},
+        "cbt_lm": {},
+        "cbt_hierarchy": {},
         "schmoop_lm": {},
         "schmoop_hierarchy": {},
         "bookscorpus_lm": {},
