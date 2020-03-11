@@ -13,7 +13,7 @@ from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE, vae_loss_fn
 
-END_OF_TEXT_TOKEN_IDS = set([50256, 0])
+END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
 
 @Model.register("know_stories")
 class KnowledgeableStoriesModel(Model):
@@ -66,7 +66,7 @@ class KnowledgeableStoriesModel(Model):
         if generation_config is None:
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 1.0, "max_length": 100, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS),
-                                 "repetition_penalty": None}
+                                 "repetition_penalty": None, "length_penalty": 1.0}
 
         if dataset_config is None:
             dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
@@ -203,6 +203,10 @@ class KnowledgeableStoriesModel(Model):
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
+
+                        passages_encoded_difference = self.calc_diff_vector(passages_encoded)
+                        output["passages_encoded_diff"] = passages_encoded_difference
+
                         output["passages_mask"] = passages_mask
                         output["sentences_encoded"] = encoded_sentences_batch
                         output["lm_encoded"] = lm_hidden_state
@@ -223,6 +227,12 @@ class KnowledgeableStoriesModel(Model):
                         elif prediction_mode:
                             output["passage_autoencoded_mu"], output[
                                 "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
+
+                            output["passage_autoencoded_diff_mu"] = self.calc_diff_vector( output["passage_autoencoded_mu"])
+                            output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
+                                output["passage_autoencoded_var"])
+
+
 
 
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
@@ -263,6 +273,12 @@ class KnowledgeableStoriesModel(Model):
         output["loss"] = loss
 
         return output
+
+    def calc_diff_vector(self, passages_encoded):
+        passages_encoded_difference = torch.zeros_like(passages_encoded).float()
+        passages_encoded_difference[..., 1: passages_encoded.size(1), ...] = passages_encoded[..., 0: passages_encoded.size(1) - 1,
+                                                    ...] - passages_encoded[..., 1: passages_encoded.size(1), ...]
+        return passages_encoded_difference
 
     def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
         encoded_sentences_list = []
@@ -480,8 +496,10 @@ class KnowledgeableStoriesModel(Model):
             num_beams=gen_config["num_beams"],
             eos_token_ids=gen_config["eos_token_ids"],
             repetition_penalty=gen_config["repetition_penalty"],
+            length_penalty=gen_config["length_penalty"],
             num_return_sequences=num_of_sequences,
         )
+
         return output_sequences
 
     def _bleu_score_if_required(self, dataset_name, prem, conclusions, generated_text):
