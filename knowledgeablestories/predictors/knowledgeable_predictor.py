@@ -18,16 +18,25 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
-END_OF_TEXT_IDS = {50256, 0}
 END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
-
 
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
+
+        lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+
+        # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+
+        self._token_indexers = {
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
+
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._softmax = nn.Softmax(dim=-1)
 
@@ -40,7 +49,7 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=10))
 
         self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=50))
         # Use cosine for probability, when false use
@@ -48,44 +57,36 @@ class KnowledgeablePredictor(Predictor):
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
 
-        lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
-
         # Config for text generation
         gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=50))
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=1.0))
+        gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
+
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS",default="<|endoftext|> . ?"))
+        self._eos_token_ids = [0, 764]
+        for t in eos_tokens.split():
+            self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
-                                   "num_beams": gen_num_beams, "eos_token_ids": [50256, 764, 0]}
+                                   "length_penalty": gen_length_penalty,
+                                   "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids}
 
         self._retain_full_output = bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default=True))
 
-        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
+        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=200))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=50))
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
         self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
-
-        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
-
-        # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-
-        self._token_indexers = {
-            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
-
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
-
-        #if torch.cuda.is_available():
-        #    self._model = model.cuda()
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         return self.rollout_prediction(inputs)
@@ -94,7 +95,7 @@ class KnowledgeablePredictor(Predictor):
 
         with torch.no_grad():
 
-            if "text" not in inputs and "sentences" not in inputs:
+            if "passage" not in inputs and "sentences" not in inputs:
                 raise ValueError("'text' or 'sentences' must be provided.")
 
             self._split_sentences_if_required(inputs)
@@ -103,9 +104,9 @@ class KnowledgeablePredictor(Predictor):
             total_story_len = len(inputs["sentences"])
 
             # Rollout indices are only to appply the rollout to given positions in the index.
-            rollout_indices = None
-            if rollout_indices in inputs:
-                rollout_indices = inputs["rollout_indices"]
+            rollout_indices = set([i for i in range(total_story_len)])
+            if "rollout_indices" in inputs:
+                rollout_indices = set(inputs["rollout_indices"])
 
             story_idx = 0
 
@@ -137,19 +138,18 @@ class KnowledgeablePredictor(Predictor):
 
                 for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
 
-                    if rollout_indices is None or s_upper_bound - 1 in rollout_indices:
+                    parent = sentence_batch[s_upper_bound - 1]
+                    parent["level"] = 0
 
-                        parent = sentence_batch[s_upper_bound - 1]
-                        parent["level"] = 0
+                    input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
-                        input_tokens = previous_tokens + current_tokens[: s_upper_bound]
+                    merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
 
-                        merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+                    if previous_tensor_dict:
+                        merged_sentences_encoded = torch.cat(
+                            [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
 
-                        if previous_tensor_dict:
-                            merged_sentences_encoded = torch.cat(
-                                [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
-
+                    if story_idx in rollout_indices:
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                              self._num_levels_rollout, original_sentences, story_idx)
 
@@ -158,13 +158,13 @@ class KnowledgeablePredictor(Predictor):
                         if not self._retain_full_output:
                             del parent["sentences"]
 
-                    story_idx += 1
-
                     logger.info(f"Position output: {parent}")
 
                     previous_prediction_metrics = parent["prediction_metrics"]
 
-                all_processed_sentences.append(sentence_batch)
+                    story_idx += 1
+
+                all_processed_sentences.extend(sentence_batch)
 
                 previous_tokens += cached_dict["tokens"]
                 previous_tensor_dict = cached_dict
@@ -180,8 +180,6 @@ class KnowledgeablePredictor(Predictor):
         level = 1
         sentences = parent["sentences"]
         while sentences and len(sentences) > 0:
-
-            print("Level ", level, sentences)
 
             if not "prediction_metrics" in parent:
                 parent["prediction_metrics"] = {}
@@ -236,7 +234,7 @@ class KnowledgeablePredictor(Predictor):
                 parent["prediction_metrics"][f"{level}"][
                     f"ely_suspense_alpha_{f}"] = torch.exp(log_variance_sent_adjusted_tensor).sum().item()
 
-            # Retrieve child sentences if available.
+            # Retrieve child sentences if available as stats need to be calculated across the whole level at once.
             child_sentences = []
             for sentence in sentences:
                 if "sentences" in sentence:
@@ -583,6 +581,7 @@ class KnowledgeablePredictor(Predictor):
                                                              self._gen_num_of_sequences - len(generated_sequences),
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
+
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
             for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
@@ -591,11 +590,11 @@ class KnowledgeablePredictor(Predictor):
 
                 generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
 
-                if generated_sequence[0] not in END_OF_TEXT_IDS:
+                if generated_sequence[0] not in self._eos_token_ids:
 
                     # Truncate the generated sentence.
                     first_index = self._generation_config["max_length"]
-                    for end_token in END_OF_TEXT_IDS:
+                    for end_token in self._eos_token_ids:
                         try:
                             first_index = min(generated_sequence.index(end_token), first_index)
                         except ValueError:
@@ -626,7 +625,7 @@ class KnowledgeablePredictor(Predictor):
 
                     all_tokens = output_dict[field]
                     for tokens in all_tokens:
-                        for id in END_OF_TEXT_IDS:
+                        for id in self._eos_token_ids:
                             try:
                                 end_of_text_index = list(tokens).index(id)
                             except ValueError:
@@ -644,8 +643,8 @@ class KnowledgeablePredictor(Predictor):
 
     def _split_sentences_if_required(self, inputs):
         # If whole text rather than sentences are provided then split the sentences.
-        if "text" in inputs and "sentences" not in inputs:
-            sentences = self._sentence_splitter.split_sentences(inputs["text"])
+        if "passage" in inputs and "sentences" not in inputs:
+            sentences = self._sentence_splitter.split_sentences(inputs["passage"])
 
             if len(sentences) > 0:
 
