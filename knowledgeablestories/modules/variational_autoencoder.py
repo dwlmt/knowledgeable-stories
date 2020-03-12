@@ -64,12 +64,7 @@ class DenseVAE(nn.Module, FromParams):
         self._encoder = nn.Sequential(*encoder_modules)
         self._decoder = nn.Sequential(*decoder_modules)
 
-
-
     def encode(self, x):
-        # Flatten 3 dimensional batches.
-        #if len(x.size()) == 3:
-        #    x = x.view(x.size(0) * x.size(1), x.size(2))
         x = self._encoder(x)
         return self.dense_mu(x), self.dense_var(x)
 
