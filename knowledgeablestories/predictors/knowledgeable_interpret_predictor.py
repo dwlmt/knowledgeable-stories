@@ -105,7 +105,8 @@ class KnowledgeableInterpretPredictor(Predictor):
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
-        for field in ["tokens","passage_autoencoded_mu", "passage_autoencoded_var",
+        for field in ["tokens",
+                      "passage_autoencoded_mu", "passage_autoencoded_var",
                       "passage_autoencoded_diff_mu", "passage_autoencoded_diff_var",
                       "sentence_autoencoded_mu", "sentence_autoencoded_var",
                       "passages_encoded","passages_encoded_diff","sentences_encoded", "lm_encoded",
