@@ -228,11 +228,9 @@ class KnowledgeableStoriesModel(Model):
                             output["passage_autoencoded_mu"], output[
                                 "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
 
-                            output["passage_autoencoded_diff_mu"] = self.calc_diff_vector( output["passage_autoencoded_mu"])
+                            output["passage_autoencoded_diff_mu"] = self.calc_diff_vector(output["passage_autoencoded_mu"])
                             output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
                                 output["passage_autoencoded_var"])
-
-
 
 
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
