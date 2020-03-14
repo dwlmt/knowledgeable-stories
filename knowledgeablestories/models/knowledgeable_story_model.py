@@ -273,9 +273,10 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def calc_diff_vector(self, passages_encoded):
+
         passages_encoded_difference = torch.zeros_like(passages_encoded).float()
-        passages_encoded_difference[..., 1: passages_encoded.size(1), ...] = passages_encoded[..., 0: passages_encoded.size(1) - 1,
-                                                    ...] - passages_encoded[..., 1: passages_encoded.size(1), ...]
+        passages_encoded_difference[:, 1: passages_encoded.size(1), 0 : passages_encoded.size(2)] = passages_encoded[ :, 0: passages_encoded.size(1) - 1,
+                                                    0 : passages_encoded.size(2)] - passages_encoded[:, 1: passages_encoded.size(1), 0 : passages_encoded.size(2)]
         return passages_encoded_difference
 
     def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
