@@ -9,7 +9,7 @@ from jsonlines import jsonlines
 
 engine_kwargs = {"pool_recycle": 3600, "connect_args": {'timeout': 300, "check_same_thread": False}}
 
-def add_coreference_features(args):
+def extract_json_from_db(args):
     print(args)
 
     database = args["database"]
@@ -55,9 +55,9 @@ def add_coreference_features(args):
 parser = argparse.ArgumentParser(
     description='Extract text to the predictor format used in the new ')
 parser.add_argument('--database', required=True, type=str, help="The SQLLite datase to read the stories from.")
-parser.add_argument('--include-list', required=False, type=str, help="The SQLLite database to read the stories from.")
+parser.add_argument('--include-list', required=False, type=str, help="A file containing a list of ids to include. If not provided exclude all.")
 parser.add_argument('--output-json', type=str, required=True, help="The location to save the output json files.")
 
 args = parser.parse_args()
 
-add_coreference_features(vars(args))
+extract_json_from_db(vars(args))
