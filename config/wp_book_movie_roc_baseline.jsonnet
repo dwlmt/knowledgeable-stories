@@ -199,7 +199,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     },
   },
   "trainer": {
-    "num_epochs": 1000,
+    "num_epochs": 5,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,

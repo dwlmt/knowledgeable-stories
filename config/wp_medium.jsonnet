@@ -31,7 +31,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 50000,
+   "batches_per_epoch": 100000,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -109,7 +109,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     }
   },
   "trainer": {
-    "num_epochs": 1000,
+    "num_epochs": 5,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,

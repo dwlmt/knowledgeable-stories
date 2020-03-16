@@ -387,12 +387,8 @@ local MAX_INSTANCES_IN_MEMORY = 64;
         "swag_know_lm": {},
         "cbt_lm": {},
         "cbt_hierarchy": {},
-        "schmoop_lm": {},
-        "schmoop_hierarchy": {},
-        "bookscorpus_lm": {},
-        "bookscorpus_hierarchy": {},
-        "filmcorpus_lm" : {},
-        "filmcorpus_hierarchy": {},
+        "multifile_lm": {},
+        "multifile_hierarchy": {},
     },
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
@@ -423,7 +419,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     }
   },
   "trainer": {
-    "num_epochs": 1000,
+    "num_epochs": 5,
     "validation_metric": "-loss",
     "patience": 3,
     "grad_norm": 5.0,

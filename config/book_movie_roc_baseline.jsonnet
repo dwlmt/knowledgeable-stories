@@ -139,7 +139,7 @@ local LM_BASE_BATCH_SIZE = 1;
     },
   },
   "trainer": {
-    "num_epochs": 1000,
+    "num_epochs": 5,
     "validation_metric": "-loss",
     "patience": 2,
     "grad_norm": 5.0,
