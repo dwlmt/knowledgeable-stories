@@ -3,13 +3,13 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:0
 #SBATCH --mem=16g  # Memory
 #SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
 #SBATCH --mail-type=all          # send email on job start, end and fail
 #SBATCH --mail-user=david.wilmot@ed.ac.uk
 
-# Set EXP_BASE_NAME and BATCH_FILE_PATH
+# Set EXP_NAME and BATCH_FILE_PATH
 
 echo "============"
 echo "Initialize Env ========"
@@ -56,37 +56,27 @@ export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
 export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
-export CACHE_DIR="${SCRATCH_HOME}/${EXP_ID}_cache"
 
-if [ ! -v COPY_DATASET ]; then
-  export DATASET_ROOT=${DATASET_SOURCE}
-else
-  export DATASET_ROOT="${SCRATCH_HOME}/${EXP_ID}_dataset"
-fi
+export PREDICTION_STORY_FILE="${CLUSTER_HOME}/${BATCH_FILE_PATH}"
 
-echo "============"
-echo "Copy Datasets locally ========"
+export EXP_NAME="${EXP_NAME}_$SLURM_ARRAY_TASK_ID"
+export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 
-if [ ! -v COPY_DATASET ]; then
-  echo "Don't copy dataset"
-else
-  mkdir -p ${DATASET_ROOT}
-  rsync -avuzhP "${DATASET_SOURCE}/" "${DATASET_ROOT}/"
-fi
+export MODEL_ZIP=${CLUSTER_HOME}/${MODEL_PATH}
 
 # Ensure the scratch home exists and CD to the experiment root level.
 cd "${EXP_ROOT}" # helps AllenNLP behave
 
 mkdir -p ${SERIAL_DIR}
-mkdir -p ${CACHE_DIR}
 
 echo "============"
 echo "ALLENNLP Task========"
 
-allennlp train --file-friendly-logging --include-package knowledgeablestories \
-    -s  ${SERIAL_DIR}/ \
-    --cache-directory ${CACHE_DIR} \
-    ${EXP_CONFIG}
+allennlp predict --include-package knowledgeablestories --predictor ${PREDICTOR} \
+     ${MODEL_ZIP} \
+     ${PREDICTION_STORY_FILE} --cuda-device -1 \
+     --batch-size 1 \
+    --output-file  ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl \
 
 echo "============"
 echo "ALLENNLP Task finished"
@@ -96,7 +86,6 @@ mkdir -p "${HEAD_EXP_DIR}"
 rsync -avuzhP "${SERIAL_DIR}/" "${HEAD_EXP_DIR}/" # Copy output onto headnode
 
 rm -rf "${SERIAL_DIR}"
-rm -rf "${CACHE_DIR}"
 
 if [ ! -v COPY_DATASET ]; then
   echo "No dataset to delete"
