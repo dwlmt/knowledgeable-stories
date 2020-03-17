@@ -22,7 +22,7 @@ export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
 source /home/${USER}/miniconda3/bin/activate allennlp
 
 echo "I'm running on ${SLURM_JOB_NODELIST}"
-dt=$(date '+%d_%m_%y__%H_%M');
+dt=$(date '+%d_%m_%y__%H_%M')
 echo ${dt}
 
 # Env variables
@@ -37,15 +37,14 @@ export NUM_CPUS=8
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 
 # Iterate the string array using for loop
-for i in "${ScratchPathArray[@]}"
-do
-    echo ${i}
-    if [ -w ${i} ];then
-      echo "WRITABLE"
-      mkdir -p ${i}
-      export SCRATCH_HOME=${i}
-      break
-   fi
+for i in "${ScratchPathArray[@]}"; do
+  echo ${i}
+  if [ -w ${i} ]; then
+    echo "WRITABLE"
+    mkdir -p ${i}
+    export SCRATCH_HOME=${i}
+    break
+  fi
 done
 
 echo ${SCRATCH_HOME}
@@ -84,9 +83,9 @@ echo "============"
 echo "ALLENNLP Task========"
 
 allennlp train --file-friendly-logging --include-package knowledgeablestories \
-    -s  ${SERIAL_DIR}/ \
-    --cache-directory ${CACHE_DIR} \
-    ${EXP_CONFIG}
+  -s ${SERIAL_DIR}/ \
+  --cache-directory ${CACHE_DIR} \
+  ${EXP_CONFIG}
 
 echo "============"
 echo "ALLENNLP Task finished"

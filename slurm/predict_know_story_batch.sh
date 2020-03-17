@@ -22,7 +22,7 @@ export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
 source /home/${USER}/miniconda3/bin/activate allennlp
 
 echo "I'm running on ${SLURM_JOB_NODELIST}"
-dt=$(date '+%d_%m_%y__%H_%M');
+dt=$(date '+%d_%m_%y__%H_%M')
 echo ${dt}
 
 # Env variables
@@ -37,15 +37,14 @@ export NUM_CPUS=8
 declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
 
 # Iterate the string array using for loop
-for i in "${ScratchPathArray[@]}"
-do
-    echo ${i}
-    if [ -w ${i} ];then
-      echo "WRITABLE"
-      mkdir -p ${i}
-      export SCRATCH_HOME=${i}
-      break
-   fi
+for i in "${ScratchPathArray[@]}"; do
+  echo ${i}
+  if [ -w ${i} ]; then
+    echo "WRITABLE"
+    mkdir -p ${i}
+    export SCRATCH_HOME=${i}
+    break
+  fi
 done
 
 echo ${SCRATCH_HOME}
@@ -58,7 +57,7 @@ export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
-export LINE=`sed "${SLURM_ARRAY_TASK_ID}q;d" ${CLUSTER_HOME}/${BATCH_FILE_PATH}/${BATCH_FILE_NAME}`
+export LINE=$(sed "${SLURM_ARRAY_TASK_ID}q;d" ${CLUSTER_HOME}/${BATCH_FILE_PATH}/${BATCH_FILE_NAME})
 export PREDICTION_STORY_FILE="${CLUSTER_HOME}/${BATCH_FILE_PATH}/${LINE}"
 
 export EXP_NAME="${EXP_NAME}_$SLURM_ARRAY_TASK_ID"
@@ -75,10 +74,10 @@ echo "============"
 echo "ALLENNLP Task========"
 
 allennlp predict --include-package knowledgeablestories --predictor ${PREDICTOR} \
-     ${MODEL_ZIP} \
-     ${PREDICTION_STORY_FILE} --cuda-device -1 \
-     --batch-size 1 \
-    --output-file  ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl \
+  ${MODEL_ZIP} \
+  ${PREDICTION_STORY_FILE} --cuda-device -1 \
+  --batch-size 1 \
+  --output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl
 
 echo "============"
 echo "ALLENNLP Task finished"
