@@ -2,6 +2,9 @@
 '''
 
 import argparse
+import os
+from pathlib import Path
+
 import dataset
 import pandas
 import tqdm
@@ -12,9 +15,10 @@ engine_kwargs = {"pool_recycle": 3600, "connect_args": {'timeout': 300, "check_s
 def extract_json_from_db(args):
     print(args)
 
+    Path(os.path.dirname(args["output_json"])).mkdir(parents=True, exist_ok=True)
+
     database = args["database"]
     dataset_db = f"sqlite:///{database}"
-
 
     story_ids_to_predict = []
     if "include_list" in args and args["include_list"] is not None:

@@ -2,6 +2,8 @@
 
 '''
 import argparse
+import os
+from pathlib import Path
 
 from jsonlines import jsonlines
 
@@ -15,18 +17,19 @@ args = parser.parse_args()
 
 def process_text(args):
 
+    Path(os.path.dirname(args["output_json"])).mkdir(parents=True, exist_ok=True)
+
     print(f"Process text from ${args['text_file']}")
 
     json_list = []
 
-    with open(args['output_json'], mode='w') as reader:
+    with open(args['text_file'], mode='r') as reader:
         for i, line in enumerate(reader):
             json_dict = {}
             json_dict["story_id"] = f"{i}"
             json_dict["passage"] = line
 
-            json_list.append()
-
+            json_list.append(json_dict)
 
     with jsonlines.open(args['output_json'], mode='w') as writer:
 
