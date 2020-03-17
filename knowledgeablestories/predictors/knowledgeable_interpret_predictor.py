@@ -108,14 +108,12 @@ class KnowledgeableInterpretPredictor(Predictor):
         for field in ["tokens",
                       "passage_autoencoded_mu", "passage_autoencoded_var",
                       "passage_autoencoded_diff_mu", "passage_autoencoded_diff_var",
-                      "sentence_autoencoded_mu", "sentence_autoencoded_var",
-                      "passages_encoded","passages_encoded_diff","sentences_encoded", "lm_encoded",
+                      "sentence_autoencoded_mu", "sentence_autoencoded_var"
                       ]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
                 elif "token" in field:
-
                     stripped_tokens = []
 
                     all_tokens = output_dict[field]

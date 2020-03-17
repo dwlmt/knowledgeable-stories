@@ -232,7 +232,6 @@ class KnowledgeableStoriesModel(Model):
                             output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
                                 output["passage_autoencoded_var"])
 
-
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                              passages_encoded, lm_mask)
