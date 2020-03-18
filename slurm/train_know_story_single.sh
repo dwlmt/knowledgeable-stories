@@ -34,22 +34,21 @@ export EMBEDDER_VOCAB_SIZE=50268
 export NUM_GPUS=1
 export NUM_CPUS=8
 
-declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
+declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
 
 # Iterate the string array using for loop
 for i in "${ScratchPathArray[@]}"; do
   echo ${i}
-  if [ -w ${i} ]; then
-    echo "WRITABLE"
-    mkdir -p ${i}
-    export SCRATCH_HOME=${i}
+  if [ -d ${i} ]; then
+    export SCRATCH_HOME="${i}/${STUDENT_ID}"
+    mkdir -p ${SCRATCH_HOME}
     break
   fi
 done
 
-echo ${SCRATCH_HOME}
+find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut -d ' ' -f 2- | sed -e 's/^/"/' -e 's/$/"/' | xargs rm -rf
 
-#rm -rf "${SCRATCH_HOME}/*"
+echo ${SCRATCH_HOME}
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 

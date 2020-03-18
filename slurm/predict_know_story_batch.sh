@@ -3,7 +3,7 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:0
+#SBATCH --gres=gpu:1
 #SBATCH --mem=16g  # Memory
 #SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
 #SBATCH --mail-type=all          # send email on job start, end and fail
@@ -34,22 +34,23 @@ export EMBEDDER_VOCAB_SIZE=50268
 export NUM_GPUS=1
 export NUM_CPUS=8
 
-declare -a ScratchPathArray=(/disk/scratch_big/${STUDENT_ID} /disk/scratch1/${STUDENT_ID} /disk/scratch2/${STUDENT_ID} /disk/scratch/${STUDENT_ID} /disk/scratch_fast/${STUDENT_ID} ${CLUSTER_HOME}/scratch/${STUDENT_ID})
+declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
 
 # Iterate the string array using for loop
 for i in "${ScratchPathArray[@]}"; do
   echo ${i}
-  if [ -w ${i} ]; then
-    echo "WRITABLE"
-    mkdir -p ${i}
-    export SCRATCH_HOME=${i}
-    break
+  if [ -d ${i} ]; then
+    export SCRATCH_HOME="${i}/${STUDENT_ID}"
+    mkdir -p ${SCRATCH_HOME}
+    if [ -w ${SCRATCH_HOME} ]; then
+      break
+    fi
   fi
 done
 
-echo ${SCRATCH_HOME}
+find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut -d ' ' -f 2- | sed -e 's/^/"/' -e 's/$/"/' | xargs rm -rf
 
-#rm -rf "${SCRATCH_HOME}/*"
+echo ${SCRATCH_HOME}
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
@@ -71,10 +72,10 @@ echo "============"
 echo "ALLENNLP Task========"
 
 allennlp predict --include-package knowledgeablestories --predictor ${PREDICTOR} \
-${MODEL_ZIP} \
-${PREDICTION_STORY_FILE} --cuda-device -1 \
---batch-size 1 \
---output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl \
+  ${MODEL_ZIP} \
+  ${PREDICTION_STORY_FILE} --cuda-device -1 \
+  --batch-size 1 \
+  --output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl
 
 echo "============"
 echo "ALLENNLP Task finished"
