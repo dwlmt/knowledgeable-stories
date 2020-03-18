@@ -53,15 +53,12 @@ echo ${SCRATCH_HOME}
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
-export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
+export EXP_ID="${EXP_NAME}_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 
 echo "My SLURM_ARRAY_TASK_ID: " $SLURM_ARRAY_TASK_ID
 export LINE=$(sed "${SLURM_ARRAY_TASK_ID}q;d" ${CLUSTER_HOME}/${BATCH_FILE_PATH}/${BATCH_FILE_NAME})
 export PREDICTION_STORY_FILE="${CLUSTER_HOME}/${BATCH_FILE_PATH}/${LINE}"
-
-export EXP_NAME="${EXP_NAME}_$SLURM_ARRAY_TASK_ID"
-export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 
 export MODEL_ZIP=${CLUSTER_HOME}/${MODEL_PATH}
 
@@ -74,10 +71,10 @@ echo "============"
 echo "ALLENNLP Task========"
 
 allennlp predict --include-package knowledgeablestories --predictor ${PREDICTOR} \
-  ${MODEL_ZIP} \
-  ${PREDICTION_STORY_FILE} --cuda-device -1 \
-  --batch-size 1 \
-  --output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl
+${MODEL_ZIP} \
+${PREDICTION_STORY_FILE} --cuda-device -1 \
+--batch-size 1 \
+--output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl \
 
 echo "============"
 echo "ALLENNLP Task finished"

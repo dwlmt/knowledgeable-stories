@@ -53,13 +53,12 @@ echo ${SCRATCH_HOME}
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
-export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 
 export PREDICTION_STORY_FILE="${CLUSTER_HOME}/${BATCH_FILE_PATH}"
 
 export EXP_NAME="${EXP_NAME}_$SLURM_ARRAY_TASK_ID"
-export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
+export EXP_ID="${EXP_NAME}_${SLURM_JOB_ID}_${CURRENT_TIME}"
 
 export MODEL_ZIP=${CLUSTER_HOME}/${MODEL_PATH}
 

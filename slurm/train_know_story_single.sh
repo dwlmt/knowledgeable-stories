@@ -53,7 +53,7 @@ echo ${SCRATCH_HOME}
 
 export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
 
-export EXP_ID="${EXP_NAME}_${CURRENT_TIME}"
+export EXP_ID="${EXP_NAME}_${SLURM_JOB_ID}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 export CACHE_DIR="${SCRATCH_HOME}/${EXP_ID}_cache"
 
