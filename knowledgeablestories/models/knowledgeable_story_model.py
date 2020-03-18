@@ -91,16 +91,13 @@ class KnowledgeableStoriesModel(Model):
         self._generation_config = generation_config
         self._metric_config = metric_config
 
-        self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
+        self._lm_name = lm_name
+        self._lm_model = None
+        self.init_lm_model_if_required(lm_name, embedder_vocab_size)
 
         self._cosine_similarity = nn.CosineSimilarity()
         self._l2_distance = nn.PairwiseDistance(p=2)
         self._l1_distance = nn.PairwiseDistance(p=1)
-
-        # If additional characters have been added then the model needs updated for the additional tokens.
-        self._embedder_vocab_size = embedder_vocab_size
-        if self._embedder_vocab_size:
-            self._lm_model.resize_token_embeddings(self._embedder_vocab_size)
 
         self._dropout = torch.nn.Dropout(dropout)
 
@@ -146,6 +143,15 @@ class KnowledgeableStoriesModel(Model):
 
         if initializer is not None:
             initializer(self)
+
+    def init_lm_model_if_required(self, lm_name, embedder_vocab_size):
+        if self._lm_model is None:
+            self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
+
+            # If additional characters have been added then the model needs updated for the additional tokens.
+            self._embedder_vocab_size = embedder_vocab_size
+            if self._embedder_vocab_size:
+                self._lm_model.resize_token_embeddings(self._embedder_vocab_size)
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
@@ -232,14 +238,19 @@ class KnowledgeableStoriesModel(Model):
                             output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
                                 output["passage_autoencoded_var"])
 
+                    '''
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                              passages_encoded, lm_mask)
+                    '''
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
 
             argument_tokens = arguments["tokens"]
+
+            self._lm_model = self._lm_model.to(argument_tokens.device)
+
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
             self._metrics["lm_loss"](lm_loss.item())
@@ -265,8 +276,6 @@ class KnowledgeableStoriesModel(Model):
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
-        if torch.cuda.is_available():
-            loss = loss.cuda()
         output["loss"] = loss
 
         return output
@@ -442,9 +451,11 @@ class KnowledgeableStoriesModel(Model):
     def encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
             self._sentence_seq2vec_encoder._module.flatten_parameters()
+            self._sentence_seq2vec_encoder = self._sentence_seq2vec_encoder.to(hidden_states.device)
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
             self._sentence_seq2seq_encoder._module.flatten_parameters()
+            self._sentence_seq2seq_encoder = self._sentence_seq2seq_encoder.to(hidden_states.device)
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
@@ -455,6 +466,7 @@ class KnowledgeableStoriesModel(Model):
             mask = passages_sentence_lengths > 0
 
         self._passage_seq2seq_encoder._module.flatten_parameters()
+        self._passage_seq2seq_encoder = self._passage_seq2seq_encoder.to(inputs.device)
 
         encoded_passages = self._passage_seq2seq_encoder(inputs, mask)
 
@@ -479,6 +491,8 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
     def generate_text(self, existing_tokens, num_of_sequences=10, override_gen_config=None):
+
+        self._lm_model = self._lm_model.to(existing_tokens.device)
 
         gen_config = self._generation_config
         if override_gen_config:
