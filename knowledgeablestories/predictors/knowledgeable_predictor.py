@@ -49,7 +49,7 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=10))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=2))
 
         self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=25))
         # Use cosine for probability, when false use
@@ -82,7 +82,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=50))
+        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
