@@ -3,7 +3,7 @@ import os
 
 import more_itertools
 import torch
-from allennlp.common.util import JsonDict, sanitize, logger
+from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import Instance, DatasetReader
 from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
@@ -162,7 +162,7 @@ class KnowledgeablePredictor(Predictor):
                         if not self._retain_full_output:
                             del parent["sentences"]
 
-                    logger.info(f"Position output: {parent}")
+                    # logger.info(f"Position output: {parent}")
 
                     previous_prediction_metrics = parent["prediction_metrics"]
 
@@ -257,74 +257,80 @@ class KnowledgeablePredictor(Predictor):
 
             generated_sequences = self.generate_sentences(input_tokens)
 
-            # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
-            if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
-                gold_sentence = original_sentences[story_idx + 1]
-                gold_sentence["tokens"] =  self._tokenizer._tokenizer.encode(gold_sentence["text"])
-                gold_sentence["gold"] = True
-                generated_sequences.append(gold_sentence)
+            if len(generated_sequences) > 0:
 
-            existing_sentences_encoded = existing_sentences_encoded[
-                                         max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):, ...]
+                # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
+                if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
+                    gold_sentence = original_sentences[story_idx + 1]
+                    gold_sentence["tokens"] = self._tokenizer._tokenizer.encode(gold_sentence["text"])
+                    gold_sentence["gold"] = True
+                    generated_sequences.append(gold_sentence)
 
-            encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
+                existing_sentences_encoded = existing_sentences_encoded[
+                                             max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):,
+                                             ...]
 
-            context_encoded_representation, final_encoded_representation = self._final_encoded_representations(
-                encoded_sentences_tensor,
-                existing_sentences_encoded)
-            context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
-                final_encoded_representation.size(0), -1)
-            if torch.cuda.is_available():
-                final_encoded_representation = final_encoded_representation.cuda()
-                context_representation = context_representation.cuda()
-            logits = self._model.calculate_logits(context_representation, final_encoded_representation,
-                                                  self._encoder_cosine)
-            probs, log_probs = self._logits_to_probs(logits)
+                encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
 
+                context_encoded_representation, final_encoded_representation = self._final_encoded_representations(
+                    encoded_sentences_tensor,
+                    existing_sentences_encoded)
+                context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
+                    final_encoded_representation.size(0), -1)
+                if torch.cuda.is_available():
+                    final_encoded_representation = final_encoded_representation.cuda()
+                    context_representation = context_representation.cuda()
+                logits = self._model.calculate_logits(context_representation, final_encoded_representation,
+                                                      self._encoder_cosine)
+                probs, log_probs = self._logits_to_probs(logits)
 
-            if num_levels_rollout == self._num_levels_rollout:
-                chain_log_prob = log_probs
-                chain_prob = probs
-            else:
-                chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
+                if num_levels_rollout == self._num_levels_rollout:
+                    chain_log_prob = log_probs
+                    chain_prob = probs
+                else:
+                    chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
 
-            log_prob_tensor_list.append(chain_log_prob)
+                log_prob_tensor_list.append(chain_log_prob)
 
-            for i, gen_seq in enumerate(generated_sequences, start=0):
-                gen_seq["parent"] = parent
+                for i, gen_seq in enumerate(generated_sequences, start=0):
+                    gen_seq["parent"] = parent
 
-                merged_input_tokens = copy.deepcopy(input_tokens)
-                merged_input_tokens.append(gen_seq["tokens"])
+                    merged_input_tokens = copy.deepcopy(input_tokens)
+                    merged_input_tokens.append(gen_seq["tokens"])
 
-                gen_seq["merged_tokens"] = merged_input_tokens
+                    gen_seq["merged_tokens"] = merged_input_tokens
 
-                merged_sentences_encoded = torch.cat(
-                    (existing_sentences_encoded, torch.unsqueeze(
-                        encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) *
-                                                      encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
+                    merged_sentences_encoded = torch.cat(
+                        (existing_sentences_encoded, torch.unsqueeze(
+                            encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) *
+                                                          encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
 
-                gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
+                    gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
 
-            metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
-                           "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
-                           "context_representation": context_representation,
-                           "final_encoded_representation": final_encoded_representation}
+                metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
+                               "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
+                               "context_representation": context_representation,
+                               "final_encoded_representation": final_encoded_representation}
 
-            for (k, v) in metric_dict.items():
+                for (k, v) in metric_dict.items():
 
-                for value, gen_seq in zip(v, generated_sequences):
-                    if "parent_relation_metrics" not in gen_seq:
-                        gen_seq["parent_relation_metrics"] = {}
+                    for value, gen_seq in zip(v, generated_sequences):
+                        if "parent_relation_metrics" not in gen_seq:
+                            gen_seq["parent_relation_metrics"] = {}
 
-                    if k in ["context_representation", "final_encoded_representation"]:
-                        gen_seq[k] = value.cpu()
-                    else:
-                        if len(value.size()) > 0:
-                            gen_seq["parent_relation_metrics"][k] = value.cpu()
+                        if k in ["context_representation", "final_encoded_representation"]:
+                            gen_seq[k] = value.cpu()
                         else:
-                            gen_seq["parent_relation_metrics"][k] = value.item()
+                            if len(value.size()) > 0:
+                                gen_seq["parent_relation_metrics"][k] = value.cpu()
+                            else:
+                                gen_seq["parent_relation_metrics"][k] = value.item()
 
-            all_level_list.extend(generated_sequences)
+                all_level_list.extend(generated_sequences)
+
+        # Early return if it fails to generate any valid sequences.
+        if len(all_level_list) == 0:
+            return
 
         # If needed then filter the beem for the whole level.
         filtered_list = []
