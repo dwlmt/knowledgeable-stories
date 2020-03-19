@@ -66,8 +66,8 @@ class KnowledgeablePredictor(Predictor):
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
 
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS",default="<|endoftext|> . ?"))
-        self._eos_token_ids = [0]
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> . ?"))
+        self._eos_token_ids = [0, 764]
         for t in eos_tokens.split():
             self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
@@ -683,5 +683,7 @@ class KnowledgeablePredictor(Predictor):
 
     @overrides
     def predict_instance(self, instance: Instance) -> JsonDict:
+        if torch.cuda.is_available():
+            self._model = self._model.cuda()
         outputs = self._model.forward_on_instance(instance)
         return sanitize(outputs)

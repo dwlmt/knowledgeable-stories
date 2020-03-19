@@ -6,7 +6,7 @@ from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax, logger
+from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
@@ -184,16 +184,7 @@ class KnowledgeableStoriesModel(Model):
 
                 encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
-                if self._sentence_autoencoder:
-                    self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch)
-                    if self.training:
-                        y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
-                        vae_loss = vae_loss_fn(x, y, mu, logvar)
-                        self._metrics["sentence_autoencoder_loss"](vae_loss)
-                        loss += vae_loss * self._loss_weights["sentence_autoencoder"]
-                    elif prediction_mode:
-                        output["sentence_autoencoded_mu"], output[
-                            "sentence_autoencoded_var"] = self._sentence_autoencoder.encode(encoded_sentences_batch)
+                loss = self._sentence_autoencoder_if_required(encoded_sentences_batch, loss, output, prediction_mode)
 
                 if self._passage_seq2seq_encoder != None:
 
@@ -223,20 +214,7 @@ class KnowledgeableStoriesModel(Model):
 
                     loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
 
-                    if self._passage_autoencoder:
-                        self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded)
-                        if self.training:
-                            y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
-                            vae_loss = vae_loss_fn(x, y, mu, logvar)
-                            self._metrics["passage_autoencoder_loss"](vae_loss.item())
-                            loss += vae_loss * self._loss_weights["passage_autoencoder"]
-                        elif prediction_mode:
-                            output["passage_autoencoded_mu"], output[
-                                "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
-
-                            output["passage_autoencoded_diff_mu"] = self.calc_diff_vector(output["passage_autoencoded_mu"])
-                            output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
-                                output["passage_autoencoded_var"])
+                    loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
                     '''
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
@@ -280,11 +258,49 @@ class KnowledgeableStoriesModel(Model):
 
         return output
 
+    def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
+        if self._passage_autoencoder:
+            self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded)
+            if self.training:
+                y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
+                vae_loss = vae_loss_fn(x, y, mu, logvar)
+                self._metrics["passage_autoencoder_loss"](vae_loss.item())
+                loss += vae_loss * self._loss_weights["passage_autoencoder"]
+            elif prediction_mode:
+                output["passage_autoencoded_mu"], output[
+                    "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
+
+                output["passage_autoencoded_diff_mu"] = self.calc_diff_vector(output["passage_autoencoded_mu"])
+                output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
+                    output["passage_autoencoded_var"])
+        return loss
+
+    def _sentence_autoencoder_if_required(self, encoded_sentences_batch, loss, output, prediction_mode):
+        if self._sentence_autoencoder:
+            self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch)
+            if self.training:
+                y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
+                vae_loss = vae_loss_fn(x, y, mu, logvar)
+                self._metrics["sentence_autoencoder_loss"](vae_loss)
+                loss += vae_loss * self._loss_weights["sentence_autoencoder"]
+            elif prediction_mode:
+                output["sentence_autoencoded_mu"], output[
+                    "sentence_autoencoded_var"] = self._sentence_autoencoder.encode(encoded_sentences_batch)
+        return loss
+
     def calc_diff_vector(self, passages_encoded):
 
         passages_encoded_difference = torch.zeros_like(passages_encoded).float()
-        passages_encoded_difference[:, 1: passages_encoded.size(1), 0 : passages_encoded.size(2)] = passages_encoded[ :, 0: passages_encoded.size(1) - 1,
-                                                    0 : passages_encoded.size(2)] - passages_encoded[:, 1: passages_encoded.size(1), 0 : passages_encoded.size(2)]
+        passages_encoded_difference[:, 1: passages_encoded.size(1), 0: passages_encoded.size(2)] = passages_encoded[:,
+                                                                                                   0: passages_encoded.size(
+                                                                                                       1) - 1,
+                                                                                                   0: passages_encoded.size(
+                                                                                                       2)] - passages_encoded[
+                                                                                                             :,
+                                                                                                             1: passages_encoded.size(
+                                                                                                                 1),
+                                                                                                             0: passages_encoded.size(
+                                                                                                                 2)]
         return passages_encoded_difference
 
     def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
