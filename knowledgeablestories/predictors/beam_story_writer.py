@@ -12,8 +12,8 @@ from allennlp.predictors import Predictor
 from knowledgeablestories import KnowledgeablePredictor
 
 
-@Predictor.register('know_greedy_story_writer')
-class KnowledgeableGreedyStoryWriterPredictor(KnowledgeablePredictor):
+@Predictor.register('know_beam_story_writer')
+class KnowledgeableBeamStoryWriterPredictor(KnowledgeablePredictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
 
