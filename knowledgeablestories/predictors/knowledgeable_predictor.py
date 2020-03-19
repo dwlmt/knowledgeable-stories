@@ -51,7 +51,10 @@ class KnowledgeablePredictor(Predictor):
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=2))
 
-        self._beam_size = int(os.getenv("PREDICTOR_BEAM_SIZE", default=25))
+        # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
+        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=100))
+        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
+
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
 
@@ -326,8 +329,8 @@ class KnowledgeablePredictor(Predictor):
         # If needed then filter the beem for the whole level.
         filtered_list = []
         log_prob_tensor = torch.cat(log_prob_tensor_list)
-        if log_prob_tensor.size(0) > self._beam_size:
-            top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size)
+        if log_prob_tensor.size(0) > self._beam_size_keep:
+            top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size_keep)
             log_prob_threshold = top_k_tensor[-1]
             for gen_seq in all_level_list:
                 if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold or (
@@ -418,20 +421,30 @@ class KnowledgeablePredictor(Predictor):
 
         num_levels_rollout -= 1
 
+        # Filter the generate from list if required.
+        log_prob_threshold = None
+        if self._beam_size_gen < len(filtered_list):
+            top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
+            log_prob_threshold = top_k_tensor[-1]
+
+        parent_list = []
+        input_tokens_batch = []
+        existing_sentences_encoded_batch = []
+
         for gen_seq in filtered_list:
-            gen_seq["level"] = self._num_levels_rollout - num_levels_rollout
 
-            parent_list = []
-            input_tokens_batch = []
-            existing_sentences_encoded_batch = []
+            if log_prob_threshold is not None and gen_seq["parent_relation_metrics"][
+                "chain_log_prob"] >= log_prob_threshold or (
+                    "gold" in gen_seq and gen_seq["gold"] == True):
+                gen_seq["level"] = self._num_levels_rollout - num_levels_rollout
 
-            parent_list.append(gen_seq)
-            merged_input_tokens = gen_seq["merged_tokens"]
-            input_tokens_batch.append(merged_input_tokens)
+                parent_list.append(gen_seq)
+                merged_input_tokens = gen_seq["merged_tokens"]
+                input_tokens_batch.append(merged_input_tokens)
 
-            existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
+                existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
 
-            existing_sentences_encoded_batch.append(existing_sentences_encoded)
+                existing_sentences_encoded_batch.append(existing_sentences_encoded)
 
             del gen_seq["parent"]
             del gen_seq["merged_tokens"]
