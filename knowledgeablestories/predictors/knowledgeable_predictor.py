@@ -66,10 +66,11 @@ class KnowledgeablePredictor(Predictor):
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
 
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> . ?"))
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> ."))
         self._eos_token_ids = [0, 764]
         for t in eos_tokens.split():
             self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[-1]}
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
@@ -564,7 +565,6 @@ class KnowledgeablePredictor(Predictor):
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
-
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
         if torch.cuda.is_available():
             previous_tokens_tensor = previous_tokens_tensor.cuda()
@@ -596,7 +596,10 @@ class KnowledgeablePredictor(Predictor):
                     first_index = self._generation_config["max_length"]
                     for end_token in self._eos_token_ids:
                         try:
-                            first_index = min(generated_sequence.index(end_token), first_index)
+                            if end_token not in self._keep_eos_ids:
+                                first_index = min(generated_sequence.index(end_token), first_index)
+                            else:
+                                first_index = min(generated_sequence.index(end_token) + 1, first_index)
                         except ValueError:
                             pass
 
