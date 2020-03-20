@@ -439,7 +439,7 @@ class KnowledgeablePredictor(Predictor):
 
         for gen_seq in filtered_list:
 
-            if log_prob_threshold is not None and gen_seq["parent_relation_metrics"][
+            if log_prob_threshold is None or gen_seq["parent_relation_metrics"][
                 "chain_log_prob"] >= log_prob_threshold or (
                     "gold" in gen_seq and gen_seq["gold"] == True):
                 gen_seq["level"] = self._num_levels_rollout - num_levels_rollout
