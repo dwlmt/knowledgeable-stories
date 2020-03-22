@@ -71,7 +71,7 @@ def cluster_vectors(args):
 
             clusterer.fit(vector_data)
 
-            dump(clusterer, f"{args['output-cluster-path']}/hdbscan_{field}_{sim_metric}.joblib")
+            dump(clusterer, f"{args['output_cluster_path']}/hdbscan_{field}_{sim_metric}.joblib")
 
             labels = clusterer.labels_,
             probabilities = clusterer.probabilities_,
