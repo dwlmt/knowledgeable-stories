@@ -68,7 +68,7 @@ class KnowledgeablePredictor(Predictor):
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
-        repetition_penalty = float(os.getenc("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
+        repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> ."))
         self._eos_token_ids = [0, 764]
