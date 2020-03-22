@@ -43,7 +43,7 @@ args = parser.parse_args()
 
 def cluster_vectors(args):
     Path(args["output_cluster_path"]).mkdir(parents=True, exist_ok=True)
-    Path(os.path.dirname(args["outputfile"])).mkdir(parents=True, exist_ok=True)
+    Path(os.path.dirname(args["output_file"])).mkdir(parents=True, exist_ok=True)
 
     # Extract and process the raw data and convert to a dask
     original_df = dask.bag.from_sequence(
