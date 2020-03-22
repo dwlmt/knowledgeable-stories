@@ -63,6 +63,7 @@ def cluster_vectors(args):
 
             if sim_metric == "cosine":
                 vector_data = normalize(vector_data, norm='l2')
+                metric = "euclidean"
 
             clusterer = hdbscan.HDBSCAN(algorithm='best', metric=metric,
                                         min_cluster_size=args["min_cluster_size"],
