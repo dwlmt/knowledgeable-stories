@@ -61,13 +61,14 @@ class KnowledgeablePredictor(Predictor):
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
 
         # Config for text generation
-        gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
+        gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=0.9))
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=50))
-        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=1.0))
+        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.9))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
+        repetition_penalty = float(os.getenc("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> ."))
         self._eos_token_ids = [0, 764]
@@ -79,7 +80,7 @@ class KnowledgeablePredictor(Predictor):
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
-                                   "length_penalty": gen_length_penalty,
+                                   "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids}
 
         self._retain_full_output = bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default=True))
