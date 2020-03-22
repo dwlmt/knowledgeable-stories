@@ -50,7 +50,7 @@ find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut
 
 echo ${SCRATCH_HOME}
 
-export EXP_ROOT="${CLUSTER_HOME}/projects/knowledgeable-stories"
+export EXP_ROOT="${CLUSTER_HOME}/git/knowledgeable-stories"
 
 export EXP_ID="${EXP_NAME}_${SLURM_JOB_ID}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
