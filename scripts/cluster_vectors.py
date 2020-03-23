@@ -53,6 +53,7 @@ def cluster_vectors(args):
     original_df = original_df.to_dataframe()
 
     export_fields = ["story_id", "sentence_num", "text"]
+    export_df = original_df[export_fields].compute()
 
     for col in args["cluster_columns"]:
 
@@ -78,37 +79,33 @@ def cluster_vectors(args):
             dump(hdbscan_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{sim_metric}.joblib")
 
             label_col = f"hdbscan_{col}_{sim_metric}_label"
-            original_df.compute()[label_col] = hdbscan_clusterer.labels_.tolist()
+            export_df[label_col] = hdbscan_clusterer.labels_.tolist()
             prob_col = f"hdbscan_{col}_{sim_metric}_probability"
-            original_df.compute()[prob_col] = hdbscan_clusterer.probabilities_.tolist()
+            export_df[prob_col] = hdbscan_clusterer.probabilities_.tolist()
+
+            dim = args["dim_reduction_component"]
+
+            reduced_vector_data = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
+                                            n_components=dim, metric=sim_metric).fit_transform(
+                vector_data)
+            x, y = zip(*reduced_vector_data.tolist())
+            x_col = f"{col}_{x}"
+            y_col = f"{col}_{y}"
+            export_df[x_col] = x
+            export_df[y_col] = y
 
         # Kmeans clusters.
         for dim in args["kmeans_ncentroids"]:
             kmeans_clusterer = cluster.KMeans(n_clusters=dim, n_init=args["kmeans_init"],
                                               max_iter=args["kmeans_iterations"], n_jobs=-1)
-            kmeans_clusterer.fit(vector_data)
+            labels = kmeans_clusterer.fit_predict(vector_data)
             dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{args['kmeans_ncentroids']}")
 
             label_col = f"kmeans_{col}_{dim}_label"
-            original_df.compute()[label_col] = hdbscan_clusterer.labels_.tolist()
-            export_fields.append(label_col)
-
-        dim = args["dim_reduction_component"]
-
-        reduced_vector_data = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
-                                        n_components=dim, metric=sim_metric).fit_transform(
-            vector_data)
-        x, y = zip(*reduced_vector_data.tolist())
-        x_col = f"{col}_{x}"
-        y_col = f"{col}_{y}"
-        original_df.compute()[x_col] = x
-        original_df.compute()[y_col] = y
-        export_fields.append(x_col)
-        export_fields.append(y_col)
+            export_df[label_col] = labels.tolist()
 
     if not args["dont_save_csv"]:
-        csv_df = original_df[export_fields].compute()
-        csv_df.to_csv(f"{args['output_cluster_path']}/cluster_export.tar.xz")
+        export_df.to_csv(f"{args['output_cluster_path']}/cluster_export.tar.xz")
 
 def extract_rows(args):
     index_counter = 0
