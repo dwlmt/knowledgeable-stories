@@ -99,13 +99,13 @@ def cluster_vectors(args):
             kmeans_clusterer = cluster.KMeans(n_clusters=dim, n_init=args["kmeans_init"],
                                               max_iter=args["kmeans_iterations"], n_jobs=-1)
             labels = kmeans_clusterer.fit_predict(vector_data)
-            dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{args['kmeans_ncentroids']}")
+            dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{dim}.joblib")
 
             label_col = f"kmeans_{col}_{dim}_label"
             export_df[label_col] = labels.tolist()
 
     if not args["dont_save_csv"]:
-        export_df.to_csv(f"{args['output_cluster_path']}/cluster_export.tar.xz")
+        export_df.to_csv(f"{args['output_cluster_path']}/cluster_export.xz")
 
 def extract_rows(args):
     index_counter = 0
@@ -122,6 +122,5 @@ def extract_rows(args):
 
             if i == args["max_num_stories"]:
                 break
-
 
 cluster_vectors(vars(args))
