@@ -137,13 +137,14 @@ def cluster_vectors(args):
 
     for plot_name, (x, y, z) in plot_fields.items():
 
-        print(export_df["plot_hover", cluster, x, y, z])
+        for cluster_col in cluster_export_fields:
+            print(export_df["plot_hover", cluster_col, x, y, z])
 
-        for cluster in cluster_export_fields:
-            fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster, color=cluster, hover_name="plot_hover")
+            fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster_col, color=cluster_col,
+                                     hover_name="plot_hover")
             fig.update_traces(marker_line=dict(width=1))
 
-            save_path = f"{args['output_path']}/{plot_name}_{cluster}_scatter"
+            save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
             export_figure(args, fig, save_path)
 
 
