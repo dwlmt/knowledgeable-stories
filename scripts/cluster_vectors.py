@@ -140,8 +140,8 @@ def cluster_vectors(args):
         for cluster_col in cluster_export_fields:
 
             if "cosine" in cluster_col and "cosine" in plot_name or "euclidean" in cluster_col and "euclidean" in plot_name:
-                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text="text", color=cluster_col)
-                fig.update_traces(marker_line=dict(width=1))
+                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, hover_name="text", color=cluster_col)
+                fig.update_traces(marker_line=dict(width=2))
 
                 save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
                 export_figure(args, fig, save_path)
