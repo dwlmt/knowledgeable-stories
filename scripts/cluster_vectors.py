@@ -138,14 +138,16 @@ def cluster_vectors(args):
     for plot_name, (x, y, z) in plot_fields.items():
 
         for cluster_col in cluster_export_fields:
-            print(export_df["plot_hover", cluster_col, x, y, z])
 
-            fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster_col, color=cluster_col,
-                                     hover_name="plot_hover")
-            fig.update_traces(marker_line=dict(width=1))
+            if "cosine" in cluster_col and "cosine" in plot_name or "euclidean" in cluster_col and "euclidean" in plot_name:
+                print(export_df["plot_hover", cluster_col, x, y, z])
 
-            save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
-            export_figure(args, fig, save_path)
+                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster_col, color=cluster_col,
+                                         hover_name="plot_hover")
+                fig.update_traces(marker_line=dict(width=1))
+
+                save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
+                export_figure(args, fig, save_path)
 
 
 def export_figure(args, fig, save_path):
