@@ -78,9 +78,9 @@ def cluster_vectors(args):
             dump(hdbscan_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{sim_metric}.joblib")
 
             label_col = f"hdbscan_{col}_{sim_metric}_label"
-            original_df[label_col] = hdbscan_clusterer.labels_.tolist()
+            original_df.compute()[label_col] = hdbscan_clusterer.labels_.tolist()
             prob_col = f"hdbscan_{col}_{sim_metric}_probability"
-            original_df[prob_col] = hdbscan_clusterer.probabilities_.tolist()
+            original_df.compute()[prob_col] = hdbscan_clusterer.probabilities_.tolist()
 
         # Kmeans clusters.
         for dim in args["kmeans_ncentroids"]:
@@ -90,7 +90,7 @@ def cluster_vectors(args):
             dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{args['kmeans_ncentroids']}")
 
             label_col = f"kmeans_{col}_{dim}_label"
-            original_df[label_col] = hdbscan_clusterer.labels_.tolist()
+            original_df.compute()[label_col] = hdbscan_clusterer.labels_.tolist()
             export_fields.append(label_col)
 
         dim = args["dim_reduction_component"]
@@ -101,8 +101,8 @@ def cluster_vectors(args):
         x, y = zip(*reduced_vector_data.tolist())
         x_col = f"{col}_{x}"
         y_col = f"{col}_{y}"
-        original_df[x_col] = x
-        original_df[y_col] = y
+        original_df.compute()[x_col] = x
+        original_df.compute()[y_col] = y
         export_fields.append(x_col)
         export_fields.append(y_col)
 
