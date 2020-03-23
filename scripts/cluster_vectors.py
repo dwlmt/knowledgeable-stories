@@ -23,7 +23,7 @@ parser.add_argument('--umap-min-dist', default=0.0, type=float, help="Controls h
 parser.add_argument('--kmeans-ncentroids', default=[32], type=int, nargs="+", help="Number of K-means centroids.")
 parser.add_argument('--kmeans-init', default=32, type=int, help="Number of times to run K-Means.")
 parser.add_argument('--kmeans-iterations', default=300, type=int, help="Max number of K-means iterations.")
-parser.add_argument('--dim-reduction-components', default=2, type=int, help="The number of components to reduce to.")
+parser.add_argument('--dim-reduction-component', default=2, type=int, help="The number of components to reduce to.")
 parser.add_argument('--dissimilarity-metric', default=["cosine", "euclidean"], nargs="+", type=str,
                     help="The dissimilarity or distance metric to use.")
 parser.add_argument('--metadata-columns', default=["sentence_num", "text", "tokens"], nargs="+", type=str,
