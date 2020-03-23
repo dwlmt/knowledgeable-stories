@@ -53,7 +53,7 @@ def cluster_vectors(args):
     original_df = original_df.to_dataframe()
 
     export_fields = ["story_id", "sentence_num", "text"]
-    export_df = original_df[export_fields].compute()
+    export_df = original_df.compute()[export_fields]
 
     for col in args["cluster_columns"]:
 
