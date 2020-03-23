@@ -78,9 +78,9 @@ def cluster_vectors(args):
             dump(hdbscan_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{sim_metric}.joblib")
 
             label_col = f"hdbscan_{col}_{sim_metric}_label"
-            original_df[label_col] = hdbscan_clusterer.labels_
+            original_df[label_col] = hdbscan_clusterer.labels_.tolist()
             prob_col = f"hdbscan_{col}_{sim_metric}_probability"
-            original_df[prob_col] = hdbscan_clusterer.probabilities_
+            original_df[prob_col] = hdbscan_clusterer.probabilities_.tolist()
 
         # Kmeans clusters.
         for dim in args["kmeans_ncentroids"]:
@@ -90,7 +90,7 @@ def cluster_vectors(args):
             dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{args['kmeans_ncentroids']}")
 
             label_col = f"kmeans_{col}_{dim}_label"
-            original_df[label_col] = hdbscan_clusterer.labels_
+            original_df[label_col] = hdbscan_clusterer.labels_.tolist()
             export_fields.append(label_col)
 
         dim = args["dim_reduction_component"]
@@ -98,7 +98,7 @@ def cluster_vectors(args):
         reduced_vector_data = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
                                         n_components=dim, metric=sim_metric).fit_transform(
             vector_data)
-        x, y = zip(*reduced_vector_data)
+        x, y = zip(*reduced_vector_data.tolist())
         x_col = f"{col}_{x}"
         y_col = f"{col}_{y}"
         original_df[x_col] = x
