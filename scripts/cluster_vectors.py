@@ -147,7 +147,7 @@ def cluster_vectors(args):
 
 def export_figure(args, fig, save_path):
     if not args["no_html_plots"]:
-        file_path = f"{save_path}"
+        file_path = f"{save_path}.html"
         print(f"Save plot: {file_path}")
         pio.write_html(fig, file_path)
     if not args["no_pdf_plots"]:
