@@ -103,9 +103,9 @@ def cluster_vectors(args):
             dump(umap_dim_red, f"{args['output_path']}/umap_{col}_{sim_metric}.joblib")
 
             x, y, z = zip(*reduced_vector_data.tolist())
-            x_col = f"{col}_{metric}_{x}"
-            y_col = f"{col}_{metric}_{y}"
-            z_col = f"{col}_{metric}_{z}"
+            x_col = f"{col}_{metric}_x"
+            y_col = f"{col}_{metric}_y"
+            z_col = f"{col}_{metric}_z"
 
             plot_fields[f"{col}_{metric}"] = ((x_col, y_col, z_col))
             export_df[x_col] = x
