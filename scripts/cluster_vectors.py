@@ -125,7 +125,7 @@ def cluster_vectors(args):
 
     if not args["dont_save_csv"]:
         print(export_df)
-        export_df.to_csv(f"{args['output_path']}/cluster_export.xz")
+        export_df.to_csv(f"{args['output_path']}/cluster_export.csv.xz")
 
     # Diagnostic plots for the
 
@@ -136,6 +136,8 @@ def cluster_vectors(args):
                               export_df["text"]
 
     for plot_name, (x, y, z) in plot_fields.items():
+
+        print(export_df["plot_hover", cluster, x, y, z])
 
         for cluster in cluster_export_fields:
             fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster, color=cluster, hover_name="plot_hover")
