@@ -111,11 +111,12 @@ def extract_rows(args):
     index_counter = 0
     with jsonlines.open(args['source_json']) as reader:
         for i, obj in tqdm(enumerate(reader)):
-            story_id_dict = {"story_id", obj["story_id"]}
+            story_id = obj["story_id"]
             for child in obj["sentences"]:
-                yield {**{k: child[k] for k in args["metadata_columns"]},
-                       **{k: numpy.array(child[k], dtype=numpy.float32) for k in args["vector_columns"]},
-                       **story_id_dict}
+                processed_dict = {**{k: child[k] for k in args["metadata_columns"]},
+                                  **{k: numpy.array(child[k], dtype=numpy.float32) for k in args["vector_columns"]}}
+                processed_dict["story_id"] = story_id
+                yield processed_dict
 
                 index_counter += 1
 
