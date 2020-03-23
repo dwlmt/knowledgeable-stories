@@ -132,7 +132,8 @@ def cluster_vectors(args):
     if len(export_df) > args["max_plot_points"]:
         export_df = export_df.sample(n=args["max_plot_points"])
 
-    export_df["plot_hover"] = export_df["story_id"] + ": " + export_df["sentence_num"] + export_df["text"]
+    export_df["plot_hover"] = export_df["story_id"].astype(str) + ": " + export_df["sentence_num"].astype(str) + " - " + \
+                              export_df["text"]
 
     for plot_name, (x, y, z) in plot_fields.items():
 
