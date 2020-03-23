@@ -7,10 +7,11 @@ import dask.array
 import dask.bag
 import hdbscan
 import numpy
-import umap
+import plotly.express as px
+import plotly.io as pio
 from joblib import dump
 from jsonlines import jsonlines
-from sklearn import cluster
+from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize
 from tqdm import tqdm
 
@@ -23,7 +24,7 @@ parser.add_argument('--umap-min-dist', default=0.0, type=float, help="Controls h
 parser.add_argument('--kmeans-ncentroids', default=[32], type=int, nargs="+", help="Number of K-means centroids.")
 parser.add_argument('--kmeans-init', default=32, type=int, help="Number of times to run K-Means.")
 parser.add_argument('--kmeans-iterations', default=300, type=int, help="Max number of K-means iterations.")
-parser.add_argument('--dim-reduction-component', default=2, type=int, help="The number of components to reduce to.")
+parser.add_argument('--dim-reduction-component', default=3, type=int, help="The number of components to reduce to.")
 parser.add_argument('--dissimilarity-metric', default=["cosine", "euclidean"], nargs="+", type=str,
                     help="The dissimilarity or distance metric to use.")
 parser.add_argument('--metadata-columns', default=["sentence_num", "text", "tokens"], nargs="+", type=str,
@@ -39,7 +40,10 @@ parser.add_argument('--cluster-columns', default=["passage_autoencoded_mu",
                     help="The vector columns to process.")
 parser.add_argument('--min-cluster-size', default=20, type=int, help="Min size fo each cluster.")
 parser.add_argument('--max-num-stories', default=100, type=int, help="Max number of stories to process")
+parser.add_argument('--max-plot-points', default=10000, type=int, help="Max points to plot in a chart.")
 parser.add_argument("--dont-save-csv", default=False, action="store_true", help="Don't save summary fields to csv.")
+parser.add_argument("--no-html-plots", default=False, action="store_true", help="Don't save plots to HTML")
+parser.add_argument("--no-pdf-plots", default=False, action="store_true", help="Don't save plots to PDF")
 
 args = parser.parse_args()
 
@@ -53,6 +57,8 @@ def cluster_vectors(args):
     original_df = original_df.to_dataframe()
 
     export_fields = ["story_id", "sentence_num", "text"]
+    cluster_export_fields = []
+    plot_fields = {}
     export_df = original_df[export_fields].compute()
 
     for col in args["cluster_columns"]:
@@ -80,32 +86,74 @@ def cluster_vectors(args):
 
             label_col = f"hdbscan_{col}_{sim_metric}_label"
             export_df[label_col] = hdbscan_clusterer.labels_.tolist()
+            cluster_export_fields.append(label_col)
+
             prob_col = f"hdbscan_{col}_{sim_metric}_probability"
             export_df[prob_col] = hdbscan_clusterer.probabilities_.tolist()
 
             dim = args["dim_reduction_component"]
 
-            reduced_vector_data = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
-                                            n_components=dim, metric=sim_metric).fit_transform(
+            umap = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
+                             n_components=dim, metric=sim_metric)
+
+            reduced_vector_data = umap.fit_transform(
                 vector_data)
-            x, y = zip(*reduced_vector_data.tolist())
-            x_col = f"{col}_{x}"
-            y_col = f"{col}_{y}"
+
+            dump(umap, f"{args['output_cluster_path']}/umap_{col}_{sim_metric}.joblib")
+
+            x, y, z = zip(*reduced_vector_data.tolist())
+            x_col = f"{col}_{metric}_{x}"
+            y_col = f"{col}_{metric}_{y}"
+            z_col = f"{col}_{metric}_{z}"
+
+            plot_fields[f"{col}_{metric}"] = ((x_col, y_col, z_col))
             export_df[x_col] = x
             export_df[y_col] = y
+            export_df[z_col] = z
 
         # Kmeans clusters.
         for dim in args["kmeans_ncentroids"]:
-            kmeans_clusterer = cluster.KMeans(n_clusters=dim, n_init=args["kmeans_init"],
-                                              max_iter=args["kmeans_iterations"], n_jobs=-1)
+            kmeans_clusterer = KMeans(n_clusters=dim, n_init=args["kmeans_init"],
+                                      max_iter=args["kmeans_iterations"], n_jobs=-1)
             labels = kmeans_clusterer.fit_predict(vector_data)
             dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{dim}.joblib")
 
             label_col = f"kmeans_{col}_{dim}_label"
             export_df[label_col] = labels.tolist()
+            cluster_export_fields.append(label_col)
 
     if not args["dont_save_csv"]:
+        print(export_df)
         export_df.to_csv(f"{args['output_cluster_path']}/cluster_export.xz")
+
+    # Diagnostic plots for the
+
+    if len(export_df) > args["max_plot_points"]:
+        export_df = export_df.sample(n=args["max_plot_points"])
+
+    export_df["plot_hover"] = export_df["story_id"] + ": " + export_df["sentence_num"] + export_df["text"]
+
+    for plot_name, (x, y, z) in plot_fields.items():
+
+        for cluster in cluster_export_fields:
+            fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster, color=cluster, hover_name="plot_hover",
+                                     render_mode='webgl')
+            fig.update_traces(marker_line=dict(width=1))
+
+            save_path = f"{args['output_cluster_path']}/{plot_name}_{cluster}_scatter"
+            export_figure(args, fig, save_path)
+
+
+def export_figure(args, fig, save_path):
+    if not args["no_html_plots"]:
+        file_path = f"{save_path}"
+        print(f"Save plot: {file_path}")
+        pio.write_html(fig, file_path)
+    if not args["no_pdf_plots"]:
+        file_path = f"{save_path}.pdf"
+        print(f"Save plot pdf: {file_path}")
+        pio.write_image(fig, file_path)
+
 
 def extract_rows(args):
     index_counter = 0
