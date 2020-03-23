@@ -14,11 +14,12 @@ from jsonlines import jsonlines
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import normalize
 from tqdm import tqdm
+from umap import UMAP
 
 parser = argparse.ArgumentParser(
     description='Extract JSON vectors and perform dimensionality reduction.')
 parser.add_argument('--source-json', required=True, type=str, help="JSON file to process.")
-parser.add_argument('--output-cluster-path', required=True, type=str, help="Pickle the clusters to reuse.")
+parser.add_argument('--output-path', required=True, type=str, help="Pickle the clusters to reuse.")
 parser.add_argument('--umap-n-neighbours', default=100, type=int, help="The number of neighbours.")
 parser.add_argument('--umap-min-dist', default=0.0, type=float, help="Controls how clumpy umap will cluster points.")
 parser.add_argument('--kmeans-ncentroids', default=[32], type=int, nargs="+", help="Number of K-means centroids.")
@@ -49,7 +50,7 @@ args = parser.parse_args()
 
 
 def cluster_vectors(args):
-    Path(args["output_cluster_path"]).mkdir(parents=True, exist_ok=True)
+    Path(args["output_path"]).mkdir(parents=True, exist_ok=True)
 
     # Extract and process the raw data and convert to a dask
     original_df = dask.bag.from_sequence(
@@ -82,7 +83,7 @@ def cluster_vectors(args):
 
             hdbscan_clusterer.fit(vector_data)
 
-            dump(hdbscan_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{sim_metric}.joblib")
+            dump(hdbscan_clusterer, f"{args['output_path']}/hdbscan_{col}_{sim_metric}.joblib")
 
             label_col = f"hdbscan_{col}_{sim_metric}_label"
             export_df[label_col] = hdbscan_clusterer.labels_.tolist()
@@ -93,13 +94,13 @@ def cluster_vectors(args):
 
             dim = args["dim_reduction_component"]
 
-            umap = umap.UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
-                             n_components=dim, metric=sim_metric)
+            umap_dim_red = UMAP(n_neighbors=args["umap_n_neighbours"], min_dist=args["umap_min_dist"],
+                                n_components=dim, metric=sim_metric)
 
-            reduced_vector_data = umap.fit_transform(
+            reduced_vector_data = umap_dim_red.fit_transform(
                 vector_data)
 
-            dump(umap, f"{args['output_cluster_path']}/umap_{col}_{sim_metric}.joblib")
+            dump(umap_dim_red, f"{args['output_path']}/umap_{col}_{sim_metric}.joblib")
 
             x, y, z = zip(*reduced_vector_data.tolist())
             x_col = f"{col}_{metric}_{x}"
@@ -116,7 +117,7 @@ def cluster_vectors(args):
             kmeans_clusterer = KMeans(n_clusters=dim, n_init=args["kmeans_init"],
                                       max_iter=args["kmeans_iterations"], n_jobs=-1)
             labels = kmeans_clusterer.fit_predict(vector_data)
-            dump(kmeans_clusterer, f"{args['output_cluster_path']}/hdbscan_{col}_{dim}.joblib")
+            dump(kmeans_clusterer, f"{args['output_path']}/hdbscan_{col}_{dim}.joblib")
 
             label_col = f"kmeans_{col}_{dim}_label"
             export_df[label_col] = labels.tolist()
@@ -124,7 +125,7 @@ def cluster_vectors(args):
 
     if not args["dont_save_csv"]:
         print(export_df)
-        export_df.to_csv(f"{args['output_cluster_path']}/cluster_export.xz")
+        export_df.to_csv(f"{args['output_path']}/cluster_export.xz")
 
     # Diagnostic plots for the
 
@@ -140,7 +141,7 @@ def cluster_vectors(args):
                                      render_mode='webgl')
             fig.update_traces(marker_line=dict(width=1))
 
-            save_path = f"{args['output_cluster_path']}/{plot_name}_{cluster}_scatter"
+            save_path = f"{args['output_path']}/{plot_name}_{cluster}_scatter"
             export_figure(args, fig, save_path)
 
 
