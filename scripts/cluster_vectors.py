@@ -132,18 +132,15 @@ def cluster_vectors(args):
     if len(export_df) > args["max_plot_points"]:
         export_df = export_df.sample(n=args["max_plot_points"])
 
-    export_df["plot_hover"] = export_df["story_id"].astype(str) + ": " + export_df["sentence_num"].astype(str) + " - " + \
-                              export_df["text"]
+    # export_df["plot_hover"] = export_df["story_id"].astype(str) + ": " + export_df["sentence_num"].astype(str) + " - " + \
+    #                          export_df["text"]
 
     for plot_name, (x, y, z) in plot_fields.items():
 
         for cluster_col in cluster_export_fields:
 
             if "cosine" in cluster_col and "cosine" in plot_name or "euclidean" in cluster_col and "euclidean" in plot_name:
-                print(export_df["plot_hover", cluster_col, x, y, z])
-
-                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text=cluster_col, color=cluster_col,
-                                         hover_name="plot_hover")
+                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, text="text", color=cluster_col)
                 fig.update_traces(marker_line=dict(width=1))
 
                 save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
