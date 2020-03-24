@@ -132,16 +132,17 @@ def cluster_vectors(args):
     if len(export_df) > args["max_plot_points"]:
         export_df = export_df.sample(n=args["max_plot_points"])
 
-    # export_df["plot_hover"] = export_df["story_id"].astype(str) + ": " + export_df["sentence_num"].astype(str) + " - " + \
-    #                          export_df["text"]
+    export_df["hover_name"] = export_df["story_id"].astype(str) + ": " + export_df["sentence_num"].astype(str) + " - " + \
+                              export_df["text"]
 
     for plot_name, (x, y, z) in plot_fields.items():
 
         for cluster_col in cluster_export_fields:
 
-            if "cosine" in cluster_col and "cosine" in plot_name or "euclidean" in cluster_col and "euclidean" in plot_name:
-                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, hover_name="text", color=cluster_col)
-                fig.update_traces(marker_line=dict(width=2))
+            if "kmean" in cluster_col or (
+                    "cosine" in cluster_col and "cosine" in plot_name or "euclidean" in cluster_col and "euclidean" in plot_name):
+                fig = px.scatter_ternary(export_df, a=x, b=y, c=z, hover_name="hover_name", color=cluster_col)
+                fig.update_traces(marker_line=dict(width=0))
 
                 save_path = f"{args['output_path']}/{plot_name}_{cluster_col}_scatter"
                 export_figure(args, fig, save_path)
@@ -152,10 +153,12 @@ def export_figure(args, fig, save_path):
         file_path = f"{save_path}.html"
         print(f"Save plot: {file_path}")
         pio.write_html(fig, file_path)
+    '''
     if not args["no_pdf_plots"]:
         file_path = f"{save_path}.pdf"
         print(f"Save plot pdf: {file_path}")
         pio.write_image(fig, file_path)
+    '''
 
 
 def extract_rows(args):
