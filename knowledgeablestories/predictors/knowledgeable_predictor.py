@@ -349,7 +349,7 @@ class KnowledgeablePredictor(Predictor):
 
         # Recalculate probabilities for the reduced beam.
         if len(filtered_list) < len(all_level_list):
-
+            log_prob_tensor_list = []
             logits_list = []
             for gen_seq in generated_sequences:
                 logits_list.append(gen_seq["parent_relation_metrics"]["logit"])
@@ -371,10 +371,15 @@ class KnowledgeablePredictor(Predictor):
                         gen_seq["parent"],
                         prob,
                         log_prob)
+
+                log_prob_tensor_list.append(chain_log_prob)
+
                 gen_seq["parent_relation_metrics"]["prob"] = prob.item()
                 gen_seq["parent_relation_metrics"]["log_prob"] = log_prob.item()
                 gen_seq["parent_relation_metrics"]["chain_prob"] = chain_prob.item()
                 gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_prob.item()
+
+            log_prob_tensor = torch.cat(log_prob_tensor_list)
 
         self._vader_polarity(filtered_list)
 
@@ -428,6 +433,7 @@ class KnowledgeablePredictor(Predictor):
             del gen_seq["final_encoded_representation"]
 
         # Filter the generate from list if required.
+
         log_prob_threshold = None
         if self._beam_size_gen < len(filtered_list):
             top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
