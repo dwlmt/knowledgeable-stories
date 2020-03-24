@@ -11,7 +11,7 @@ from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Ave
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
-from knowledgeablestories.modules.variational_autoencoder import DenseVAE, vae_loss_fn
+from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
 END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
 
@@ -263,7 +263,7 @@ class KnowledgeableStoriesModel(Model):
             self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded)
             if self.training:
                 y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
-                vae_loss = vae_loss_fn(x, y, mu, logvar)
+                vae_loss = self._passage_autoencoder.loss_function(x, y, mu, logvar)
                 self._metrics["passage_autoencoder_loss"](vae_loss.item())
                 loss += vae_loss * self._loss_weights["passage_autoencoder"]
             elif prediction_mode:
@@ -280,7 +280,7 @@ class KnowledgeableStoriesModel(Model):
             self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch)
             if self.training:
                 y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
-                vae_loss = vae_loss_fn(x, y, mu, logvar)
+                vae_loss = self._passage_autoencoder.loss_function(x, y, mu, logvar)
                 self._metrics["sentence_autoencoder_loss"](vae_loss)
                 loss += vae_loss * self._loss_weights["sentence_autoencoder"]
             elif prediction_mode:

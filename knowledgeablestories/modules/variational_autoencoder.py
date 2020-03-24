@@ -1,11 +1,11 @@
 from typing import List
 
 import torch
-from allennlp.commands import logger
 from allennlp.common import FromParams
 from torch import nn
 from torch.nn import Parameter
 from torch.nn.functional import mse_loss
+
 
 class DenseVAE(nn.Module, FromParams):
 
@@ -78,16 +78,14 @@ class DenseVAE(nn.Module, FromParams):
         eps = torch.randn_like(std)
         return eps.mul(std).add_(mu)
 
-
     def forward(self, x):
-        #logger.info(f"Autoencoder Forward {x.size()}")
+        # logger.info(f"Autoencoder Forward {x.size()}")
         mu, logvar = self.encode(x)
         z = self._reparameterize(mu, logvar)
         y = self.decode(z)
         return y, x, mu, logvar
 
-
-def vae_loss_fn(input, recons, mu, logvar, kld_weighting: int = 1.0):
-    mse = mse_loss(recons, input)
-    kld = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) * kld_weighting
-    return mse + kld
+    def loss_function(self, input, recons, mu, logvar, kld_weighting: int = 1.0):
+        mse = mse_loss(recons, input)
+        kld = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) * kld_weighting
+        return mse + kld
