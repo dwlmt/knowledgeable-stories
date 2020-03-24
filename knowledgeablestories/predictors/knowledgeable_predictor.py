@@ -57,6 +57,7 @@ class KnowledgeablePredictor(Predictor):
 
         # Use cosine for probability, when false use
         self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
+        self._prediction_temp = float(os.getenv("PREDICTOR_TEMP", default=1.0))
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
 
@@ -283,6 +284,9 @@ class KnowledgeablePredictor(Predictor):
                     context_representation = context_representation.cuda()
                 logits = self._model.calculate_logits(context_representation, final_encoded_representation,
                                                       self._encoder_cosine)
+
+                logits /= self._prediction_temp
+
                 probs, log_probs = self._logits_to_probs(logits)
 
                 if num_levels_rollout == self._num_levels_rollout:
