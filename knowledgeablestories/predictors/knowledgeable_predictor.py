@@ -49,7 +49,7 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
-        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=2))
+        self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
         # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
         self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=100))
@@ -331,6 +331,7 @@ class KnowledgeablePredictor(Predictor):
 
         # Early return if it fails to generate any valid sequences.
         if len(all_level_list) == 0:
+            num_levels_rollout -= 1
             return
 
         # If needed then filter the beem for the whole level.
@@ -426,8 +427,6 @@ class KnowledgeablePredictor(Predictor):
             del gen_seq["context_representation"]
             del gen_seq["final_encoded_representation"]
 
-        num_levels_rollout -= 1
-
         # Filter the generate from list if required.
         log_prob_threshold = None
         if self._beam_size_gen < len(filtered_list):
@@ -438,6 +437,7 @@ class KnowledgeablePredictor(Predictor):
         input_tokens_batch = []
         existing_sentences_encoded_batch = []
 
+        num_levels_rollout -= 1
         for gen_seq in filtered_list:
 
             if log_prob_threshold is None or gen_seq["parent_relation_metrics"][
