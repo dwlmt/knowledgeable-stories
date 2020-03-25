@@ -705,6 +705,7 @@ def extract_rows(args):
                 processed_dict["story_id"] = story_id
                 processed_dict["text"] = child["text"]
                 processed_dict["sentence_num"] = child["sentence_num"]
+                processed_dict["index"] = index_counter
 
                 if "prediction_metrics" in child:
                     metrics = child["prediction_metrics"]
@@ -715,9 +716,6 @@ def extract_rows(args):
                 processed_dict_list.append(processed_dict)
 
             index_counter += 1
-
-            if i == args["max_num_stories"]:
-                break
 
             df = pandas.read_json(StringIO(json.dumps(processed_dict_list)))
             print(df)
