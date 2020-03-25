@@ -706,6 +706,8 @@ def extract_rows(args):
                 print(df.columns)
                 yield df
 
+
+
                 index_counter += 1
 
             if i == args["max_num_stories"]:
