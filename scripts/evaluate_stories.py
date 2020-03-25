@@ -23,9 +23,8 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser(
     description='Run stats from  the prediction output, clustering and stats for the annotations and predictions.')
-parser.add_argument('--prediction-json', required=True, type=str, help="The JSON files with the predictions.")
-parser.add_argument('--vector-stats', required=False, type=str, help="CSV containing the vector output.")
-parser.add_argument('--annotator-targets', required=True, type=str, help="CSV with consensus predictions.")
+parser.add_argument('--prediction-json', required=False, type=str, help="The JSON files with the predictions.")
+parser.add_argument('--annotator-targets', required=False, type=str, help="CSV with consensus predictions.")
 parser.add_argument('--output-dir', required=True, type=str, help="CSV containing the vector output.")
 parser.add_argument("--no-html-plots", default=False, action="store_true", help="Don't save plots to HTML")
 parser.add_argument("--no-pdf-plots", default=False, action="store_true", help="Don't save plots to PDF")
@@ -40,34 +39,8 @@ parser.add_argument('--export-columns', required=False, type=str, nargs="*",
 
 args = parser.parse_args()
 
-model_prediction_columns = [
+metric_columns = [
     "corpus_surprise_gpt_embedding",
-]
-
-model_prediction_columns = [
-    'textblob_sentiment', 'vader_sentiment', 'sentiment',
-    "baseclass", "random", "generated_surprise_word_overlap", "corpus_surprise_simple_embedding",
-    "generated_surprise_gpt_embedding",
-    'generated_surprise_l1', 'generated_surprise_l2',
-    'generated_suspense_l1', 'generated_suspense_l2',
-    'generated_suspense_entropy_1',
-    'corpus_suspense_entropy_1',
-    'generated_suspense_entropy_1_diff',
-    'generated_surprise_entropy',
-    "corpus_surprise_word_overlap",
-    "corpus_surprise_simple_embedding",
-    'corpus_surprise_entropy',
-    'corpus_surprise_l1', 'corpus_surprise_l2',
-    'corpus_suspense_l1', 'corpus_suspense_l2',
-    'generated_surprise_l1_state', 'generated_surprise_l2_state',
-    'generated_suspense_l1_state', 'generated_suspense_l2_state',
-    'corpus_surprise_l1_state', 'corpus_surprise_l2_state',
-    'corpus_suspense_l1_state', 'corpus_suspense_l2_state',
-    'corpus_suspense_entropy_ex_gold_1',
-    'generated_suspense_entropy_ex_gold_1',
-    'corpus_suspense_l1_ex_gold', 'corpus_suspense_l2_ex_gold',
-    'generated_suspense_l1_state_ex_gold', 'generated_suspense_l2_state_ex_gold',
-    'corpus_suspense_l1_state_ex_gold', 'corpus_suspense_l2_state_ex_gold',
 ]
 
 annotator_prediction_column = "suspense"
@@ -174,15 +147,15 @@ class RelativeToAbsoluteModel(torch.nn.Module):
         return res_tensor
 
 
-def contineous_evaluation(annotator_df, position_df, args):
+def contineous_evaluation(annotator_df, position_df, args, metric_columns):
     ''' Maps the relative judgements from the annotations to an absolute scale and
     '''
     train_df = prepare_dataset(annotator_df, position_df, keep_first_sentence=True)
 
     train_df = train_df.loc[train_df['worker_id'] != 'mean']
 
-    cont_model_predictions(args, train_df)
-    cont_model_pred_to_ann(args, train_df)
+    cont_model_predictions(args, train_df, metric_columns)
+    cont_model_pred_to_ann(args, train_df, metric_columns)
     cont_worker_to_worker(args, train_df)
 
 
@@ -249,7 +222,7 @@ def cont_worker_to_worker(args, train_df):
         worker_story_results_df.to_csv(f"{args['output_dir']}/sentence_model_evaluation/worker_rel_to_abs_story.csv")
 
 
-def cont_model_pred_to_ann(args, train_df):
+def cont_model_pred_to_ann(args, train_df, metric_columns):
     results_data = []
     story_data = []
 
@@ -257,7 +230,7 @@ def cont_model_pred_to_ann(args, train_df):
 
     with torch.cuda.device(args["cuda_device"]):
 
-        for col in model_prediction_columns:
+        for col in metric_columns:
 
             fitting_model = RelativeToAbsoluteModel()
 
@@ -375,10 +348,10 @@ def cont_model_pred_to_ann(args, train_df):
     return col, story_ids
 
 
-def cont_model_predictions(args, train_df):
+def cont_model_predictions(args, train_df, metric_columns):
     prediction_story_data = []
     prediction_results_data = []
-    for col, col_2 in combinations(model_prediction_columns, 2):
+    for col, col_2 in combinations(metric_columns, 2):
 
         comparison_one_all = []
         comparison_two_all = []
@@ -537,13 +510,13 @@ def abs_evaluate_predictions(predictions, annotations, results_dict):
             print(ex)
 
 
-def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, model=RelativeToAbsoluteModel()):
+def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, metric_columns, model=RelativeToAbsoluteModel()):
     print(f"Plot the annotator sentences to get a visualisation of the peaks in the annotations.")
 
     if args["export_only"]:
         columns = args["export_columns"]
     else:
-        columns = model_prediction_columns
+        columns = metric_columns
 
     position_df = position_df.sort_values(by=["story_id", "sentence_num"]).reset_index()
 
@@ -554,7 +527,7 @@ def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, 
 
     # merged_df = merged_df.loc[merged_df["sentence_num"] + 1 == merged_df["sentence_num_later"]]
 
-    for col in model_prediction_columns:
+    for col in metric_columns:
         if "diff" in col:
             continue
 
@@ -718,8 +691,6 @@ def extract_rows(args):
             index_counter += 1
 
             df = pandas.read_json(StringIO(json.dumps(processed_dict_list)))
-            print(df)
-            print(df.columns)
             yield df
 
 
@@ -732,13 +703,8 @@ def evaluate_stories(args):
 
     position_df = pandas.concat(df_list)
 
-    print(position_df)
-    print(position_df.columns)
-
     metric_columns = [i for i in list(position_df.columns) if i.startswith("metric")]
     print(metric_columns)
-
-    return
 
     position_df["baseclass"] = 0.0
     position_df["random"] = numpy.random.randint(1, 100, position_df.shape[0])
@@ -749,12 +715,13 @@ def evaluate_stories(args):
     if args["exclude_worker_ids"] is not None and len(args["exclude_worker_ids"]) > 0:
         annotator_df = annotator_df[~annotator_df["worker_id"].isin(args["exclude_worker_ids"])]
 
-    plot_annotator_and_model_predictions(position_df, annotator_df, args)
-    contineous_evaluation(position_df, annotator_df, args)
+    plot_annotator_and_model_predictions(position_df, annotator_df, args, metric_columns)
+    if annotator_df:
+        contineous_evaluation(position_df, annotator_df, args, metric_columns)
 
 
 def scale_prediction_columns(position_df):
-    for col in model_prediction_columns:
+    for col in metric_columns:
         for feature_col in [f"{col}_diff", f"{col}"]:
 
             if feature_col not in position_df.columns:
@@ -780,7 +747,7 @@ def prepare_dataset(annotator_df, position_df, keep_first_sentence=False):
 
     # merged_df = merged_df.loc[merged_df["sentence_num"] + 1 == merged_df["sentence_num_later"]]
 
-    for col in model_prediction_columns:
+    for col in metric_columns:
         col = col.replace("_diff", "")
         merged_df[f"{col}_diff"] = merged_df[f"{col}_later"] - merged_df[col]
         merged_df[f"{col}_diff"] = numpy.where(merged_df[f"{col}_diff"] < 0.0, 0.0, merged_df[f"{col}_diff"])
