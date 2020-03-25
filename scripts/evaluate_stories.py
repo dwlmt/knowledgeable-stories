@@ -702,7 +702,7 @@ def extract_rows(args):
                 processed_dict = {}
                 processed_dict["story_id"] = story_id
                 processed_dict["text"] = child["text"]
-                processed_dict["sentence_num"] = child["sentence_nume"]
+                processed_dict["sentence_num"] = child["sentence_num"]
 
                 if "prediction_metrics" in child:
                     metrics = child["prediction_metrics"]
