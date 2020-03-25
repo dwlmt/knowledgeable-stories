@@ -699,8 +699,18 @@ def extract_rows(args):
         for i, obj in tqdm(enumerate(reader)):
             story_id = obj["story_id"]
             for child in obj["sentences"]:
-                processed_dict = child
+                processed_dict = {}
                 processed_dict["story_id"] = story_id
+                processed_dict["text"] = child["text"]
+                processed_dict["sentence_num"] = child["sentence_nume"]
+
+                if "prediction_metrics" in child:
+                    metrics = child["prediction_metrics"]
+                    for k_level, v_level in metrics.items():
+                        for k_metric, v_metric in v_level.items():
+                            processed_dict[f"metric.{k_level}.{k_metric}"] = v_metric
+
+
                 df = pandas.read_json(StringIO(json.dumps(processed_dict)))
                 print(df)
                 print(df.columns)
@@ -721,8 +731,13 @@ def evaluate_stories(args):
 
     df_list = [r for r in extract_rows(args)]
 
-    print(df_list)
-    print(df_list.columns)
+    position_df = pandas.concat(df_list)
+
+    print(position_df)
+    print(position_df.columns)
+
+    metric_columns = [i for i in list(position_df.columns) if i.startswith("metric")]
+    print(metric_columns)
 
     return
 
@@ -801,6 +816,5 @@ def export_plots(args, file, fig):
         file_path = f"{args['output_dir']}/{file}.pdf"
         print(f"Save plot pdf: {file_path}")
         pio.write_image(fig, file_path)
-
 
 evaluate_stories(vars(args))
