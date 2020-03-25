@@ -698,6 +698,8 @@ def extract_rows(args):
     with jsonlines.open(args['prediction_json']) as reader:
         for i, obj in tqdm(enumerate(reader)):
             story_id = obj["story_id"]
+
+            processed_dict_list = []
             for child in obj["sentences"]:
                 processed_dict = {}
                 processed_dict["story_id"] = story_id
@@ -710,18 +712,17 @@ def extract_rows(args):
                         for k_metric, v_metric in v_level.items():
                             processed_dict[f"metric.{k_level}.{k_metric}"] = v_metric
 
+                processed_dict_list.append(processed_dict)
 
-                df = pandas.read_json(StringIO(json.dumps(processed_dict)))
-                print(df)
-                print(df.columns)
-                yield df
-
-
-
-                index_counter += 1
+            index_counter += 1
 
             if i == args["max_num_stories"]:
                 break
+
+            df = pandas.read_json(StringIO(json.dumps(processed_dict_list)))
+            print(df)
+            print(df.columns)
+            yield df
 
 
 def evaluate_stories(args):
