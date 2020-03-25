@@ -13,7 +13,7 @@ import plotly.graph_objs as go
 import plotly.io as pio
 import scipy
 import torch
-from StringIO import StringIO
+from io import StringIO
 from jsonlines import jsonlines
 from nltk import interval_distance, AnnotationTask
 from scipy.spatial import distance
