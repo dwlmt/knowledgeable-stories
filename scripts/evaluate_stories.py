@@ -39,7 +39,7 @@ parser.add_argument("--export-only", default=False, action="store_true",
                     help="Only for export so remove legend and filter down export parameters.")
 parser.add_argument('--export-columns', required=False, type=str, nargs="*",
                     default=[])
-parser.add_argument('--peak-prominence-weighting', default=float(1/3), type=float,
+parser.add_argument('--peak-prominence-weighting', default=float(0.1), type=float,
                     help="Use to scale the standard deviation of a column.")
 
 args = parser.parse_args()
@@ -587,7 +587,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
                         type = "peak"
                         peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"],
-                                                              width=1)
+                                                              width=1, distance=3)
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
@@ -601,7 +601,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                                     symbol='star-triangle-up',
                                     size=11,
                                 ),
-                                name=f'annotation - {type}',
+                                name=f'{worker_id} - {type}',
                                 text=hover_text
                             )
                             plot_data.append(trace)
@@ -644,7 +644,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
                         type = "peak"
                         peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"],
-                                                              width=1)
+                                                              width=1, distance=3)
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
@@ -812,11 +812,10 @@ def create_peak_text_and_metadata(peak_indices, peaks_meta):
 
         prominence = peaks_meta["prominences"][i]
         width = peaks_meta["widths"][i]
-        importance = prominence * width
         left_base = peaks_meta["left_bases"][i]
         right_base = peaks_meta["right_bases"][i]
 
-        text = f"<br>Prominence: {prominence} <br>Width: {width} <br>Importance: {importance}, <br> {left_base}, <br> {right_base}"
+        text = f"<br>Prominence: {prominence} <br>Width: {width}, <br> {left_base}, <br> {right_base}"
 
         hover_text.append(text)
     return hover_text
