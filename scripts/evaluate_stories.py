@@ -515,7 +515,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
     else:
         columns = metric_columns
 
-    position_df = scale_prediction_columns(position_df)
+    position_df = scale_prediction_columns(position_df, metric_columns)
 
     colors = plotly.colors.DEFAULT_PLOTLY_COLORS
 
@@ -523,7 +523,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
     position_story_ids = position_df["story_id"].unique()
 
-    story_ids = set(story_ids).union(set(position_story_ids))
+    story_ids = position_story_ids#set(story_ids).union(set(position_story_ids))
 
     with torch.no_grad():
 
@@ -590,7 +590,6 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
                         if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
                             continue
-
 
                         if col != "baseclass" and "sentiment" not in col and sum(
                                 [1 for i in measure_values_unscaled if i > 0]) > 0:
@@ -690,7 +689,7 @@ def evaluate_stories(args):
         contineous_evaluation(position_df, annotator_df, args, metric_columns)
 
 
-def scale_prediction_columns(position_df):
+def scale_prediction_columns(position_df, metric_columns):
     for col in metric_columns:
         if col not in position_df.columns:
             continue
@@ -723,7 +722,7 @@ def prepare_dataset(annotator_df, position_df, keep_first_sentence=False):
                              how='left', indicator=True)
     merged_df = df_all.loc[df_all['_merge'] == "left_only"]
 
-    merged_df = scale_prediction_columns(merged_df)
+    merged_df = scale_prediction_columns(merged_df, metric_columns)
     print(f"Merged rows: {len(merged_df)}")
 
     merged_df = merged_df.sort_values(by=["story_id", "worker_id", "sentence_num"])
