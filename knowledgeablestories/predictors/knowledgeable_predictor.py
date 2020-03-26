@@ -281,6 +281,8 @@ class KnowledgeablePredictor(Predictor):
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
+                    context_encoded_representation = context_encoded_representation.cuda()
+
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0), final_encoded_representation,
                                                       self._encoder_cosine)
 
@@ -313,7 +315,7 @@ class KnowledgeablePredictor(Predictor):
 
                 metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
                                "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
-                               "context_representation": context_representation,
+                               "context_representation": context_encoded_representation,
                                "final_encoded_representation": final_encoded_representation}
 
                 for (k, v) in metric_dict.items():
