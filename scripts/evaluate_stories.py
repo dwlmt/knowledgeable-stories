@@ -3,6 +3,7 @@ import collections
 import json
 import os
 from collections import OrderedDict, Iterable
+from io import StringIO
 from itertools import combinations
 
 import numpy
@@ -13,7 +14,6 @@ import plotly.graph_objs as go
 import plotly.io as pio
 import scipy
 import torch
-from io import StringIO
 from jsonlines import jsonlines
 from nltk import interval_distance, AnnotationTask
 from scipy.spatial import distance
@@ -381,9 +381,6 @@ def cont_model_predictions(args, train_df, metric_columns):
             if len(model_predictions) == 0 or len(model_predictions_2) == 0:
                 continue
 
-            # model_predictions = model_predictions[:-1]
-            # model_predictions_2 = model_predictions_2[:-1]
-
             comparison_one_all.append(model_predictions)
             comparison_two_all.append(model_predictions_2)
 
@@ -401,7 +398,6 @@ def cont_model_predictions(args, train_df, metric_columns):
     prediction_story_results_df = pandas.DataFrame(data=prediction_story_data)
     prediction_story_results_df.to_csv(
         f"{args['output_dir']}/sentence_model_evaluation/prediction_rel_to_abs_story.csv")
-
 
 def abs_evaluate_predictions(predictions, annotations, results_dict):
     if any(isinstance(el, (list, tuple, Iterable)) for el in annotations):
@@ -510,7 +506,8 @@ def abs_evaluate_predictions(predictions, annotations, results_dict):
             print(ex)
 
 
-def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, metric_columns, model=RelativeToAbsoluteModel()):
+def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric_columns,
+                                         model=RelativeToAbsoluteModel()):
     print(f"Plot the annotator sentences to get a visualisation of the peaks in the annotations.")
 
     if args["export_only"]:
@@ -518,48 +515,31 @@ def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, 
     else:
         columns = metric_columns
 
-    position_df = position_df.sort_values(by=["story_id", "sentence_num"]).reset_index()
-
-    position_df = pd.concat([position_df, position_df[1:].reset_index(drop=True).add_suffix("_later")],
-                            axis=1)
-    position_df = position_df.sort_values(by=["story_id", "sentence_num"]).reset_index()
-    position_df = position_df.loc[position_df["story_id"] == position_df["story_id_later"]]
-
-    # merged_df = merged_df.loc[merged_df["sentence_num"] + 1 == merged_df["sentence_num_later"]]
-
-    for col in metric_columns:
-        if "diff" in col:
-            continue
-
-        position_df[f"{col}_diff"] = position_df[f"{col}_later"] - position_df[col]
-        position_df[f"{col}_diff"] = numpy.where(position_df[f"{col}_diff"] < 0.0, 0.0, position_df[f"{col}_diff"])
-
     position_df = scale_prediction_columns(position_df)
-
-    print(position_df)
-    print(position_df.columns)
 
     colors = plotly.colors.DEFAULT_PLOTLY_COLORS
 
-    story_ids = merged_sentence_df["story_id"].unique()
+    story_ids = annotator_df["story_id"].unique()
 
     position_story_ids = position_df["story_id"].unique()
 
-    story_ids = set(story_ids).intersection(set(position_story_ids))
+    story_ids = set(story_ids).union(set(position_story_ids))
 
     with torch.no_grad():
 
         for story_id in story_ids:
 
             position_story_df = position_df.loc[position_df["story_id"] == story_id]
-            sentence_nums = position_story_df["sentence_num"].tolist()
-            sentence_text = position_story_df["sentence_text"].tolist()
-            text = sentence_text  # [f"<b>{sentence_nums[j]} - {sentence_text[j]}</b>" for j in range(len(sentence_nums))],
+            if len(position_story_df) > 0:
+                sentence_text = position_story_df["text"].tolist()
+                text = sentence_text
+            else:
+                text = None
 
             plot_data = []
 
-            story_df = merged_sentence_df.loc[merged_sentence_df["story_id"] == story_id]
-            story_df = story_df.groupby(['story_id', 'sentence_id', 'sentence_num', 'worker_id'],
+            story_df = annotator_df.loc[annotator_df["story_id"] == story_id]
+            story_df = story_df.groupby(['story_id', 'sentence_num', 'worker_id'],
                                         as_index=False).first()
 
             if len(story_df) > 0:
@@ -590,7 +570,6 @@ def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, 
                             y=measure_values,
                             mode='lines+markers',
                             name=f"{worker_id}",
-                            text=text,
                             line=dict(color=colors[7], dash=dash)
                         )
                         plot_data.append(trace)
@@ -602,10 +581,6 @@ def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, 
             if len(story_df) > 0:
 
                 for i, col in enumerate(columns):
-
-                    dash = "solid"
-                    if "corpus" in col:
-                        dash = "dash"
 
                     measure_values = position_df[f"{col}_scaled"].tolist()
                     measure_values_unscaled = position_df[f"{col}"].tolist()
@@ -623,22 +598,14 @@ def plot_annotator_and_model_predictions(position_df, merged_sentence_df, args, 
                     measure_offset = 0.0 - measure_values[0]
                     measure_values = [m + measure_offset for m in measure_values]
 
-                    # print(col, measure_values, measure_values_unscaled, sentence_nums)
-
-                    color_lookup = i
-
-                    if col in ['corpus_suspense_l1',
-                               'corpus_surprise_entropy',
-                               'corpus_suspense_l1_state']:
-                        color_lookup -= 3
-
                     trace = go.Scatter(
                         x=sentence_nums,
                         y=measure_values,
                         mode='lines+markers',
                         name=f"{col}",
                         text=text,
-                        line=dict(color=colors[color_lookup % len(colors)], dash=dash)
+                        color=i,
+                        colorscale='Viridis',
                     )
                     plot_data.append(trace)
 
@@ -722,15 +689,13 @@ def evaluate_stories(args):
 
 def scale_prediction_columns(position_df):
     for col in metric_columns:
-        for feature_col in [f"{col}_diff", f"{col}"]:
+        if col not in position_df.columns:
+            continue
 
-            if feature_col not in position_df.columns:
-                continue
-
-            scaler = StandardScaler()
-            scaled_col = numpy.squeeze(scaler.fit_transform(position_df[feature_col].to_numpy().reshape(-1, 1)),
-                                       axis=1).tolist()
-            position_df[f"{feature_col}_scaled"] = scaled_col
+        scaler = StandardScaler()
+        scaled_col = numpy.squeeze(scaler.fit_transform(position_df[col].to_numpy().reshape(-1, 1)),
+                                   axis=1).tolist()
+        position_df[f"{col}_scaled"] = scaled_col
     return position_df
 
 
@@ -745,14 +710,6 @@ def prepare_dataset(annotator_df, position_df, keep_first_sentence=False):
     merged_df = merged_df.loc[merged_df["story_id"] == merged_df["story_id_later"]]
     merged_df = merged_df.loc[merged_df["worker_id"] == merged_df["worker_id_later"]]
 
-    # merged_df = merged_df.loc[merged_df["sentence_num"] + 1 == merged_df["sentence_num_later"]]
-
-    for col in metric_columns:
-        col = col.replace("_diff", "")
-        merged_df[f"{col}_diff"] = merged_df[f"{col}_later"] - merged_df[col]
-        merged_df[f"{col}_diff"] = numpy.where(merged_df[f"{col}_diff"] < 0.0, 0.0, merged_df[f"{col}_diff"])
-
-        # if not keep_first_sentence:
     if keep_first_sentence:
         merged_df = merged_df.loc[(merged_df["suspense"] != 0.0) | (merged_df["sentence_num"] == 0)]
     else:
