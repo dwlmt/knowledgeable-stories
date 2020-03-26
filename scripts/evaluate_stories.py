@@ -39,6 +39,8 @@ parser.add_argument("--export-only", default=False, action="store_true",
                     help="Only for export so remove legend and filter down export parameters.")
 parser.add_argument('--export-columns', required=False, type=str, nargs="*",
                     default=[])
+parser.add_argument('--peak-prominence-weighting', default=float(1/3), type=float,
+                    help="Use to scale the standard deviation of a column.")
 
 args = parser.parse_args()
 
@@ -584,7 +586,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         plot_data.append(trace)
 
                         type = "peak"
-                        peak_indices, peaks_meta = find_peaks(measure_values)
+                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"])
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
@@ -640,7 +642,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         plot_data.append(trace)
 
                         type = "peak"
-                        peak_indices, peaks_meta = find_peaks(measure_values)
+                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"])
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
@@ -806,13 +808,13 @@ def create_peak_text_and_metadata(peak_indices, peaks_meta):
 
     for i, ind in enumerate(peak_indices):
 
-        prominance = peaks_meta["prominences"][i]
+        prominence = peaks_meta["prominences"][i]
         width = peaks_meta["widths"][i]
-        importance = prominance * width
+        importance = prominence * width
         left_base = peaks_meta["left_bases"][i]
         right_base = peaks_meta["right_bases"][i]
 
-        text = f"<br>Prominence: {prominance} <br>Width: {width} <br>Importance: {importance}, <br> {left_base}, <br> {right_base}"
+        text = f"<br>Prominence: {prominence} <br>Width: {width} <br>Importance: {importance}, <br> {left_base}, <br> {right_base}"
 
         hover_text.append(text)
     return hover_text
