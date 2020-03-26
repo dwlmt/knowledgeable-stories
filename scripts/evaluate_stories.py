@@ -702,12 +702,6 @@ def prepare_dataset(annotator_df, position_df, keep_first_sentence=False):
                          right_on=["story_id", "sentence_num"], how="inner")
     merged_df = merged_df.sort_values(by=["worker_id", "story_id", "sentence_num"]).reset_index()
 
-    merged_df = pd.concat([merged_df, merged_df[1:].reset_index(drop=True).add_suffix("_later")],
-                          axis=1)
-    merged_df = merged_df.sort_values(by=["worker_id", "story_id", "sentence_num"]).reset_index()
-    merged_df = merged_df.loc[merged_df["story_id"] == merged_df["story_id_later"]]
-    merged_df = merged_df.loc[merged_df["worker_id"] == merged_df["worker_id_later"]]
-
     if keep_first_sentence:
         merged_df = merged_df.loc[(merged_df["suspense"] != 0.0) | (merged_df["sentence_num"] == 0)]
     else:
