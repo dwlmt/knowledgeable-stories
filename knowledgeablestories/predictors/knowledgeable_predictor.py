@@ -162,7 +162,6 @@ class KnowledgeablePredictor(Predictor):
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                              self._num_levels_rollout, original_sentences, story_idx)
 
-                        logger.info("Parent", parent)
                         print("Parent", parent)
                         self._calculate_metrics(parent, previous_prediction_metrics)
 
@@ -323,7 +322,7 @@ class KnowledgeablePredictor(Predictor):
 
                 for (k, v) in metric_dict.items():
 
-                    print(f"{k} - {v}")
+                    print(f"{k} - {v.size()}")
 
                     for value, gen_seq in zip(v, generated_sequences):
                         if "parent_relation_metrics" not in gen_seq:
@@ -443,6 +442,7 @@ class KnowledgeablePredictor(Predictor):
         # Filter the generate from list if required.
 
         log_prob_threshold = None
+        print(f"Log prob tensor: {log_prob_tensor.size()}")
         if self._beam_size_gen < len(filtered_list):
             top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
             log_prob_threshold = top_k_tensor[-1]
