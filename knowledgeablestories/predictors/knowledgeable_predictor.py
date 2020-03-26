@@ -22,6 +22,9 @@ END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
 
+def parse_bool(b):
+    return b == "True" or b == "TRUE" or b == "true" or b == "1"
+
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
@@ -56,7 +59,7 @@ class KnowledgeablePredictor(Predictor):
         self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
-        self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
+        self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default=True))
         self._prediction_temp = float(os.getenv("PREDICTOR_TEMP", default=1.0))
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
@@ -67,7 +70,7 @@ class KnowledgeablePredictor(Predictor):
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.9))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
-        gen_do_sample = bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
+        gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default=True))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
@@ -84,7 +87,7 @@ class KnowledgeablePredictor(Predictor):
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids}
 
-        self._retain_full_output = bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default=False))
+        self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default=False))
 
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
