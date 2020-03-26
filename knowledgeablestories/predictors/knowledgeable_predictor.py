@@ -162,6 +162,8 @@ class KnowledgeablePredictor(Predictor):
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                              self._num_levels_rollout, original_sentences, story_idx)
 
+                        logger.info("Parent", parent)
+                        print("Parent", parent)
                         self._calculate_metrics(parent, previous_prediction_metrics)
 
                         if not self._retain_full_output:
@@ -251,6 +253,9 @@ class KnowledgeablePredictor(Predictor):
         all_level_list = []
         for parent, input_tokens, existing_sentences_encoded in zip(parent_list, input_tokens_batch,
                                                                     existing_sentences_encoded_batch):
+
+            if "sentences" not in parent:
+                parent["sentences"] = []
 
             generated_sequences = self.generate_sentences(input_tokens)
 
@@ -429,8 +434,6 @@ class KnowledgeablePredictor(Predictor):
                     gen_seq["parent_relation_metrics"][f"chain_{k}"] = self._chain_distance_from_parent(parent, k, v)
 
             parent = gen_seq["parent"]
-            if "sentences" not in gen_seq["parent"]:
-                parent["sentences"] = []
 
             parent["sentences"].append(gen_seq)
 
