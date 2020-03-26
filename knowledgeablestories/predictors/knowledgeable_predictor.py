@@ -281,7 +281,6 @@ class KnowledgeablePredictor(Predictor):
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
-                    context_representation = context_representation.cuda()
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0), final_encoded_representation,
                                                       self._encoder_cosine)
 
