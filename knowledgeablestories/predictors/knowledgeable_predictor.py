@@ -277,16 +277,13 @@ class KnowledgeablePredictor(Predictor):
                     encoded_sentences_tensor,
                     existing_sentences_encoded)
 
-                context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
-                    final_encoded_representation.size(0), -1)
-
                 print(f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()},"
-                            f", final encoded {final_encoded_representation.size()} ")
+                            f"{context_representation}, final encoded {final_encoded_representation.size()} ")
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_representation = context_representation.cuda()
-                logits = self._model.calculate_logits(context_representation, final_encoded_representation,
+                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0), final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
@@ -583,8 +580,10 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences.append(encoded_sentences_batch)
 
         encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
-        if encoded_sentences_tensor.size == 3:
-            encoded_sentences_tensor = encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1), -1)
+        if encoded_sentences_tensor.size() == 4:
+            encoded_sentences_tensor = encoded_sentences_tensor.view(encoded_sentences_tensor.size(0)
+                                                                     * encoded_sentences_tensor.size(1), encoded_sentences_tensor.size(2),
+                                                                     encoded_sentences_tensor.size(3))
 
         return encoded_sentences_tensor
 
