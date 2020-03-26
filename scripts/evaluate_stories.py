@@ -814,7 +814,7 @@ def create_peak_text_and_metadata(peak_indices, peaks_meta):
         left_base = peaks_meta["left_bases"][i]
         right_base = peaks_meta["right_bases"][i]
 
-        text = f"<br>Prominence: {prominence} <br>Width: {width}, <br> Left Base: {left_base}, <br> Right Base: {right_base}"
+        text = f"<br>Prominence: {prominence} <br>Width: {width}, <br>Left Base: {left_base}, <br>Right Base: {right_base}"
 
         hover_text.append(text)
     return hover_text
