@@ -604,10 +604,6 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             mode='lines+markers',
                             name=f"{col}",
                             text=text,
-                            line=dict(
-                                color=[i] * len(sentence_nums),
-                                colorscale='Magma',  # one of plotly colorscales
-                            )
                         )
                         plot_data.append(trace)
 
