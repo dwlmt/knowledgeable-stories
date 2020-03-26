@@ -566,7 +566,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                     if len(worker_df) > 0:
 
                         worker_df = worker_df.sort_values(by=["sentence_num"])
-
+                        sentence_nums = worker_df["sentence_num"].tolist()
                         suspense = torch.tensor(worker_df["suspense"].tolist()).int()
                         measure_values = model(suspense).tolist()
 
@@ -575,7 +575,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             dash = "dash"
 
                         trace = go.Scatter(
-                            x=worker_df["sentence_num"],
+                            x=sentence_nums,
                             y=measure_values,
                             mode='lines+markers',
                             name=f"{worker_id}",
@@ -587,12 +587,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         peak_indices, peaks_meta = find_peaks(measure_values)
 
                         if len(peak_indices) > 0:
-                            hover_text, peaks_data = create_peak_text_and_metadata(peak_indices, peaks_meta,
-                                                                                   sentence_nums,
-                                                                                   sentence_text, story_id, "peak",
-                                                                                   col)
-
-                            measure_values.extend(peaks_data)
+                            hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
 
                             trace = go.Scatter(
                                 x=[sentence_nums[j] for j in peak_indices],
@@ -620,7 +615,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
                         measure_values = position_df[f"{col}_scaled"].tolist()
                         measure_values_unscaled = position_df[f"{col}"].tolist()
-                        sentence_nums = worker_df["sentence_num"].tolist()
+                        sentence_nums = position_df["sentence_num"].tolist()
 
                         if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
                             continue
@@ -648,12 +643,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         peak_indices, peaks_meta = find_peaks(measure_values)
 
                         if len(peak_indices) > 0:
-                            hover_text, peaks_data = create_peak_text_and_metadata(peak_indices, peaks_meta,
-                                                                                   sentence_nums,
-                                                                                   sentence_text, story_id, "peak",
-                                                                                   col)
-
-                            measure_values.extend(peaks_data)
+                            hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
 
                             trace = go.Scatter(
                                 x=[sentence_nums[j] for j in peak_indices],
@@ -811,58 +801,20 @@ def optionally_top_n_peaks(num_of_peaks, peak_indices, peaks_meta):
 
     return peak_indices
 
-def create_peak_text_and_metadata(peak_indices, peaks_meta, sentence_nums, sentence_text, story_id, type, field):
+def create_peak_text_and_metadata(peak_indices, peaks_meta):
     hover_text = []
-    peaks_list = []
 
     for i, ind in enumerate(peak_indices):
-
-        peak_dict = {}
-
-        peak_dict["story_id"] = story_id
-        peak_dict["field"] = field
-        peak_dict["text"] = []
-        peak_dict["sentence_nums"] = []
-
-        left_base = peaks_meta["left_bases"][i]
-        right_base = peaks_meta["right_bases"][i]
-        text = ""
-
-        for j in range(left_base, right_base):
-            j = min(max(j, 0), len(sentence_nums) - 1)
-            wrapper = TextWrapper(initial_indent="<br>", width=80)
-
-            if j == ind:
-                peak_dict["sentence"] = sentence_text[j]
-                peak_dict["sentence_num"] = sentence_nums[j]
-
-                wrapper = TextWrapper(initial_indent="<br>")
-                wrapped_text = wrapper.fill(f"<b>{sentence_nums[j]} - {sentence_text[j]}</b>")
-
-                text += wrapped_text
-            else:
-
-                wrapped_text = wrapper.fill(f"{sentence_nums[j]} - {sentence_text[j]}")
-
-                text += wrapped_text
-
-            peak_dict["text"].append(sentence_text[j])
-            peak_dict["sentence_nums"].append(sentence_nums[j])
 
         prominance = peaks_meta["prominences"][i]
         width = peaks_meta["widths"][i]
         importance = prominance * width
+        left_base = peaks_meta["left_bases"][i]
+        right_base = peaks_meta["right_bases"][i]
 
-        peak_dict["prominence"] = prominance
-        peak_dict["width"] = width
-        peak_dict["importance"] = importance
-        peak_dict["type"] = type
+        text = f"<br>Prominence: {prominance} <br>Width: {width} <br>Importance: {importance}, <br> {left_base}, <br> {right_base}"
 
-        text += "<br>"
-        text += f"<br>Prominence: {prominance} <br>Width: {width} <br>Importance: {importance}"
-
-        peaks_list.append(peak_dict)
         hover_text.append(text)
-    return hover_text, peaks_list
+    return hover_text
 
 evaluate_stories(vars(args))
