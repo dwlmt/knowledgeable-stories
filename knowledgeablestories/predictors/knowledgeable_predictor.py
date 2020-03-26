@@ -3,7 +3,7 @@ import os
 
 import more_itertools
 import torch
-from allennlp.common.util import JsonDict, sanitize
+from allennlp.common.util import JsonDict, sanitize, logger
 from allennlp.data import Instance, DatasetReader
 from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
@@ -274,6 +274,10 @@ class KnowledgeablePredictor(Predictor):
                     existing_sentences_encoded)
                 context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
                     final_encoded_representation.size(0), -1)
+
+                logger.info(f"Context: encoded sentences {encoded_sentences_tensor}, context_encoded {context_encoded_representation},"
+                            f", final encoded {final_encoded_representation} ")
+
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_representation = context_representation.cuda()
@@ -313,6 +317,8 @@ class KnowledgeablePredictor(Predictor):
                                "final_encoded_representation": final_encoded_representation}
 
                 for (k, v) in metric_dict.items():
+
+                    logger.info(f"{k} - {v}")
 
                     for value, gen_seq in zip(v, generated_sequences):
                         if "parent_relation_metrics" not in gen_seq:
