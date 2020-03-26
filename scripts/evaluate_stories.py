@@ -681,7 +681,7 @@ def evaluate_stories(args):
         annotator_df = annotator_df[~annotator_df["worker_id"].isin(args["exclude_worker_ids"])]
 
     plot_annotator_and_model_predictions(position_df, annotator_df, args, metric_columns)
-    if annotator_df:
+    if annotator_df is not None:
         contineous_evaluation(position_df, annotator_df, args, metric_columns)
 
 
