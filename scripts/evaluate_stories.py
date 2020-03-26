@@ -601,7 +601,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                                     symbol='star-triangle-up',
                                     size=11,
                                 ),
-                                name=f'{col} - {type}',
+                                name=f'annotation - {type}',
                                 text=hover_text
                             )
                             plot_data.append(trace)
