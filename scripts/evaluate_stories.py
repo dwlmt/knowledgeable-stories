@@ -608,17 +608,16 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
                 plot_data.append(trace)
 
-            story_df = position_df.loc[position_df["story_id"] == story_id]
 
-            if len(story_df) > 0:
+            if len(position_story_df) > 0:
 
                 for i, col in enumerate(columns):
                     print(position_df.columns)
                     if col in list(position_df.columns):
 
-                        measure_values = position_df[f"{col}_scaled"].tolist()
-                        measure_values_unscaled = position_df[f"{col}"].tolist()
-                        sentence_nums = position_df["sentence_num"].tolist()
+                        measure_values = position_story_df[f"{col}_scaled"].tolist()
+                        measure_values_unscaled = position_story_df[f"{col}"].tolist()
+                        sentence_nums = position_story_df["sentence_num"].tolist()
 
                         if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
                             continue
