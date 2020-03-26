@@ -56,7 +56,7 @@ class KnowledgeablePredictor(Predictor):
         self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
-        self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
+        self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=False))
         self._prediction_temp = float(os.getenv("PREDICTOR_TEMP", default=1.0))
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))
@@ -211,34 +211,26 @@ class KnowledgeablePredictor(Predictor):
                 if torch.cuda.is_available():
                     field_tensor = field_tensor.cuda()
 
-                # Normalize the distances is the metric is several steps ahead.
-                if f in ["chain_l1_dist", "chain_cosine_dist", "chain_l2_dist", "chain_sentiment_variance"]:
-                    field_tensor = field_tensor / float(level)
-
                 fields_to_extract_dict[f] = field_tensor
 
-            entropy = Categorical(torch.exp(fields_to_extract_dict["chain_log_prob"])).entropy().item()
+            entropy = Categorical(probs=torch.exp(fields_to_extract_dict["chain_log_prob"])).entropy().item()
             parent["prediction_metrics"][f"{level}"]["entropy"] = entropy
 
             if "prediction_metrics" in previous_prediction_metrics:
                 if f"{level}" in previous_prediction_metrics:
-                    parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = max(
-                        previous_prediction_metrics[f"{level}"]["entropy"] -
-                        parent["prediction_metrics"][f"{level}"]["entropy"], 0.0)
+                    parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"]["entropy"]
 
             for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
-                # This is a hack to rescale as the total prob distribution reduces over a number of steps.
-                total_prob_ratio = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() / 1.0
-                adjusted_field = torch.log(
-                    fields_to_extract_dict[f] * 1.0 / total_prob_ratio)
-                log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + adjusted_field
+                total_prob_factor = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() + 1.0
+
+                log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(fields_to_extract_dict[f])
 
                 log_variance_sent_adjusted_tensor = log_variance_tensor + torch.log(
                     self._sentiment_weighting * (1.0 + fields_to_extract_dict["chain_sentiment_variance"]))
-                parent["prediction_metrics"][f"{level}"][f"ely_suspense_{f}"] = torch.exp(
-                    log_variance_tensor).sum().item()
+                parent["prediction_metrics"][f"{level}"][f"ely_suspense_{f}"] = (torch.exp(
+                    log_variance_tensor).sum().item() * total_prob_factor) / float(level)
                 parent["prediction_metrics"][f"{level}"][
-                    f"ely_suspense_alpha_{f}"] = torch.exp(log_variance_sent_adjusted_tensor).sum().item()
+                    f"ely_suspense_alpha_{f}"] = (torch.exp(log_variance_sent_adjusted_tensor).sum().item() * total_prob_factor) / level
 
             # Retrieve child sentences if available as stats need to be calculated across the whole level at once.
             child_sentences = []
