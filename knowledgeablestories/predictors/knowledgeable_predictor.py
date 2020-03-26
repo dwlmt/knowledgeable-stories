@@ -315,9 +315,9 @@ class KnowledgeablePredictor(Predictor):
 
                 metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
                                "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
-                               "context_representation": context_encoded_representation,
                                "final_encoded_representation": final_encoded_representation}
 
+                gen_seq["context_representation"] = context_encoded_representation
                 for (k, v) in metric_dict.items():
 
                     print(f"{k} - {v.size()}")
@@ -326,7 +326,7 @@ class KnowledgeablePredictor(Predictor):
                         if "parent_relation_metrics" not in gen_seq:
                             gen_seq["parent_relation_metrics"] = {}
 
-                        if k in ["context_representation", "final_encoded_representation"]:
+                        if k in ["final_encoded_representation"]:
                             gen_seq[k] = value.cpu()
                         else:
                             if len(value.size()) > 0:
@@ -401,7 +401,7 @@ class KnowledgeablePredictor(Predictor):
                 context_representation = context_representation.cuda()
                 final_encoded_representation = final_encoded_representation.cuda()
 
-            cosine = 1.0 - self._cosine_similarity(context_representation, final_encoded_representation)
+            cosine_distance = 1.0 - self._cosine_similarity(context_representation, final_encoded_representation)
 
             l1 = self._l1_distance(context_representation, final_encoded_representation)
             l2 = self._l2_distance(context_representation, final_encoded_representation)
@@ -412,7 +412,7 @@ class KnowledgeablePredictor(Predictor):
             sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
             gen_seq["parent_relation_metrics"]["sentiment_variance"] = sentiment_variance
 
-            metric_dict = {"cosine_dist": cosine, "l1_dist": l1, "l2_dist": l2, "dot_product": dot_product,
+            metric_dict = {"cosine_dist": cosine_distance, "l1_dist": l1, "l2_dist": l2, "dot_product": dot_product,
                            "sentiment_variance": sentiment_variance}
 
             for (k, v) in metric_dict.items():
