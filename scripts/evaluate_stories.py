@@ -18,6 +18,7 @@ import scipy
 import torch
 from jsonlines import jsonlines
 from nltk import interval_distance, AnnotationTask
+from scipy.signal import find_peaks
 from scipy.spatial import distance
 from scipy.stats import kendalltau, pearsonr, spearmanr, combine_pvalues
 from sklearn.preprocessing import StandardScaler
@@ -567,7 +568,6 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         worker_df = worker_df.sort_values(by=["sentence_num"])
 
                         suspense = torch.tensor(worker_df["suspense"].tolist()).int()
-
                         measure_values = model(suspense).tolist()
 
                         dash = "solid"
@@ -582,6 +582,31 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             line=dict(color="lightslategrey", dash=dash)
                         )
                         plot_data.append(trace)
+
+                        type = "peak"
+                        peak_indices, peaks_meta = find_peaks(measure_values)
+
+                        if len(peak_indices) > 0:
+                            hover_text, peaks_data = create_peak_text_and_metadata(peak_indices, peaks_meta,
+                                                                                   sentence_nums,
+                                                                                   sentence_text, story_id, "peak",
+                                                                                   col)
+
+                            measure_values.extend(peaks_data)
+
+                            trace = go.Scatter(
+                                x=[sentence_nums[j] for j in peak_indices],
+                                y=[measure_values[j] for j in peak_indices],
+                                mode='markers',
+                                marker=dict(
+                                    color="lightslategrey",
+                                    symbol='star-triangle-up',
+                                    size=11,
+                                ),
+                                name=f'{col} - {type}',
+                                text=hover_text
+                            )
+                            plot_data.append(trace)
 
                 plot_data.append(trace)
 
@@ -618,6 +643,31 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             line=dict(color=color_scale[i % num_colors], dash=dash)
                         )
                         plot_data.append(trace)
+
+                        type = "peak"
+                        peak_indices, peaks_meta = find_peaks(measure_values)
+
+                        if len(peak_indices) > 0:
+                            hover_text, peaks_data = create_peak_text_and_metadata(peak_indices, peaks_meta,
+                                                                                   sentence_nums,
+                                                                                   sentence_text, story_id, "peak",
+                                                                                   col)
+
+                            measure_values.extend(peaks_data)
+
+                            trace = go.Scatter(
+                                x=[sentence_nums[j] for j in peak_indices],
+                                y=[measure_values[j] for j in peak_indices],
+                                mode='markers',
+                                marker=dict(
+                                    color=color_scale[i % num_colors],
+                                    symbol='star-triangle-up',
+                                    size=11,
+                                ),
+                                name=f'{col} - {type}',
+                                text=hover_text
+                            )
+                            plot_data.append(trace)
 
             title = f'Model and Annotation plots {story_id}'
             if args["export_only"]:
@@ -761,7 +811,7 @@ def optionally_top_n_peaks(num_of_peaks, peak_indices, peaks_meta):
 
     return peak_indices
 
-def create_peak_text_and_metadata(peak_indices, peaks_meta, sentence_nums, sentence_text, story_id, type, group, field):
+def create_peak_text_and_metadata(peak_indices, peaks_meta, sentence_nums, sentence_text, story_id, type, field):
     hover_text = []
     peaks_list = []
 
@@ -771,7 +821,6 @@ def create_peak_text_and_metadata(peak_indices, peaks_meta, sentence_nums, sente
 
         peak_dict["story_id"] = story_id
         peak_dict["field"] = field
-        peak_dict["group"] = group
         peak_dict["text"] = []
         peak_dict["sentence_nums"] = []
 
