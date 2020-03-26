@@ -581,34 +581,36 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
             if len(story_df) > 0:
 
                 for i, col in enumerate(columns):
+                    print(position_df.columns)
+                    if col in list(position_df.columns):
 
-                    measure_values = position_df[f"{col}_scaled"].tolist()
-                    measure_values_unscaled = position_df[f"{col}"].tolist()
-                    sentence_nums = worker_df["sentence_num"].tolist()
+                        measure_values = position_df[f"{col}_scaled"].tolist()
+                        measure_values_unscaled = position_df[f"{col}"].tolist()
+                        sentence_nums = worker_df["sentence_num"].tolist()
 
-                    if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
-                        continue
+                        if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
+                            continue
 
 
-                    if col != "baseclass" and "sentiment" not in col and sum(
-                            [1 for i in measure_values_unscaled if i > 0]) > 0:
-                        measure_values, measure_values_unscaled, sentence_nums = zip(
-                            *((m, mu, s) for m, mu, s in zip(measure_values, measure_values_unscaled, sentence_nums) if
-                              mu > 0.0))
+                        if col != "baseclass" and "sentiment" not in col and sum(
+                                [1 for i in measure_values_unscaled if i > 0]) > 0:
+                            measure_values, measure_values_unscaled, sentence_nums = zip(
+                                *((m, mu, s) for m, mu, s in zip(measure_values, measure_values_unscaled, sentence_nums) if
+                                  mu > 0.0))
 
-                    measure_offset = 0.0 - measure_values[0]
-                    measure_values = [m + measure_offset for m in measure_values]
+                        measure_offset = 0.0 - measure_values[0]
+                        measure_values = [m + measure_offset for m in measure_values]
 
-                    trace = go.Scatter(
-                        x=sentence_nums,
-                        y=measure_values,
-                        mode='lines+markers',
-                        name=f"{col}",
-                        text=text,
-                        color=i,
-                        colorscale='Viridis',
-                    )
-                    plot_data.append(trace)
+                        trace = go.Scatter(
+                            x=sentence_nums,
+                            y=measure_values,
+                            mode='lines+markers',
+                            name=f"{col}",
+                            text=text,
+                            color=i,
+                            colorscale='Viridis',
+                        )
+                        plot_data.append(trace)
 
             title = f'Model and Annotation plots {story_id}'
             if args["export_only"]:
