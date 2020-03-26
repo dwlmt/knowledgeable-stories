@@ -275,7 +275,7 @@ class KnowledgeablePredictor(Predictor):
                 context_representation = torch.unsqueeze(context_encoded_representation, dim=0).expand(
                     final_encoded_representation.size(0), -1)
 
-                logger.info(f"Context: encoded sentences {encoded_sentences_tensor}, context_encoded {context_encoded_representation},"
+                print(f"Context: encoded sentences {encoded_sentences_tensor}, context_encoded {context_encoded_representation},"
                             f", final encoded {final_encoded_representation} ")
 
                 if torch.cuda.is_available():
@@ -318,7 +318,7 @@ class KnowledgeablePredictor(Predictor):
 
                 for (k, v) in metric_dict.items():
 
-                    logger.info(f"{k} - {v}")
+                    print(f"{k} - {v}")
 
                     for value, gen_seq in zip(v, generated_sequences):
                         if "parent_relation_metrics" not in gen_seq:
