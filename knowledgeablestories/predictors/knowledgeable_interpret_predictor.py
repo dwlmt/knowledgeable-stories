@@ -176,5 +176,7 @@ class KnowledgeableInterpretPredictor(Predictor):
 
     @overrides
     def predict_instance(self, instance: Instance) -> JsonDict:
+        if torch.cuda.is_available():
+            self._model = self._model.cuda()
         outputs = self._model.forward_on_instance(instance)
         return sanitize(outputs)
