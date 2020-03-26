@@ -589,6 +589,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                     if len(measure_values_unscaled) == 0 or len(measure_values) == 0 or len(sentence_nums) == 0:
                         continue
 
+
                     if col != "baseclass" and "sentiment" not in col and sum(
                             [1 for i in measure_values_unscaled if i > 0]) > 0:
                         measure_values, measure_values_unscaled, sentence_nums = zip(
