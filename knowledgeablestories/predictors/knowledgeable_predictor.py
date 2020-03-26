@@ -42,7 +42,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._sentence_splitter: SentenceSplitter = SpacySentenceSplitter()
 
-        self._cosine_similarity = nn.CosineSimilarity()
+        self._cosine_similarity = nn.CosineSimilarity(dim=-1)
         self._l2_distance = nn.PairwiseDistance(p=2)
         self._l1_distance = nn.PairwiseDistance(p=1)
 
@@ -56,7 +56,7 @@ class KnowledgeablePredictor(Predictor):
         self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
-        self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=False))
+        self._encoder_cosine = bool(os.getenv("PREDICTOR_COSINE", default=True))
         self._prediction_temp = float(os.getenv("PREDICTOR_TEMP", default=1.0))
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=3))

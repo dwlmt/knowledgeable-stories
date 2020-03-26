@@ -95,7 +95,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_model = None
         self.init_lm_model_if_required(lm_name, embedder_vocab_size)
 
-        self._cosine_similarity = nn.CosineSimilarity()
+        self._cosine_similarity = nn.CosineSimilarity(dim=-1)
         self._l2_distance = nn.PairwiseDistance(p=2)
         self._l1_distance = nn.PairwiseDistance(p=1)
 
@@ -457,11 +457,14 @@ class KnowledgeableStoriesModel(Model):
         return batch_group
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine):
-        if not cosine:
+
+        if cosine:
+            logits = self._cosine_similarity(embeddings_one, embeddings_two)
+
+        else :
             logits = torch.matmul(embeddings_one,
                                   torch.t(embeddings_two))
-        else:
-            logits = self._cosine_similarity(embeddings_one, embeddings_two)
+
         return logits
 
     def encode_sentences(self, hidden_states, mask):
