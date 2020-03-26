@@ -5,7 +5,9 @@ import os
 from collections import OrderedDict, Iterable
 from io import StringIO
 from itertools import combinations
+from textwrap import TextWrapper
 
+import colorlover
 import numpy
 import pandas
 import pandas as pd
@@ -510,6 +512,15 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                                          model=RelativeToAbsoluteModel()):
     print(f"Plot the annotator sentences to get a visualisation of the peaks in the annotations.")
 
+    colors = colorlover.scales['5']['div']['Spectral']
+
+    num_colors = len(metric_columns) + 1
+
+    if num_colors > 5:
+        color_scale = colorlover.interp(colors, num_colors)
+    else:
+        color_scale = colors
+
     if args["export_only"]:
         columns = args["export_columns"]
     else:
@@ -568,7 +579,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             y=measure_values,
                             mode='lines+markers',
                             name=f"{worker_id}",
-                            line=dict(color="darkslategrey", dash=dash)
+                            line=dict(color="lightslategrey", dash=dash)
                         )
                         plot_data.append(trace)
 
@@ -604,6 +615,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             mode='lines+markers',
                             name=f"{col}",
                             text=text,
+                            line=dict(color=color_scale[i % num_colors], dash=dash)
                         )
                         plot_data.append(trace)
 
@@ -669,6 +681,7 @@ def evaluate_stories(args):
     position_df = pandas.concat(df_list)
 
     metric_columns = [i for i in list(position_df.columns) if i.startswith("metric")]
+    metric_columns = sorted(metric_columns)
     print(metric_columns)
 
     position_df["baseclass"] = 0.0
@@ -731,5 +744,76 @@ def export_plots(args, file, fig):
         file_path = f"{args['output_dir']}/{file}.pdf"
         print(f"Save plot pdf: {file_path}")
         pio.write_image(fig, file_path)
+
+def optionally_top_n_peaks(num_of_peaks, peak_indices, peaks_meta):
+    if num_of_peaks > 0 and len(peak_indices) > 0:
+        proms = peaks_meta["prominences"]
+
+        top_peaks = numpy.argsort(-numpy.array(proms))[:num_of_peaks]
+
+        top_peaks = sorted(top_peaks)
+
+        peak_indices = [peak_indices[i] for i in top_peaks]
+
+        for col in "prominences", "right_bases", "left_bases", "widths", "width_heights", "left_ips", "right_ips", "plateau_sizes", "left_edges", "right_edges":
+            meta_col = peaks_meta[col]
+            peaks_meta[col] = [meta_col[i] for i in top_peaks]
+
+    return peak_indices
+
+def create_peak_text_and_metadata(peak_indices, peaks_meta, sentence_nums, sentence_text, story_id, type, group, field):
+    hover_text = []
+    peaks_list = []
+
+    for i, ind in enumerate(peak_indices):
+
+        peak_dict = {}
+
+        peak_dict["story_id"] = story_id
+        peak_dict["field"] = field
+        peak_dict["group"] = group
+        peak_dict["text"] = []
+        peak_dict["sentence_nums"] = []
+
+        left_base = peaks_meta["left_bases"][i]
+        right_base = peaks_meta["right_bases"][i]
+        text = ""
+
+        for j in range(left_base, right_base):
+            j = min(max(j, 0), len(sentence_nums) - 1)
+            wrapper = TextWrapper(initial_indent="<br>", width=80)
+
+            if j == ind:
+                peak_dict["sentence"] = sentence_text[j]
+                peak_dict["sentence_num"] = sentence_nums[j]
+
+                wrapper = TextWrapper(initial_indent="<br>")
+                wrapped_text = wrapper.fill(f"<b>{sentence_nums[j]} - {sentence_text[j]}</b>")
+
+                text += wrapped_text
+            else:
+
+                wrapped_text = wrapper.fill(f"{sentence_nums[j]} - {sentence_text[j]}")
+
+                text += wrapped_text
+
+            peak_dict["text"].append(sentence_text[j])
+            peak_dict["sentence_nums"].append(sentence_nums[j])
+
+        prominance = peaks_meta["prominences"][i]
+        width = peaks_meta["widths"][i]
+        importance = prominance * width
+
+        peak_dict["prominence"] = prominance
+        peak_dict["width"] = width
+        peak_dict["importance"] = importance
+        peak_dict["type"] = type
+
+        text += "<br>"
+        text += f"<br>Prominence: {prominance} <br>Width: {width} <br>Importance: {importance}"
+
+        peaks_list.append(peak_dict)
+        hover_text.append(text)
+    return hover_text, peaks_list
 
 evaluate_stories(vars(args))
