@@ -586,7 +586,8 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         plot_data.append(trace)
 
                         type = "peak"
-                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"])
+                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"],
+                                                              width=1)
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
@@ -642,7 +643,8 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                         plot_data.append(trace)
 
                         type = "peak"
-                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"])
+                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"],
+                                                              width=1)
 
                         if len(peak_indices) > 0:
                             hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
