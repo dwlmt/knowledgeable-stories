@@ -277,8 +277,7 @@ class KnowledgeablePredictor(Predictor):
                     encoded_sentences_tensor,
                     existing_sentences_encoded)
 
-                print(f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()},"
-                            f"{context_representation}, final encoded {final_encoded_representation.size()} ")
+                print(f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()}, final encoded {final_encoded_representation.size()} ")
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
