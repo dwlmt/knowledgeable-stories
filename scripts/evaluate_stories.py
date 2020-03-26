@@ -517,8 +517,6 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
     position_df = scale_prediction_columns(position_df, metric_columns)
 
-    colors = plotly.colors.DEFAULT_PLOTLY_COLORS
-
     story_ids = annotator_df["story_id"].unique()
 
     position_story_ids = position_df["story_id"].unique()
@@ -570,7 +568,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             y=measure_values,
                             mode='lines+markers',
                             name=f"{worker_id}",
-                            line=dict(color=colors[7], dash=dash)
+                            line=dict(color="darkslategrey", dash=dash)
                         )
                         plot_data.append(trace)
 
@@ -606,12 +604,8 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                             mode='lines+markers',
                             name=f"{col}",
                             text=text,
-                            marker=dict(
-                                color=i,
-                                colorscale='Magma',  # one of plotly colorscales
-                            ),
-                            line = dict(
-                                color=i,
+                            line=dict(
+                                color=[i] * len(sentence_nums),
                                 colorscale='Magma',  # one of plotly colorscales
                             )
                         )
