@@ -534,9 +534,9 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
             merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
-                merged_sentences_encoded.size(0),
+                merged_sentences_encoded_expanded.size(0),
                 encoded_sentences_batch_tensor_expanded.size(1),
-                merged_sentences_encoded.size(2))
+                merged_sentences_encoded_expanded.size(2))
 
             context_sentences_to_encode = torch.cat(
                 (merged_sentences_encoded_expanded, encoded_sentences_batch_tensor_expanded))
