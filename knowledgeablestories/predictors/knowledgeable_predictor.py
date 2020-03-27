@@ -275,6 +275,7 @@ class KnowledgeablePredictor(Predictor):
                     generated_sequences.append(gold_sentence)
 
                 print(generated_sequences)
+                print("Length Generated Sequences", len(generated_sequences))
 
                 existing_sentences_encoded = existing_sentences_encoded[
                                              max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
