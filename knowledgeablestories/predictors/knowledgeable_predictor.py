@@ -581,9 +581,11 @@ class KnowledgeablePredictor(Predictor):
         encoded_passages_all_tensor = torch.stack(encoded_passages_list)
 
         #print(f"Passages before {encoded_passages_all_tensor.size()}")
+        '''
         encoded_passages_all_tensor = encoded_passages_all_tensor.view(
             (encoded_passages_all_tensor.size(0) * encoded_passages_all_tensor.size(1),
              encoded_passages_all_tensor.size(2), encoded_passages_all_tensor.size(3)))
+        '''
 
         print(f"Passages after {encoded_passages_all_tensor.size()}")
 
