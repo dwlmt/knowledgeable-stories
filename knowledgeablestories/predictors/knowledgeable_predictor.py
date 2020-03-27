@@ -527,11 +527,7 @@ class KnowledgeablePredictor(Predictor):
         encoded_passages_list = []
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
-            # print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
-
-            encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
-
-            print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded}")
+            print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             context_sentences_to_encode = torch.unsqueeze(
                 torch.cat((merged_sentences_encoded, encoded_sentences_batch_tensor)), dim=0)
