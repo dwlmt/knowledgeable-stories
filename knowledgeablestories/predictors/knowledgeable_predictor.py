@@ -263,7 +263,7 @@ class KnowledgeablePredictor(Predictor):
 
             generated_sequences = self.generate_sentences(input_tokens)
 
-            print(parent, input_tokens)
+            print(parent, input_tokens, generated_sequences)
 
             if len(generated_sequences) > 0:
 
