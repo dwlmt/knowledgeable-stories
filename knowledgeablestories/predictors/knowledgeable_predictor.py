@@ -93,7 +93,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
+        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
@@ -164,7 +164,7 @@ class KnowledgeablePredictor(Predictor):
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                              self._num_levels_rollout, original_sentences, story_idx)
 
-                        print("Parent", parent)
+                        #print("Parent", parent)
                         self._calculate_metrics(parent, previous_prediction_metrics)
 
                         if not self._retain_full_output:
@@ -274,9 +274,6 @@ class KnowledgeablePredictor(Predictor):
                     gold_sentence["gold"] = True
                     generated_sequences.append(gold_sentence)
 
-                print(generated_sequences)
-                print("Length Generated Sequences", len(generated_sequences))
-
                 existing_sentences_encoded = existing_sentences_encoded[
                                              max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
                                              ...]
@@ -301,6 +298,7 @@ class KnowledgeablePredictor(Predictor):
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
+                print(f"Logits {logits}")
 
                 probs, log_probs = self._logits_to_probs(logits)
 
@@ -529,8 +527,7 @@ class KnowledgeablePredictor(Predictor):
         encoded_passages_list = []
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
-            print(
-                f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
+            #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
             merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
@@ -547,18 +544,18 @@ class KnowledgeablePredictor(Predictor):
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-            print("Context", context_sentences_to_encode.size())
+            #print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
             encoded_passages = torch.squeeze(encoded_passages, dim=0)
 
-            print("Encoded passages", encoded_passages.size())
+            #print("Encoded passages", encoded_passages.size())
 
             encoded_passages = encoded_passages.cpu()
 
             encoded_passages_list.append(encoded_passages)
         encoded_passages_all_tensor = torch.stack(encoded_passages_list)
 
-        print(f"Passages before {encoded_passages_all_tensor.size()}")
+        #print(f"Passages before {encoded_passages_all_tensor.size()}")
         encoded_passages_all_tensor = encoded_passages_all_tensor.view(
             (encoded_passages_all_tensor.size(0) * encoded_passages_all_tensor.size(1),
              encoded_passages_all_tensor.size(2), encoded_passages_all_tensor.size(3)))
