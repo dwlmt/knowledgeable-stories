@@ -272,6 +272,8 @@ class KnowledgeablePredictor(Predictor):
                     gold_sentence["gold"] = True
                     generated_sequences.append(gold_sentence)
 
+                print(generated_sequences)
+
                 existing_sentences_encoded = existing_sentences_encoded[
                                              max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):,
                                              ...]
