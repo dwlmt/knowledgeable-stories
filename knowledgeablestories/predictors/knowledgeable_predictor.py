@@ -225,8 +225,8 @@ class KnowledgeablePredictor(Predictor):
             if "prediction_metrics" in previous_prediction_metrics:
                 if f"{level}" in previous_prediction_metrics:
                     parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = \
-                    previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"][
-                        "entropy"]
+                        previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"][
+                            "entropy"]
 
             for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
                 total_prob_factor = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() + 1.0
@@ -283,7 +283,9 @@ class KnowledgeablePredictor(Predictor):
                     existing_sentences_encoded)
 
                 print(
-                    f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()}, final encoded {final_encoded_representation.size()} ")
+                    f"Context: encoded sentences {encoded_sentences_tensor.size()}, "
+                    f"context_encoded {context_encoded_representation.size()}, "
+                    f"final encoded {final_encoded_representation.size()} ")
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
@@ -320,11 +322,11 @@ class KnowledgeablePredictor(Predictor):
 
                     gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
 
-                metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
+                metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                                "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                                "context_representation": torch.unsqueeze(context_encoded_representation,
                                                                          dim=0).expand_as(
-                                   final_encoded_representation).cpu(),
+                                   final_encoded_representation),
                                "final_encoded_representation": final_encoded_representation}
 
                 for (k, v) in metric_dict.items():
@@ -335,7 +337,7 @@ class KnowledgeablePredictor(Predictor):
                         if "parent_relation_metrics" not in gen_seq:
                             gen_seq["parent_relation_metrics"] = {}
 
-                        if k in ["context_representation","final_encoded_representation"]:
+                        if k in ["context_representation", "final_encoded_representation"]:
                             gen_seq[k] = value.cpu()
                         else:
                             if len(value.size()) > 0:
@@ -400,6 +402,8 @@ class KnowledgeablePredictor(Predictor):
         self._vader_polarity(filtered_list)
 
         for i, gen_seq in enumerate(filtered_list):
+
+            print(gen_seq.keys())
 
             gen_seq["index"] = i
 
