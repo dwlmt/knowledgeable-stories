@@ -300,8 +300,6 @@ class KnowledgeablePredictor(Predictor):
                 logits /= self._prediction_temp
                 print(f"Logits {logits}, {logits.size()}")
 
-                logits = logits[0]
-
                 probs, log_probs = self._logits_to_probs(logits)
 
                 if num_levels_rollout == self._num_levels_rollout:
@@ -529,7 +527,7 @@ class KnowledgeablePredictor(Predictor):
         encoded_passages_list = []
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
-            #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
+            print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
 
@@ -573,7 +571,9 @@ class KnowledgeablePredictor(Predictor):
         final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
 
         print("Context encoded", context_encoded_representation)
-        print("Final encoded", context_encoded_representation)
+        print("Final encoded", final_encoded_representations)
+
+        assert final_encoded_representations[0] != final_encoded_representations[1]
         return context_encoded_representation, final_encoded_representations
 
     def _encode_batch_of_sentences(self, generated_sequences):
