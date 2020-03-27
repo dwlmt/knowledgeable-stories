@@ -530,35 +530,54 @@ class KnowledgeablePredictor(Predictor):
 
             print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
-            encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
+            #encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
 
-            print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded}")
+            #print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded}")
 
+            '''
             merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
                 merged_sentences_encoded.size(0),
                 encoded_sentences_batch_tensor_expanded.size(1),
                 merged_sentences_encoded.size(1))
+            '''
 
-            context_sentences_to_encode = torch.cat(
-                (merged_sentences_encoded_expanded, encoded_sentences_batch_tensor_expanded))
+            for encoded_sentence in encoded_sentences_batch_tensor:
+                context_sentences_to_encode = torch.unsqueeze(torch.cat(
+                    (merged_sentences_encoded, encoded_sentence)), dim=0)
 
+                if torch.cuda.is_available():
+                    context_sentences_to_encode = context_sentences_to_encode.cuda()
+
+                print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
+
+                encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
+
+                print("Encoded passages", encoded_passages, encoded_passages.size())
+
+                encoded_passages = encoded_passages.cpu()
+
+                encoded_passages_list.append(torch.squeeze(encoded_passages, dim=0))
+
+            '''
             print("Context to encode", context_sentences_to_encode.size())
-            # Put the batch first.
+            #             # Put the batch first.
             context_sentences_to_encode = context_sentences_to_encode.permute(1, 0, 2).contiguous()
+            
 
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
 
             print("Context to encode updated", context_sentences_to_encode.size())
-            mask = torch.ones_like(context_sentences_to_encode).byte()
 
-            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode, mask=mask)
+            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
 
-            print("Encoded passages", encoded_passages.size())
+            print("Encoded passages", encoded_passages,encoded_passages.size())
 
             encoded_passages = encoded_passages.cpu()
+            
 
             encoded_passages_list.append(encoded_passages)
+            '''
         encoded_passages_all_tensor = torch.stack(encoded_passages_list)
 
         #print(f"Passages before {encoded_passages_all_tensor.size()}")
