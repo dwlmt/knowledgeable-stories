@@ -22,8 +22,10 @@ END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
 
+
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
+
 
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
@@ -222,7 +224,9 @@ class KnowledgeablePredictor(Predictor):
 
             if "prediction_metrics" in previous_prediction_metrics:
                 if f"{level}" in previous_prediction_metrics:
-                    parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"]["entropy"]
+                    parent["prediction_metrics"][f"{level}"]["hale_uncertainty_reduction"] = \
+                    previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"][
+                        "entropy"]
 
             for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
                 total_prob_factor = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() + 1.0
@@ -234,7 +238,8 @@ class KnowledgeablePredictor(Predictor):
                 parent["prediction_metrics"][f"{level}"][f"ely_suspense_{f}"] = (torch.exp(
                     log_variance_tensor).sum().item() * total_prob_factor) / float(level)
                 parent["prediction_metrics"][f"{level}"][
-                    f"ely_suspense_alpha_{f}"] = (torch.exp(log_variance_sent_adjusted_tensor).sum().item() * total_prob_factor) / level
+                    f"ely_suspense_alpha_{f}"] = (torch.exp(
+                    log_variance_sent_adjusted_tensor).sum().item() * total_prob_factor) / level
 
             # Retrieve child sentences if available as stats need to be calculated across the whole level at once.
             child_sentences = []
@@ -277,13 +282,15 @@ class KnowledgeablePredictor(Predictor):
                     encoded_sentences_tensor,
                     existing_sentences_encoded)
 
-                print(f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()}, final encoded {final_encoded_representation.size()} ")
+                print(
+                    f"Context: encoded sentences {encoded_sentences_tensor.size()}, context_encoded {context_encoded_representation.size()}, final encoded {final_encoded_representation.size()} ")
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
-                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0), final_encoded_representation,
+                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
+                                                      final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
@@ -315,9 +322,11 @@ class KnowledgeablePredictor(Predictor):
 
                 metric_dict = {"logit": logits, "prob": probs, "log_prob": log_probs,
                                "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
+                               "context_representation": torch.unsqueeze(context_encoded_representation,
+                                                                         dim=0).expand_as(
+                                   final_encoded_representation).cpu(),
                                "final_encoded_representation": final_encoded_representation}
 
-                gen_seq["context_representation"] = context_encoded_representation
                 for (k, v) in metric_dict.items():
 
                     print(f"{k} - {v.size()}")
@@ -509,7 +518,7 @@ class KnowledgeablePredictor(Predictor):
     def _final_encoded_representations(self, encoded_sentences_tensor, merged_sentences_encoded):
 
         encoded_passages_list = []
-        for encoded_sentences_batch_tensor in torch.split(encoded_sentences_tensor,self._encoders_batch_size):
+        for encoded_sentences_batch_tensor in torch.split(encoded_sentences_tensor, self._encoders_batch_size):
 
             merged_sentences_expanded = merged_sentences_encoded.unsqueeze(dim=1).expand(
                 merged_sentences_encoded.size(0), encoded_sentences_batch_tensor.size(0), -1)
@@ -582,7 +591,8 @@ class KnowledgeablePredictor(Predictor):
         encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
         if encoded_sentences_tensor.size() == 4:
             encoded_sentences_tensor = encoded_sentences_tensor.view(encoded_sentences_tensor.size(0)
-                                                                     * encoded_sentences_tensor.size(1), encoded_sentences_tensor.size(2),
+                                                                     * encoded_sentences_tensor.size(1),
+                                                                     encoded_sentences_tensor.size(2),
                                                                      encoded_sentences_tensor.size(3))
 
         return encoded_sentences_tensor
@@ -652,7 +662,8 @@ class KnowledgeablePredictor(Predictor):
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
                                                                            clean_up_tokenization_spaces=True)
 
-                        if not generated_text.isspace() and sum([s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
+                        if not generated_text.isspace() and sum(
+                                [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
         return generated_sequences
