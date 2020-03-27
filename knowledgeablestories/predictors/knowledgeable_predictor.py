@@ -158,7 +158,7 @@ class KnowledgeablePredictor(Predictor):
 
                     if previous_tensor_dict:
                         merged_sentences_encoded = torch.cat(
-                            [merged_sentences_encoded, previous_tensor_dict["sentences_encoded"]], dim=0)
+                            [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
 
                     if story_idx in rollout_indices:
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
@@ -277,7 +277,7 @@ class KnowledgeablePredictor(Predictor):
                 print(generated_sequences)
 
                 existing_sentences_encoded = existing_sentences_encoded[
-                                             max(0, existing_sentences_encoded.size(0) - self._encoders_batch_size):,
+                                             max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
                                              ...]
 
                 encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
