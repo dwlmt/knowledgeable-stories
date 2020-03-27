@@ -533,9 +533,8 @@ class KnowledgeablePredictor(Predictor):
 
             print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded}")
 
-
-            context_sentences_to_encode = torch.unsqueeze(torch.cat(merged_sentences_encoded, encoded_sentences_batch_tensor))
-
+            context_sentences_to_encode = torch.unsqueeze(
+                torch.cat((merged_sentences_encoded, encoded_sentences_batch_tensor)), dim=0)
 
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
@@ -553,7 +552,7 @@ class KnowledgeablePredictor(Predictor):
 
         print(f"Passages after {encoded_passages_all_tensor.size()}")
 
-        context_encoded_representation = encoded_passages_all_tensor[0, -2, : ]
+        context_encoded_representation = encoded_passages_all_tensor[0, -2, :]
         final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
 
         return context_encoded_representation, final_encoded_representations
