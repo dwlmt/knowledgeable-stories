@@ -530,7 +530,7 @@ class KnowledgeablePredictor(Predictor):
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
             print(
-                f"Join context, {merged_sentences_encoded.size()}, {merged_sentences_expanded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
+                f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             merged_sentences_expanded = merged_sentences_encoded.unsqueeze(dim=1).expand(
                 merged_sentences_encoded.size(0), encoded_sentences_batch_tensor.size(1), -1)
