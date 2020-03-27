@@ -526,7 +526,7 @@ class KnowledgeablePredictor(Predictor):
     def _final_encoded_representations(self, encoded_sentences_tensor, merged_sentences_encoded):
 
         encoded_passages_list = []
-        for encoded_sentences_batch_tensor in torch.split(encoded_sentences_tensor, self._encoders_batch_size):
+        for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
             merged_sentences_expanded = merged_sentences_encoded.unsqueeze(dim=1).expand(
                 merged_sentences_encoded.size(0), encoded_sentences_batch_tensor.size(1), -1)
@@ -598,11 +598,6 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences.append(encoded_sentences_batch)
 
         encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
-        if encoded_sentences_tensor.size() == 4:
-            encoded_sentences_tensor = encoded_sentences_tensor.view(encoded_sentences_tensor.size(0)
-                                                                     * encoded_sentences_tensor.size(1),
-                                                                     encoded_sentences_tensor.size(2),
-                                                                     encoded_sentences_tensor.size(3))
 
         return encoded_sentences_tensor
 
