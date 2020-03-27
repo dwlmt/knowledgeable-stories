@@ -538,9 +538,11 @@ class KnowledgeablePredictor(Predictor):
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
 
+            print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
-
             encoded_passages = torch.squeeze(encoded_passages, dim=0)
+
+            print("Encoded passages", encoded_passages.size())
 
             encoded_passages = encoded_passages.cpu()
 
