@@ -599,8 +599,7 @@ class KnowledgeablePredictor(Predictor):
         encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
 
         encoded_sentences_tensor = encoded_sentences_tensor.view(
-            encoded_sentences_tensor.size(1) * encoded_sentences_tensor.size(2), encoded_sentences_tensor.size(3),
-            encoded_sentences_tensor.size(4))
+            encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1), encoded_sentences_tensor.size(2))
 
         return encoded_sentences_tensor
 
