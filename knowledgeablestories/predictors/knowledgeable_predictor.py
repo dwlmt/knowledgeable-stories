@@ -293,9 +293,7 @@ class KnowledgeablePredictor(Predictor):
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
-                print(context_encoded_representation)
-                print(final_encoded_representation)
-                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0).expand_as(final_encoded_representation),
+                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
 
@@ -534,6 +532,9 @@ class KnowledgeablePredictor(Predictor):
             #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
+
+            print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded.size()}")
+
             merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
                 merged_sentences_encoded.size(0),
                 encoded_sentences_batch_tensor_expanded.size(1),
