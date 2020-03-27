@@ -532,11 +532,7 @@ class KnowledgeablePredictor(Predictor):
             print(
                 f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
-            merged_sentences_expanded = merged_sentences_encoded.unsqueeze(dim=1).expand(
-                merged_sentences_encoded.size(0), encoded_sentences_batch_tensor.size(1), -1)
-
-            print(f"Join context, {merged_sentences_encoded.size()}, {merged_sentences_expanded.size()}, {encoded_sentences_tensor.size()}")
-            context_sentences_to_encode = torch.cat((merged_sentences_expanded, encoded_sentences_tensor))
+            context_sentences_to_encode = torch.cat((merged_sentences_encoded, encoded_sentences_tensor))
 
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
