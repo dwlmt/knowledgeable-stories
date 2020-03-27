@@ -293,12 +293,16 @@ class KnowledgeablePredictor(Predictor):
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
-                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
+                print(context_encoded_representation)
+                print(final_encoded_representation)
+                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0).expand_as(final_encoded_representation),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
-                print(f"Logits {logits}")
+                print(f"Logits {logits}, {logits.size()}")
+
+                logits = logits[0]
 
                 probs, log_probs = self._logits_to_probs(logits)
 
