@@ -93,7 +93,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
+        self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
 
@@ -335,7 +335,7 @@ class KnowledgeablePredictor(Predictor):
                         if "parent_relation_metrics" not in gen_seq:
                             gen_seq["parent_relation_metrics"] = {}
 
-                        if k in ["final_encoded_representation"]:
+                        if k in ["context_representation","final_encoded_representation"]:
                             gen_seq[k] = value.cpu()
                         else:
                             if len(value.size()) > 0:
