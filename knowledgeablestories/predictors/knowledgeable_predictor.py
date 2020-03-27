@@ -533,21 +533,21 @@ class KnowledgeablePredictor(Predictor):
                 f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             context_sentences_to_encode = torch.cat((merged_sentences_encoded, encoded_sentences_batch_tensor))
+            context_sentences_to_encode = torch.unsqueeze(context_sentences_to_encode, dim=1)
 
             if torch.cuda.is_available():
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
 
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
+
+            encoded_passages = torch.squeeze(encoded_passages, dim=0)
+
             encoded_passages = encoded_passages.cpu()
 
             encoded_passages_list.append(encoded_passages)
         encoded_passages_all_tensor = torch.stack(encoded_passages_list)
 
         print(f"Passages before {encoded_passages_all_tensor.size()}")
-        encoded_passages_all_tensor = encoded_passages_all_tensor.permute(0, 2, 1, 3).contiguous()
-
-        print(f"Passages mid {encoded_passages_all_tensor.size()}")
-
         encoded_passages_all_tensor = encoded_passages_all_tensor.view(
             (encoded_passages_all_tensor.size(0) * encoded_passages_all_tensor.size(1),
              encoded_passages_all_tensor.size(2), encoded_passages_all_tensor.size(3)))
