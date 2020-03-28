@@ -531,8 +531,9 @@ class KnowledgeablePredictor(Predictor):
             for x, y in itertools.combinations(encoded_sentences_batch_tensor, r=2):
                 if torch.all(x.eq(y)):
                     print("Sentence Encoded Tensors Same ", x, y)
+                    assert False
                 else:
-                    print("Sentence Encoded Tensors are different ")
+                    pass#print("Sentence Encoded Tensors are different ")
 
             #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
@@ -575,11 +576,14 @@ class KnowledgeablePredictor(Predictor):
         context_encoded_representation = encoded_passages_all_tensor[0, -2, ...]
         final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
 
+        final_encoded_representations = torch.rand_like(final_encoded_representations)
+
         for x, y in itertools.combinations(final_encoded_representations, r=2):
             if torch.all(x.eq(y)):
                 print("Final Encoded Tensors Same ", x, y)
+                assert False
             else:
-                print("Final Encoded Tensors are different", x, y)
+                pass#print("Final Encoded Tensors are different", x, y)
 
         return context_encoded_representation, final_encoded_representations
 
