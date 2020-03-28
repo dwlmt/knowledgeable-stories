@@ -696,6 +696,7 @@ class KnowledgeablePredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
+        print(f"Context: { self._tokenizer._tokenizer.decode(previous_tokens_tensor,clean_up_tokenization_spaces=True)}, Generated: {generated_sequences}")
         return generated_sequences
 
     def convert_output_to_tensors(self, output_dict):
