@@ -6,8 +6,14 @@ local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
 local KB_BASE_BATCH_SIZE = 4;
-local MAX_INSTANCES_IN_MEMORY = 64;
-
+local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
+local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
+local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
+local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
+local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
+local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
+local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE"));
+local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
 {
   "dataset_reader": {
     "type": "multitask_reader",
@@ -125,7 +131,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", 
        "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
        "iterate_forever": false,
-       "batches_per_epoch": 100000,
+       "batches_per_epoch": ,TRAINING_ITERATION_SIZE
        "sampling_rates":  [3.0 / 32.0, 3.0 / 32.0, 1.0 / 32.0, 1.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0],
      "iterators": {
        "writing_prompts_lm": {
@@ -217,7 +223,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy",
       "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
       "iterate_forever": false,
-      "batches_per_epoch": 10000,
+      "batches_per_epoch": , VALIDATION_ITERATION_SIZE
       "sampling_rates":  [3.0 / 32.0, 3.0 / 32.0, 1.0 / 32.0, 1.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0],
      "iterators": {
        "writing_prompts_lm": {
@@ -387,7 +393,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     }
   },
   "trainer": {
-    "num_epochs": 10,
+    "num_epochs": EPOCHS,
     "validation_metric": "-loss",
     "patience": 3,
     "grad_norm": 5.0,
@@ -398,14 +404,14 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
-      "lr": 0.01,
-      "momentum": 0.9,
+      "lr": LR_RATE,
+      "momentum": MOMENTUM,
       "nesterov": true
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.25,
-      "patience": 1,
+      "factor": LR_REDUCE_RATE,
+      "patience": LR_PATIENCE,
     }
   }
 }

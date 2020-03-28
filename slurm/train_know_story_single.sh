@@ -28,11 +28,21 @@ echo ${dt}
 # Env variables
 export STUDENT_ID=${USER}
 
+# General training parameters
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
 export EMBEDDER_VOCAB_SIZE=50268
 export NUM_GPUS=1
 export NUM_CPUS=8
+
+export MAX_INSTANCES_IN_MEMORY=64
+export EPOCHS=10
+export LR_RATE=0.01
+export PATIENCE=2
+export TRAINING_ITERATION_SIZE=50000
+export VALIDATION_ITERATION_SIZE=5000
+export LR_PATIENCE=1
+export LR_REDUCE_RATE=0.25
 
 declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
 

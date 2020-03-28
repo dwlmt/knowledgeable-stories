@@ -5,7 +5,15 @@ local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
 local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
-local MAX_INSTANCES_IN_MEMORY = 64;
+local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
+local EPOCHS = std.parseInt(std.extVar("EPOCHS");
+local PATIENCE = std.parseInt(std.extVar("PATIENCE");
+local LR_RATE = std.parseJson(std.extVar("LR_RATE");
+local MOMENTUM = std.parseJson(std.extVar("MOMENTUM");
+local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE");
+local LR_REDUCE_RATE = std.parseInt(std.extVar("LR_REDUCE_RATE");
+local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE");
+local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE");
 
 {
   "dataset_reader": {
@@ -97,9 +105,9 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     },
   },
   "trainer": {
-    "num_epochs": 5,
+    "num_epochs": EPOCHS,
     "validation_metric": "-loss",
-    "patience": 2,
+ "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -108,14 +116,14 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
-      "lr": 0.01,
-      "momentum": 0.9,
+      "lr": LR_RATE,
+      "momentum": MOMENTUM,
       "nesterov": true
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.25,
- "patience": 1
+      "factor": LR_REDUCE_RATE,
+"patience": LR_PATIENCE,
     }
   }
 }

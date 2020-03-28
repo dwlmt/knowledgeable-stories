@@ -3,9 +3,18 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
+
+local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
+local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
+local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
+local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
+local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
+local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
+local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE"));
+local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
+
 local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
-local MAX_INSTANCES_IN_MEMORY = 64;
 
 {
   "dataset_reader": {
@@ -31,7 +40,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 50000,
+   "batches_per_epoch": ,TRAINING_ITERATION_SIZE
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -50,7 +59,7 @@ local MAX_INSTANCES_IN_MEMORY = 64;
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 5000,
+   "batches_per_epoch": , VALIDATION_ITERATION_SIZE
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -96,9 +105,9 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     },
   },
   "trainer": {
-    "num_epochs": 5,
+    "num_epochs": EPOCHS,
     "validation_metric": "-loss",
-    "patience": 2,
+ "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -107,14 +116,14 @@ local MAX_INSTANCES_IN_MEMORY = 64;
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
-      "lr": 0.01,
-      "momentum": 0.9,
+      "lr": LR_RATE,
+      "momentum": MOMENTUM,
       "nesterov": true
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
-      "factor": 0.25,
- "patience": 1
+      "factor": LR_REDUCE_RATE,
+"patience": LR_PATIENCE,
     }
   }
 }
