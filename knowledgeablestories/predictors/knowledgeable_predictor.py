@@ -543,7 +543,8 @@ class KnowledgeablePredictor(Predictor):
                 merged_sentences_encoded.size(0),
                 encoded_sentences_batch_tensor_expanded.size(1),
                 merged_sentences_encoded.size(1))
-            
+
+
             merged_sentences_encoded_expanded = torch.rand_like(merged_sentences_encoded_expanded)
 
             context_sentences_to_encode = torch.cat(
