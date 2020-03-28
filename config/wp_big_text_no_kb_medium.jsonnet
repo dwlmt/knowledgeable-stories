@@ -9,6 +9,7 @@ local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
 local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
 local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
+local MOMENTUM = std.parseJson(std.extVar("MOMENTUM"));
 local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
