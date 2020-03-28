@@ -186,6 +186,8 @@ class KnowledgeablePredictor(Predictor):
 
             inputs["sentences"] = all_processed_sentences
 
+            print(inputs)
+
             return inputs
 
     def _calculate_metrics(self, parent, previous_prediction_metrics):
