@@ -544,7 +544,7 @@ class KnowledgeablePredictor(Predictor):
             '''
 
             for encoded_sentence in encoded_sentences_batch_tensor:
-                context_sentences_to_encode =  torch.unsqueeze(encoded_sentence,dim=0)#torch.unsqueeze(torch.cat(
+                context_sentences_to_encode =  torch.unsqueeze(torch.unsqueeze(encoded_sentence,dim=0),dim=0)#torch.unsqueeze(torch.cat(
                     #(merged_sentences_encoded, torch.unsqueeze(encoded_sentence,dim=0))), dim=0)
 
                 if torch.cuda.is_available():
