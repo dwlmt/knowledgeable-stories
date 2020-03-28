@@ -547,8 +547,6 @@ class KnowledgeablePredictor(Predictor):
             context_sentences_to_encode = torch.cat(
                 (merged_sentences_encoded_expanded, encoded_sentences_batch_tensor_expanded))
 
-            context_sentences_to_encode = torch.rand_like(context_sentences_to_encode)
-
             # Put the batch first.
             context_sentences_to_encode = context_sentences_to_encode.permute(1, 0, 2).contiguous()
 
