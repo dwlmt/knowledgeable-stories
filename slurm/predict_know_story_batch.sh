@@ -52,6 +52,8 @@ find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut
 
 echo ${SCRATCH_HOME}
 
+rm -rf /tmp/*
+
 export EXP_ROOT="${CLUSTER_HOME}/git/knowledgeable-stories"
 
 export EXP_ID="${EXP_NAME}_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}_${CURRENT_TIME}"
