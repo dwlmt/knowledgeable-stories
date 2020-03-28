@@ -7,14 +7,14 @@ local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
 local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
-local EPOCHS = std.parseInt(std.extVar("EPOCHS");
-local PATIENCE = std.parseInt(std.extVar("PATIENCE");
-local LR_RATE = std.parseJson(std.extVar("LR_RATE");
-local MOMENTUM = std.parseJson(std.extVar("MOMENTUM");
-local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE");
-local LR_REDUCE_RATE = std.parseInt(std.extVar("LR_REDUCE_RATE");
-local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE");
-local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE");
+local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
+local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
+local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
+local MOMENTUM = std.parseJson(std.extVar("MOMENTUM"));
+local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE"));
+local LR_REDUCE_RATE = std.parseInt(std.extVar("LR_REDUCE_RATE"));
+local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
+local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 
 {
   "dataset_reader": {
