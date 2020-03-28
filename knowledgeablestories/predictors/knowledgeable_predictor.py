@@ -301,8 +301,6 @@ class KnowledgeablePredictor(Predictor):
                 logits /= self._prediction_temp
                 print(f"Logits {logits}, {logits.size()}")
 
-                logits = logits[0]
-
                 probs, log_probs = self._logits_to_probs(logits)
 
                 if num_levels_rollout == self._num_levels_rollout:
