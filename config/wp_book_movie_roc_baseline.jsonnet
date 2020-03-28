@@ -11,7 +11,7 @@ local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
 local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
 local MOMENTUM = std.parseJson(std.extVar("MOMENTUM"));
 local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE"));
-local LR_REDUCE_RATE = std.parseInt(std.extVar("LR_REDUCE_RATE"));
+local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 
