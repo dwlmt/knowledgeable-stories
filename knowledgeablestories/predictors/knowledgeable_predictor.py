@@ -535,16 +535,16 @@ class KnowledgeablePredictor(Predictor):
                 else:
                     pass#print("Sentence Encoded Tensors are different ")
 
-            #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
+            print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
 
             encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
-
-            print(f"Encoded expanded {encoded_sentences_batch_tensor_expanded}")
 
             merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
                 merged_sentences_encoded.size(0),
                 encoded_sentences_batch_tensor_expanded.size(1),
                 merged_sentences_encoded.size(1))
+            
+            merged_sentences_encoded_expanded = torch.rand_like(merged_sentences_encoded_expanded)
 
             context_sentences_to_encode = torch.cat(
                 (merged_sentences_encoded_expanded, encoded_sentences_batch_tensor_expanded))
@@ -575,7 +575,7 @@ class KnowledgeablePredictor(Predictor):
 
         context_encoded_representation = encoded_passages_all_tensor[0, -2, ...]
         final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
-        final_encoded_representations = torch.rand_like(final_encoded_representations)
+        #final_encoded_representations = torch.rand_like(final_encoded_representations)
 
         for x, y in itertools.combinations(final_encoded_representations, r=2):
             if torch.all(x.eq(y)):
@@ -659,13 +659,11 @@ class KnowledgeablePredictor(Predictor):
 
             retries += 1
 
-            print(previous_tokens_tensor)
             output_sequences = self._model.generate_text(previous_tokens_tensor,
                                                          num_of_sequences=min(
                                                              self._gen_num_of_sequences - len(generated_sequences),
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
-            print(output_sequences)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
