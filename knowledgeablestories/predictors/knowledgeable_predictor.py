@@ -12,7 +12,6 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import SentenceSplitter, PretrainedTransformerTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.models import Model
-from allennlp.nn.util import get_final_encoder_states
 from allennlp.predictors.predictor import Predictor
 from overrides import overrides
 from torch import nn
@@ -548,21 +547,23 @@ class KnowledgeablePredictor(Predictor):
                 context_sentences_to_encode =  torch.unsqueeze(torch.unsqueeze(encoded_sentence,dim=0),dim=0)#torch.unsqueeze(torch.cat(
                     #(merged_sentences_encoded, torch.unsqueeze(encoded_sentence,dim=0))), dim=0)
 
+                context_sentences_to_encode = torch.rand_like(context_sentences_to_encode)
+
                 if torch.cuda.is_available():
                     context_sentences_to_encode = context_sentences_to_encode.cuda()
 
                 #print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
 
                 encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
-                encoded_passages = get_final_encoder_states(encoded_passages, mask=torch.ones_like(encoded_passages).byte())
 
                 #print("Encoded passages", encoded_passages, encoded_passages.size())
 
                 encoded_passages = encoded_passages.cpu()
+                encoded_passages = torch.squeeze(encoded_passages, dim=0)
 
-                final_encoded_passages_list.append(encoded_passages)
+                final_encoded_passages_list.append(encoded_passages[-1])
                 if context_encoded is None:
-                    context_encoded = encoded_passages
+                    context_encoded = encoded_passages[-1]
 
             '''
             #print("Context to encode", context_sentences_to_encode.size())
