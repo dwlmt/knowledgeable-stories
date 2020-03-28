@@ -1,4 +1,4 @@
-"""Some parts adapted from the TD-VAE code by Xinqiang Ding <xqding@umich.edu>."""
+"""Placeholder, adapted from https://github.com/ankitkv/TD-VAE"""
 import numpy
 import torch
 from torch import nn
