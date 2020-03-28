@@ -186,6 +186,8 @@ class KnowledgeablePredictor(Predictor):
 
             inputs["sentences"] = all_processed_sentences
 
+            print(inputs)
+
             return inputs
 
     def _calculate_metrics(self, parent, previous_prediction_metrics):
@@ -520,7 +522,8 @@ class KnowledgeablePredictor(Predictor):
 
     def _final_encoded_representations(self, encoded_sentences_tensor, merged_sentences_encoded):
 
-        encoded_passages_list = []
+        final_encoded_passages_list = []
+        context_encoded = None
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
             #print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
@@ -543,15 +546,18 @@ class KnowledgeablePredictor(Predictor):
                 if torch.cuda.is_available():
                     context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-                #print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
+                print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
 
                 encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
 
-                #print("Encoded passages", encoded_passages, encoded_passages.size())
+                print("Encoded passages", encoded_passages, encoded_passages.size())
 
                 encoded_passages = encoded_passages.cpu()
+                encoded_passages = torch.squeeze(encoded_passages, dim=0)
 
-                encoded_passages_list.append(torch.squeeze(encoded_passages, dim=0))
+                final_encoded_passages_list.append(encoded_passages[-1])
+                if context_encoded is None:
+                    context_encoded = encoded_passages[-2]
 
             '''
             #print("Context to encode", context_sentences_to_encode.size())
@@ -573,7 +579,7 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_passages_list.append(encoded_passages)
             '''
-        encoded_passages_all_tensor = torch.stack(encoded_passages_list)
+        final_encoded_representations = torch.stack(final_encoded_passages_list)
 
         ##print(f"Passages before {encoded_passages_all_tensor.size()}")
         '''
@@ -583,14 +589,12 @@ class KnowledgeablePredictor(Predictor):
         '''
 
         #print(f"Passages after {encoded_passages_all_tensor.size()}")
-
-        context_encoded_representation = encoded_passages_all_tensor[0, -2, ...]
-        final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
+        #final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
 
         #print("Context encoded", context_encoded_representation.size())
         #print("Final encoded", final_encoded_representations.size())
 
-        return context_encoded_representation, final_encoded_representations
+        return context_encoded, final_encoded_representations
 
     def _encode_batch_of_sentences(self, generated_sequences):
         encoded_sentences = []
