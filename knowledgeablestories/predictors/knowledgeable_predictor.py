@@ -658,11 +658,13 @@ class KnowledgeablePredictor(Predictor):
 
             retries += 1
 
+            print(previous_tokens_tensor)
             output_sequences = self._model.generate_text(previous_tokens_tensor,
                                                          num_of_sequences=min(
                                                              self._gen_num_of_sequences - len(generated_sequences),
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
+            print(output_sequences)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
