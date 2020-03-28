@@ -51,7 +51,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
    "names_to_index": ["roc_lm", "roc_hierarchy",
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": , VALIDATION_ITERATION_SIZE
+   "batches_per_epoch": VALIDATION_ITERATION_SIZE,
    "iterators": {
        "cmu_movie_lm": {
             "type": "basic",

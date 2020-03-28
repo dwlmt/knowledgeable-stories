@@ -72,7 +72,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy"],
    "sampling_rates": [1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0],
    "iterate_forever": false,
-   "batches_per_epoch": ,TRAINING_ITERATION_SIZE
+   "batches_per_epoch": TRAINING_ITERATION_SIZE,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -123,7 +123,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "cmu_book_lm", "cmu_book_hierarchy", "cmu_movie_lm", "cmu_movie_hierarchy"],
    "sampling_rates": [1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0, 1.0 / 8.0],
    "iterate_forever": false,
-   "batches_per_epoch": , VALIDATION_ITERATION_SIZE
+   "batches_per_epoch": VALIDATION_ITERATION_SIZE,
    "iterators": {
         "writing_prompts_lm": {
             "type": "basic",

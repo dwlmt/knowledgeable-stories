@@ -131,7 +131,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", 
        "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
        "iterate_forever": false,
-       "batches_per_epoch": ,TRAINING_ITERATION_SIZE
+       "batches_per_epoch": TRAINING_ITERATION_SIZE,
        "sampling_rates":  [3.0 / 32.0, 3.0 / 32.0, 1.0 / 32.0, 1.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0],
      "iterators": {
        "writing_prompts_lm": {
@@ -223,7 +223,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy",
       "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy"],
       "iterate_forever": false,
-      "batches_per_epoch": , VALIDATION_ITERATION_SIZE
+      "batches_per_epoch": VALIDATION_ITERATION_SIZE,
       "sampling_rates":  [3.0 / 32.0, 3.0 / 32.0, 1.0 / 32.0, 1.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0, 2.0 / 32.0],
      "iterators": {
        "writing_prompts_lm": {
