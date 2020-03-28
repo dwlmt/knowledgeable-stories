@@ -561,7 +561,7 @@ class KnowledgeablePredictor(Predictor):
 
                 final_encoded_passages_list.append(encoded_passages[-1])
                 if context_encoded is None:
-                    context_encoded = encoded_passages[-2]
+                    context_encoded = encoded_passages[-1]
 
             '''
             #print("Context to encode", context_sentences_to_encode.size())
