@@ -172,9 +172,10 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "roc_hierarchy": {
-            "type": "roc_hierarchy",
-            "lazy": true,
-        },
+            "type": "basic",
+            "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
      "cbt_lm": {
             "type": "basic",
             "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
