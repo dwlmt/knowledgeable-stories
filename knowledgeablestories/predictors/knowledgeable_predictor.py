@@ -1,4 +1,5 @@
 import copy
+import itertools
 import os
 from time import sleep
 
@@ -522,6 +523,9 @@ class KnowledgeablePredictor(Predictor):
 
     def _final_encoded_representations(self, encoded_sentences_tensor, merged_sentences_encoded):
 
+        for x, y in itertools.combinations(encoded_sentences_tensor, r=2):
+            assert not torch.all(x.eq(y))
+
         final_encoded_passages_list = []
         context_encoded = None
         for encoded_sentences_batch_tensor in encoded_sentences_tensor:
@@ -546,11 +550,11 @@ class KnowledgeablePredictor(Predictor):
                 if torch.cuda.is_available():
                     context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-                print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
+                #print("Context to encode updated", context_sentences_to_encode, context_sentences_to_encode.size())
 
                 encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
 
-                print("Encoded passages", encoded_passages, encoded_passages.size())
+                #print("Encoded passages", encoded_passages, encoded_passages.size())
 
                 encoded_passages = encoded_passages.cpu()
                 encoded_passages = torch.squeeze(encoded_passages, dim=0)
@@ -593,6 +597,12 @@ class KnowledgeablePredictor(Predictor):
 
         #print("Context encoded", context_encoded_representation.size())
         #print("Final encoded", final_encoded_representations.size())
+
+        print("Context Encoded", context_encoded)
+        print("Final Encoder", final_encoded_representations)
+
+        for x, y in itertools.combinations(final_encoded_representations, r=2):
+            assert not torch.all(x.eq(y))
 
         return context_encoded, final_encoded_representations
 
