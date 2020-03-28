@@ -260,7 +260,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
         if self._passage_autoencoder:
-            self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded)
+            self._passage_autoencoder = self._passage_autoencoder.to(passages_encoded.detach())
             if self.training:
                 y, x, mu, logvar = self._passage_autoencoder(passages_encoded)
                 vae_loss = self._passage_autoencoder.loss_function(x, y, mu, logvar)
@@ -268,7 +268,7 @@ class KnowledgeableStoriesModel(Model):
                 loss += vae_loss * self._loss_weights["passage_autoencoder"]
             elif prediction_mode:
                 output["passage_autoencoded_mu"], output[
-                    "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded)
+                    "passage_autoencoded_var"] = self._passage_autoencoder.encode(passages_encoded.detach())
 
                 output["passage_autoencoded_diff_mu"] = self.calc_diff_vector(output["passage_autoencoded_mu"])
                 output["passage_autoencoded_diff_var"] = self.calc_diff_vector(
@@ -277,7 +277,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _sentence_autoencoder_if_required(self, encoded_sentences_batch, loss, output, prediction_mode):
         if self._sentence_autoencoder:
-            self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch)
+            self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch.detach())
             if self.training:
                 y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
                 vae_loss = self._passage_autoencoder.loss_function(x, y, mu, logvar)
@@ -285,7 +285,7 @@ class KnowledgeableStoriesModel(Model):
                 loss += vae_loss * self._loss_weights["sentence_autoencoder"]
             elif prediction_mode:
                 output["sentence_autoencoded_mu"], output[
-                    "sentence_autoencoded_var"] = self._sentence_autoencoder.encode(encoded_sentences_batch)
+                    "sentence_autoencoded_var"] = self._sentence_autoencoder.encode(encoded_sentences_batch.detach())
         return loss
 
     def calc_diff_vector(self, passages_encoded):
