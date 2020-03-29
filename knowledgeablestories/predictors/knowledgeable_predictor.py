@@ -580,7 +580,7 @@ class KnowledgeablePredictor(Predictor):
 
             # Measure vector distances.
             print(
-                f" Original Sentences: {existing_sentences_encoded}, Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
+                f" Original Sentences: {existing_sentences_encoded.size()}, Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
 
             print(f" Original Sentences Distance: {torch.nn.functional.pdist(existing_sentences_encoded, p=1)}")
             print(f" Encoded Sentences Distance: {torch.nn.functional.pdist(encoded_sentences_batch, p=1)}")
