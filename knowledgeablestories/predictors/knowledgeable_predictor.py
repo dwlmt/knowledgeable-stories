@@ -579,9 +579,10 @@ class KnowledgeablePredictor(Predictor):
             if context_tensor is None:
                 context_tensor = encoded_passages[:, -2, :]
 
-        encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0).view(
-            encoded_sentences_list.size(0) * encoded_sentences_list.size(1), encoded_sentences_list.size(2),
-            encoded_sentences_list.size(3))
+        encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
+        encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
+                                      encoded_sentences_tensor.size(2), encoded_sentences_tensor.size(3))
+
         final_tensor = torch.cat(encoded_passages_list, dim=0)
 
         return encoded_sentences_tensor, context_tensor, final_tensor
