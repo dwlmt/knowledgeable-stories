@@ -285,6 +285,7 @@ class KnowledgeablePredictor(Predictor):
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
+                print(context_encoded_representation.size(), final_encoded_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
@@ -585,6 +586,7 @@ class KnowledgeablePredictor(Predictor):
 
         final_tensor = torch.cat(encoded_passages_list, dim=0)
 
+        print("Encoded", encoded_sentences_tensor.size(), context_tensor.size(), final_tensor.size())
         return encoded_sentences_tensor, context_tensor, final_tensor
 
     def _add_distance_metrics(self, passages_encoded_tensor, sentence_batch):
