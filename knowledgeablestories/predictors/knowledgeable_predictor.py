@@ -562,7 +562,7 @@ class KnowledgeablePredictor(Predictor):
                                                               passage_mask=torch.ones(
                                                                   context_sentences_to_encode.size(0),
                                                                   context_sentences_to_encode.size(
-                                                                      1)).bool())
+                                                                      1)).bool().to(context_sentences_to_encode.device))
 
             # print("Encoded passages", encoded_passages.size())
 
