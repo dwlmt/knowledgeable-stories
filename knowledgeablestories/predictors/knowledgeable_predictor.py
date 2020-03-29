@@ -559,7 +559,9 @@ class KnowledgeablePredictor(Predictor):
 
             # print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode,
-                                                              mask=torch.ones_like(context_sentences_to_encode).byte())
+                                                              lm_mask=torch.ones(context_sentences_to_encode.size(0),
+                                                                                 context_sentences_to_encode.size(
+                                                                                     1)).bool())
 
             # print("Encoded passages", encoded_passages.size())
 

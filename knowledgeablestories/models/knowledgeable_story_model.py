@@ -478,11 +478,17 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
-    def encode_passages(self, inputs, mask=None):
+    def encode_passages(self, inputs, lm_mask=None, passage_mask=None):
 
-        if mask is not None:
-            passages_sentence_lengths = torch.sum(mask, dim=2)
-            mask = passages_sentence_lengths > 0
+        mask = None
+
+        if lm_mask is not None:
+            passages_sentence_lengths = torch.sum(lm_mask, dim=2)
+            lm_mask = passages_sentence_lengths > 0
+            mask = lm_mask
+
+        if passage_mask is not None:
+            mask = passage_mask
 
         self._passage_seq2seq_encoder._module.flatten_parameters()
         self._passage_seq2seq_encoder = self._passage_seq2seq_encoder.to(inputs.device)
