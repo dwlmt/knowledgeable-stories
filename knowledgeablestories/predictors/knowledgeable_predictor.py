@@ -553,11 +553,11 @@ class KnowledgeablePredictor(Predictor):
                 existing_sentences_encoded.size(1))
 
             if torch.cuda.is_available():
-                existing_sentences_encoded = existing_sentences_expanded.cuda()
+                existing_sentences_expanded = existing_sentences_expanded.cuda()
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
 
             context_sentences_to_encode = torch.cat(
-                (existing_sentences_encoded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1)
+                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1)
 
             # print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
