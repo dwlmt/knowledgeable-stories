@@ -555,10 +555,11 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
 
             context_sentences_to_encode = torch.cat(
-                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1)
+                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
 
             # print("Context", context_sentences_to_encode.size())
-            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
+            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode,
+                                                              mask=torch.ones_like(context_sentences_to_encode).byte())
 
             # print("Encoded passages", encoded_passages.size())
 
@@ -579,7 +580,9 @@ class KnowledgeablePredictor(Predictor):
 
             # Measure vector distances.
             print(
-                f"Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
+                f" Original Sentences: {existing_sentences_encoded}, Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
+
+            print(f" Original Sentences Distance: {torch.nn.functional.pdist(existing_sentences_encoded, p=1)}")
             print(f" Encoded Sentences Distance: {torch.nn.functional.pdist(encoded_sentences_batch, p=1)}")
 
             e_list = []
