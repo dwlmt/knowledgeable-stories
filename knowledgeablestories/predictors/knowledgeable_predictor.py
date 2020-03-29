@@ -578,8 +578,15 @@ class KnowledgeablePredictor(Predictor):
                 context_tensor = encoded_passages[0, -2, :]
 
             # Measure vector distances.
-            print(f"Encoded Sentences: {encoded_sentences_batch.size()}, Encoded Passages : {encoded_passages.size()}")
+            print(
+                f"Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
             print(f" Encoded Sentences Distance: {torch.nn.functional.pdist(encoded_sentences_batch, p=1)}")
+
+            e_list = []
+            for e in context_sentences_to_encode:
+                e_list.append(torch.nn.functional.pdist(e, p=1))
+            print(f" Merged Sentences Distance: {torch.stack(e_list)}")
+
             e_list = []
             for e in encoded_passages:
                 e_list.append(torch.nn.functional.pdist(e, p=1))
