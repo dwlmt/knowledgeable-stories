@@ -547,8 +547,7 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
-            print(existing_sentences_encoded.size(), encoded_sentences_batch.size())
-            existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
+            existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).repeat(
                 encoded_sentences_batch.size(0),
                 existing_sentences_encoded.size(0),
                 existing_sentences_encoded.size(1))
@@ -580,6 +579,17 @@ class KnowledgeablePredictor(Predictor):
             if context_tensor is None:
                 context_tensor = encoded_passages[0, -2, :]
 
+            # Measure vector distances.
+            print(f"Encoded Sentences: {encoded_sentences_batch}, Encoded Passages : {encoded_passages}")
+            e_list = []
+            for e in encoded_sentences_batch:
+                e_list.append(torch.nn.functional.pdist(e, p=1))
+            print(f" Encoded Sentences Distance: {torch.stack(e_list)}")
+            e_list = []
+            for e in encoded_passages:
+                e_list.append(torch.nn.functional.pdist(e, p=1))
+            print(f" Encoded Passages Distance: {torch.stack(e_list)}")
+
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
                                       encoded_sentences_tensor.size(2))
@@ -587,6 +597,7 @@ class KnowledgeablePredictor(Predictor):
         final_tensor = torch.cat(encoded_passages_list, dim=0)
 
         print("Encoded", encoded_sentences_tensor.size(), context_tensor.size(), final_tensor.size())
+
         return encoded_sentences_tensor, context_tensor, final_tensor
 
     def _add_distance_metrics(self, passages_encoded_tensor, sentence_batch):
