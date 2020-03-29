@@ -1,10 +1,9 @@
 import copy
-import itertools
 import os
 
 import more_itertools
 import torch
-from allennlp.common.util import JsonDict, sanitize, logger
+from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import Instance, DatasetReader
 from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
@@ -69,8 +68,8 @@ class KnowledgeablePredictor(Predictor):
 
         # Config for text generation
         gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
-        gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=50))
-        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.95))
+        gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=0))
+        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
@@ -165,7 +164,7 @@ class KnowledgeablePredictor(Predictor):
                         self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                              self._num_levels_rollout, original_sentences, story_idx)
 
-                        #print("Parent", parent)
+                        # print("Parent", parent)
                         self._calculate_metrics(parent, previous_prediction_metrics)
 
                         if not self._retain_full_output:
@@ -279,16 +278,8 @@ class KnowledgeablePredictor(Predictor):
                                              max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
                                              ...]
 
-                encoded_sentences_tensor = self._encode_batch_of_sentences(generated_sequences)
-
-                context_encoded_representation, final_encoded_representation = self._final_encoded_representations(
-                    encoded_sentences_tensor,
-                    existing_sentences_encoded)
-
-                print(
-                    f"Context: encoded sentences {encoded_sentences_tensor.size()}, "
-                    f"context_encoded {context_encoded_representation.size()}, "
-                    f"final encoded {final_encoded_representation.size()} ")
+                encoded_sentences_tensor, context_encoded_representation, final_encoded_representation = self._encode_representations(
+                    generated_sequences, existing_sentences_encoded)
 
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
@@ -523,69 +514,11 @@ class KnowledgeablePredictor(Predictor):
         log_probs = torch.squeeze(log_probs)
         return probs, log_probs,
 
-    def _final_encoded_representations(self, encoded_sentences_tensor, merged_sentences_encoded):
-
+    def _encode_representations(self, generated_sequences, existing_sentences_encoded):
+        encoded_sentences_list = []
+        context_tensor = None
         encoded_passages_list = []
-        for encoded_sentences_batch_tensor in encoded_sentences_tensor:
 
-            for x, y in itertools.combinations(encoded_sentences_batch_tensor, r=2):
-                if torch.all(x.eq(y)):
-                    print("Sentence Encoded Tensors Same ", x, y)
-                    #assert False
-                else:
-                    pass#print("Sentence Encoded Tensors are different ")
-
-            print(f"Join context, {merged_sentences_encoded.size()}, {encoded_sentences_tensor.size()}, {encoded_sentences_batch_tensor.size()}")
-
-            encoded_sentences_batch_tensor_expanded = torch.unsqueeze(encoded_sentences_batch_tensor, dim=0)
-
-            merged_sentences_encoded_expanded = torch.unsqueeze(merged_sentences_encoded, dim=1).expand(
-                merged_sentences_encoded.size(0),
-                encoded_sentences_batch_tensor_expanded.size(1),
-                merged_sentences_encoded.size(1))
-
-            context_sentences_to_encode = torch.cat(
-                (merged_sentences_encoded_expanded, encoded_sentences_batch_tensor_expanded))
-
-            # Put the batch first.
-            context_sentences_to_encode = context_sentences_to_encode.permute(1, 0, 2).contiguous()
-
-            if torch.cuda.is_available():
-                context_sentences_to_encode = context_sentences_to_encode.cuda()
-
-            #print("Context", context_sentences_to_encode.size())
-            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
-            encoded_passages = torch.squeeze(encoded_passages, dim=0)
-
-            #print("Encoded passages", encoded_passages.size())
-
-            encoded_passages = encoded_passages.cpu()
-
-            encoded_passages_list.append(encoded_passages)
-        encoded_passages_all_tensor = torch.stack(encoded_passages_list)
-
-        #print(f"Passages before {encoded_passages_all_tensor.size()}")
-        encoded_passages_all_tensor = encoded_passages_all_tensor.view(
-            (encoded_passages_all_tensor.size(0) * encoded_passages_all_tensor.size(1),
-             encoded_passages_all_tensor.size(2), encoded_passages_all_tensor.size(3)))
-
-        print(f"Passages after {encoded_passages_all_tensor.size()}")
-
-        context_encoded_representation = encoded_passages_all_tensor[0, -2, ...]
-        final_encoded_representations = encoded_passages_all_tensor[:, -1, :]
-        #final_encoded_representations = torch.rand_like(final_encoded_representations)
-
-        for x, y in itertools.combinations(final_encoded_representations, r=2):
-            if torch.all(x.eq(y)):
-                print("Final Encoded Tensors Same ", x, y)
-                #assert False
-            else:
-                pass#print("Final Encoded Tensors are different", x, y)
-
-        return context_encoded_representation, final_encoded_representations
-
-    def _encode_batch_of_sentences(self, generated_sequences):
-        encoded_sentences = []
         first_size = None
         for generated_sequence_batch in more_itertools.chunked(generated_sequences, self._encoders_batch_size):
 
@@ -600,7 +533,7 @@ class KnowledgeablePredictor(Predictor):
                 seq.extend([padding] * (target_length - length))
                 return seq
 
-            sentence_tokens = [s["tokens"] + [END_OF_TEXT_TOKEN_ID] for s in generated_sequence_batch]
+            sentence_tokens = [s["tokens"] for s in generated_sequence_batch]
             sentence_tokens_max_length = max(lengths(sentence_tokens))
             sentence_tokens = [pad(s, sentence_tokens_max_length, padding=0) for s in sentence_tokens]
             sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
@@ -611,7 +544,28 @@ class KnowledgeablePredictor(Predictor):
             lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states(sentence_tokens_tensor,
                                                                              num_wrapping_dims=0)
 
-            encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask).cpu()
+            encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
+
+            existing_sentences_encoded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
+                encoded_sentences_batch.size(0),
+                existing_sentences_encoded.size(1),
+                existing_sentences_encoded.size(1))
+
+            context_sentences_to_encode = torch.cat(
+                (existing_sentences_encoded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1)
+
+            if torch.cuda.is_available():
+                context_sentences_to_encode = context_sentences_to_encode.cuda()
+
+            passages_encoded, passages_mask = self.encode_passages(encoded_sentences_batch, lm_mask)
+
+            # print("Context", context_sentences_to_encode.size())
+            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
+
+            # print("Encoded passages", encoded_passages.size())
+
+            encoded_passages = encoded_passages.cpu()
+            encoded_sentences_batch = encoded_sentences_batch.cpu()
 
             if not first_size:
                 first_size = encoded_sentences_batch.size()
@@ -620,11 +574,17 @@ class KnowledgeablePredictor(Predictor):
                 blank_encoded[0: encoded_sentences_batch.size(0), :] = encoded_sentences_batch
                 encoded_sentences_batch = blank_encoded
 
-            encoded_sentences.append(encoded_sentences_batch)
+            encoded_sentences_list.append(encoded_sentences_batch.cpu())
+            encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
+            if context_tensor is None:
+                context_tensor = encoded_passages[:, -2, :]
 
-        encoded_sentences_tensor = torch.stack(encoded_sentences, dim=0)
+        encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0).view(
+            encoded_sentences_list.size(0) * encoded_sentences_list.size(1), encoded_sentences_list.size(2),
+            encoded_sentences_list.size(3))
+        final_tensor = torch.cat(encoded_passages_list, dim=0)
 
-        return encoded_sentences_tensor
+        return encoded_sentences_tensor, context_tensor, final_tensor
 
     def _add_distance_metrics(self, passages_encoded_tensor, sentence_batch):
         if torch.cuda.is_available():
