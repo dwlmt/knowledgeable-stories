@@ -393,7 +393,7 @@ class KnowledgeablePredictor(Predictor):
                 gen_seq["parent_relation_metrics"]["chain_prob"] = chain_prob.item()
                 gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_prob.item()
 
-            log_prob_tensor = torch.Tensor(log_prob_tensor_list).cpu()
+            log_prob_tensor = torch.tensor(log_prob_tensor_list).cpu()
 
         self._vader_polarity(filtered_list)
 
