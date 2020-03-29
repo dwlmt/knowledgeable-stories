@@ -548,7 +548,7 @@ class KnowledgeablePredictor(Predictor):
 
             existing_sentences_encoded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
                 encoded_sentences_batch.size(0),
-                existing_sentences_encoded.size(1),
+                existing_sentences_encoded.size(0),
                 existing_sentences_encoded.size(1))
 
             if torch.cuda.is_available():
