@@ -578,7 +578,7 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
             encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
             if context_tensor is None:
-                context_tensor = encoded_passages[:, -2, :]
+                context_tensor = encoded_passages[0, -2, :]
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
