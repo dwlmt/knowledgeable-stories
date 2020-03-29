@@ -595,6 +595,9 @@ class KnowledgeablePredictor(Predictor):
                 e_list.append(torch.nn.functional.pdist(e, p=1))
             print(f" Encoded Passages Distance: {torch.stack(e_list)}")
 
+            print(f"Encoded Passages Extract {encoded_passages[:, -1, :].cpu()}")
+            print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
+
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
                                       encoded_sentences_tensor.size(2))
