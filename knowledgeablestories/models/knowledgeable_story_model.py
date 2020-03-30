@@ -458,12 +458,13 @@ class KnowledgeableStoriesModel(Model):
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine):
 
-        if cosine:
-            logits = self._cosine_similarity(embeddings_one, embeddings_two)
+        logits = torch.matmul(embeddings_one,
+                              torch.t(embeddings_two))
 
-        else :
-            logits = torch.matmul(embeddings_one,
-                                  torch.t(embeddings_two))
+        if cosine:
+            logits /= max(
+                torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
+                                                                                   keepdim=True), 1e8)
 
         return logits
 
