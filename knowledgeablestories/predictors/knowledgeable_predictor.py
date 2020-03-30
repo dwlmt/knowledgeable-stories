@@ -3,7 +3,7 @@ import os
 
 import more_itertools
 import torch
-from allennlp.common.util import JsonDict, sanitize
+from allennlp.common.util import JsonDict, sanitize, logger
 from allennlp.data import Instance, DatasetReader
 from allennlp.data.fields import MetadataField, ListField, TextField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
@@ -57,7 +57,7 @@ class KnowledgeablePredictor(Predictor):
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
         # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
-        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=100))
+        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=101))
         self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
@@ -170,7 +170,7 @@ class KnowledgeablePredictor(Predictor):
                         if not self._retain_full_output:
                             del parent["sentences"]
 
-                    # logger.info(f"Position output: {parent}")
+                    logger.info(f"Position output: {parent}")
 
                     previous_prediction_metrics = parent["prediction_metrics"]
 
@@ -263,7 +263,7 @@ class KnowledgeablePredictor(Predictor):
 
             generated_sequences = self.generate_sentences(input_tokens)
 
-            print(parent, input_tokens, generated_sequences)
+            # print(parent, input_tokens, generated_sequences)
 
             if len(generated_sequences) > 0:
 
@@ -285,13 +285,13 @@ class KnowledgeablePredictor(Predictor):
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
-                print(context_encoded_representation.size(), final_encoded_representation.size())
+                #print(context_encoded_representation.size(), final_encoded_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
-                print(f"Logits {logits}, {logits.size()}")
+                #print(f"Logits {logits}, {logits.size()}")
 
                 probs, log_probs = self._logits_to_probs(logits)
 
@@ -327,7 +327,7 @@ class KnowledgeablePredictor(Predictor):
 
                 for (k, v) in metric_dict.items():
 
-                    print(f"{k} - {v.size()}")
+                    #print(f"{k} - {v.size()}")
 
                     for value, gen_seq in zip(v, generated_sequences):
                         if "parent_relation_metrics" not in gen_seq:
@@ -399,7 +399,7 @@ class KnowledgeablePredictor(Predictor):
 
         for i, gen_seq in enumerate(filtered_list):
 
-            print(gen_seq.keys())
+            #print(gen_seq.keys())
 
             gen_seq["index"] = i
 
@@ -449,7 +449,11 @@ class KnowledgeablePredictor(Predictor):
         # Filter the generate from list if required.
 
         log_prob_threshold = None
-        print(f"Log prob tensor: {log_prob_tensor.size()}")
+        # print(f"Log prob tensor: {log_prob_tensor.size()}")
+
+        if len(log_prob_tensor) == 0:
+            return
+
         if self._beam_size_gen < len(filtered_list):
             top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
             log_prob_threshold = top_k_tensor[-1]
@@ -578,6 +582,7 @@ class KnowledgeablePredictor(Predictor):
             if context_tensor is None:
                 context_tensor = encoded_passages[0, -2, :]
 
+            '''
             # Measure vector distances.
             print(
                 f" Original Sentences: {existing_sentences_encoded.size()}, Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
@@ -597,6 +602,7 @@ class KnowledgeablePredictor(Predictor):
 
             # print(f"Encoded Passages Extract {encoded_passages[:, -1, :].cpu()}")
             # print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
+            '''
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
@@ -604,7 +610,7 @@ class KnowledgeablePredictor(Predictor):
 
         final_tensor = torch.cat(encoded_passages_list, dim=0)
 
-        print("Encoded", encoded_sentences_tensor.size(), context_tensor.size(), final_tensor.size())
+        #print("Encoded", encoded_sentences_tensor.size(), context_tensor.size(), final_tensor.size())
 
         return encoded_sentences_tensor, context_tensor, final_tensor
 
@@ -677,7 +683,7 @@ class KnowledgeablePredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-        print(f"Generated: {generated_sequences}")
+        #print(f"Generated: {generated_sequences}")
         return generated_sequences
 
     def convert_output_to_tensors(self, output_dict):
