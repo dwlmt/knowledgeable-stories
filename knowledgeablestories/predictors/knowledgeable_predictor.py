@@ -564,7 +564,7 @@ class KnowledgeablePredictor(Predictor):
             '''            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
             '''
             encoded_passages = torch.cat(
-                [self._model.encode_passages(torch.unsqueeze(p, dim=0)) for p in context_sentences_to_encode], dim=0)
+                [self._model.encode_passages(torch.unsqueeze(p, dim=0))[0] for p in context_sentences_to_encode], dim=0)
 
             # print("Encoded passages", encoded_passages.size())
 
