@@ -547,30 +547,17 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
-            '''
             existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
                 encoded_sentences_batch.size(0),
                 existing_sentences_encoded.size(0),
                 existing_sentences_encoded.size(1))
-            '''
-
-            context_sentences_to_encode = torch.zeros(encoded_sentences_batch.size(0),
-                                                      existing_sentences_encoded.size(0) + 1,
-                                                      existing_sentences_encoded.size(1))
 
             if torch.cuda.is_available():
                 existing_sentences_encoded = existing_sentences_encoded.cuda()
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
-                context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-            context_sentences_to_encode[:, 0: existing_sentences_encoded.size(0), :] = torch.unsqueeze(
-                existing_sentences_encoded, dim=0).expand(encoded_sentences_batch.size(0),
-                                                          existing_sentences_encoded.size(0),
-                                                          existing_sentences_encoded.size(1))
-            context_sentences_to_encode[:, -1, :] = encoded_sentences_batch
-
-            # context_sentences_to_encode = torch.cat(
-            #    (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
+            context_sentences_to_encode = torch.cat(
+                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
 
             # print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode,
