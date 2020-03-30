@@ -462,9 +462,8 @@ class KnowledgeableStoriesModel(Model):
                               torch.t(embeddings_two))
 
         if cosine:
-            logits /= max(
-                torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
-                                                                                   keepdim=True), 1e8)
+            logits /= (torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
+                                                                                          keepdim=True)) + 1e8
 
         return logits
 
