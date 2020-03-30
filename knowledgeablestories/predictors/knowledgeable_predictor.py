@@ -563,8 +563,10 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
                 context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-            context_sentences_to_encode[:, 0: existing_sentences_encoded.size(0), :] = torch.cat(
-                encoded_sentences_batch.size(0) * [existing_sentences_encoded])
+            context_sentences_to_encode[:, 0: existing_sentences_encoded.size(0), :] = torch.unsqueeze(
+                existing_sentences_encoded, dim=0).expand(encoded_sentences_batch.size(0),
+                                                          existing_sentences_encoded.size(0),
+                                                          existing_sentences_encoded(1))
             context_sentences_to_encode[:, -1, :] = encoded_sentences_batch
 
             # context_sentences_to_encode = torch.cat(
