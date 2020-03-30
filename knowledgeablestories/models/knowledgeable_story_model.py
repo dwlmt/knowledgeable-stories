@@ -469,11 +469,11 @@ class KnowledgeableStoriesModel(Model):
 
     def encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
-            self._sentence_seq2vec_encoder._module.flatten_parameters()
+            # self._sentence_seq2vec_encoder._module.flatten_parameters()
             self._sentence_seq2vec_encoder = self._sentence_seq2vec_encoder.to(hidden_states.device)
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
-            self._sentence_seq2seq_encoder._module.flatten_parameters()
+            #self._sentence_seq2seq_encoder._module.flatten_parameters()
             self._sentence_seq2seq_encoder = self._sentence_seq2seq_encoder.to(hidden_states.device)
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
@@ -490,7 +490,7 @@ class KnowledgeableStoriesModel(Model):
         if passage_mask is not None:
             mask = passage_mask
 
-        self._passage_seq2seq_encoder._module.flatten_parameters()
+        #self._passage_seq2seq_encoder._module.flatten_parameters()
         self._passage_seq2seq_encoder = self._passage_seq2seq_encoder.to(inputs.device)
 
         encoded_passages = self._passage_seq2seq_encoder(inputs, mask)
