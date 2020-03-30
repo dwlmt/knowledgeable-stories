@@ -100,9 +100,21 @@ local LM_BASE_BATCH_SIZE = 1;
       "type": "lstm",
       "input_size": 768,
       "hidden_size": 768,
-      "num_layers": 4,
+      "num_layers": 5,
       "dropout": 0.0,
     },
+    "sentence_autoencoder": {
+        "input_dim": 784,
+        "embedding_dim": 49,
+        "hidden_dims": [392, 196, 98],
+        "negative_slope": 0.1
+    },
+    "passage_autoencoder": {
+        "input_dim": 784,
+        "embedding_dim": 49,
+        "hidden_dims": [392, 196, 98],
+        "negative_slope": 0.1
+    }
   },
   "trainer": {
     "num_epochs": EPOCHS,
@@ -123,7 +135,7 @@ local LM_BASE_BATCH_SIZE = 1;
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": LR_REDUCE_RATE,
-"patience": LR_PATIENCE,
+      "patience": LR_PATIENCE,
     }
   }
 }
