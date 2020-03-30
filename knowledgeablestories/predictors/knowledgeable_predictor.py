@@ -561,12 +561,7 @@ class KnowledgeablePredictor(Predictor):
                 (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
 
             # print("Context", context_sentences_to_encode.size())
-            '''            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
-            '''
-            encoded_passages = torch.cat(
-                [self._model.encode_passages(torch.unsqueeze(p, dim=0))[0] for p in context_sentences_to_encode], dim=0)
-
-            # print("Encoded passages", encoded_passages.size())
+            encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
 
             encoded_passages = encoded_passages.cpu()
             encoded_sentences_batch = encoded_sentences_batch.cpu()
