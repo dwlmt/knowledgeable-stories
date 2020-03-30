@@ -85,7 +85,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "embedder_vocab_size": embedder_vocab_size,
-    "passage_disc_loss_cosine": True,
+    "passage_disc_loss_cosine": true,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
