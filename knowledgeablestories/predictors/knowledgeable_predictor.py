@@ -566,7 +566,7 @@ class KnowledgeablePredictor(Predictor):
             context_sentences_to_encode[:, 0: existing_sentences_encoded.size(0), :] = torch.unsqueeze(
                 existing_sentences_encoded, dim=0).expand(encoded_sentences_batch.size(0),
                                                           existing_sentences_encoded.size(0),
-                                                          existing_sentences_encoded(1))
+                                                          existing_sentences_encoded.size(1))
             context_sentences_to_encode[:, -1, :] = encoded_sentences_batch
 
             # context_sentences_to_encode = torch.cat(
