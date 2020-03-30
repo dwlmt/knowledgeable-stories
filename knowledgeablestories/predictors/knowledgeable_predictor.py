@@ -547,15 +547,28 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
-            existing_sentences_expanded = existing_sentences_encoded.repeat(
-                encoded_sentences_batch.size(0), 1, 1)
+            '''
+            existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
+                encoded_sentences_batch.size(0),
+                existing_sentences_encoded.size(0),
+                existing_sentences_encoded.size(1))
+            '''
+
+            context_sentences_to_encode = torch.zeros(encoded_sentences_batch.size(0),
+                                                      existing_sentences_encoded.size(0) + 1,
+                                                      existing_sentences_encoded.size(1))
 
             if torch.cuda.is_available():
-                existing_sentences_expanded = existing_sentences_expanded.cuda()
+                existing_sentences_encoded = existing_sentences_encoded.cuda()
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
+                context_sentences_to_encode = context_sentences_to_encode.cuda()
 
-            context_sentences_to_encode = torch.cat(
-                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
+            context_sentences_to_encode[:, 0: existing_sentences_encoded.size(0), :] = torch.cat(
+                encoded_sentences_batch.size(0) * [existing_sentences_encoded])
+            context_sentences_to_encode[:, -1, :] = encoded_sentences_batch
+
+            # context_sentences_to_encode = torch.cat(
+            #    (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
 
             # print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode,
@@ -598,8 +611,8 @@ class KnowledgeablePredictor(Predictor):
                 e_list.append(torch.nn.functional.pdist(e, p=1))
             print(f" Encoded Passages Distance: {torch.stack(e_list)}")
 
-            print(f"Encoded Passages Extract {encoded_passages[:, -1, :].cpu()}")
-            print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
+            # print(f"Encoded Passages Extract {encoded_passages[:, -1, :].cpu()}")
+            # print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
