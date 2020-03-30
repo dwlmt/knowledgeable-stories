@@ -553,6 +553,7 @@ class KnowledgeablePredictor(Predictor):
                 existing_sentences_encoded.size(1))
 
             if torch.cuda.is_available():
+                existing_sentences_expanded = existing_sentences_expanded.cuda()
                 existing_sentences_encoded = existing_sentences_encoded.cuda()
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
 
