@@ -39,7 +39,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 1000,
+   "batches_per_epoch": TRAINING_ITERATION_SIZE,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -58,7 +58,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "type": "multitask_iterator",
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
    "iterate_forever": false,
-   "batches_per_epoch": 100,
+   "batches_per_epoch": VALIDATION_ITERATION_SIZE,
    "sampling_rates": [0.5, 0.5],
    "iterators": {
        "writing_prompts_lm": {
@@ -85,6 +85,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "embedder_vocab_size": embedder_vocab_size,
+    "passage_disc_loss_cosine": True,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
@@ -100,9 +101,21 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "type": "lstm",
       "input_size": 1024,
       "hidden_size": 1024,
-      "num_layers": 4,
+      "num_layers": 5,
       "dropout": 0.0,
     },
+    "sentence_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims":  [512, 256, 128],
+        "negative_slope": 0.1
+    },
+    "passage_autoencoder": {
+        "input_dim": 1024,
+        "embedding_dim": 64,
+        "hidden_dims": [512, 256, 128],
+        "negative_slope": 0.1
+    }
   },
   "trainer": {
     "num_epochs": EPOCHS,
