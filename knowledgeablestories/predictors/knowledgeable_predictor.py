@@ -344,7 +344,7 @@ class KnowledgeablePredictor(Predictor):
                 all_level_list.extend(generated_sequences)
 
         # Early return if it fails to generate any valid sequences.
-        if len(all_level_list) <= 2:
+        if len(all_level_list) <= 3:
             num_levels_rollout -= 1
             return
 
@@ -360,6 +360,11 @@ class KnowledgeablePredictor(Predictor):
                     filtered_list.append(gen_seq)
         else:
             filtered_list = all_level_list
+
+        # Early return if it fails to generate any valid sequences.
+        if len(filtered_list) <= 3:
+            num_levels_rollout -= 1
+            return
 
         # Recalculate probabilities for the reduced beam.
         if len(filtered_list) < len(all_level_list):
