@@ -368,28 +368,28 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
       "type": "lstm",
-      "input_size": 784,
-      "hidden_size": 784,
+      "input_size": 768,
+      "hidden_size": 768,
       "num_layers": 3,
       "dropout": 0.0,
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 784,
-      "hidden_size": 784,
+      "input_size": 768,
+      "hidden_size": 768,
       "num_layers": 5,
       "dropout": 0.0,
     },
     "sentence_autoencoder": {
-        "input_dim": 784,
-        "embedding_dim": 49,
-        "hidden_dims": [392, 196, 98],
+        "input_dim": 768,
+        "embedding_dim": 48,
+        "hidden_dims": [384, 192, 96],
         "negative_slope": 0.1
     },
     "passage_autoencoder": {
-        "input_dim": 784,
-        "embedding_dim": 49,
-        "hidden_dims": [392, 196, 98],
+        "input_dim": 768,
+        "embedding_dim": 48,
+        "hidden_dims": [384, 192, 96],
         "negative_slope": 0.1
     }
   },

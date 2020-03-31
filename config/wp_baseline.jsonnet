@@ -3,18 +3,18 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-
+local PASSAGE_BASE_BATCH_SIZE = 2;
+local LM_BASE_BATCH_SIZE = 1;
+local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
 local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
 local LR_RATE = std.parseJson(std.extVar("LR_RATE"));
+local MOMENTUM = std.parseJson(std.extVar("MOMENTUM"));
 local PATIENCE = std.parseInt(std.extVar("PATIENCE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 local LR_PATIENCE = std.parseInt(std.extVar("LR_PATIENCE"));
 local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
-
-local PASSAGE_BASE_BATCH_SIZE = 2;
-local LM_BASE_BATCH_SIZE = 1;
 
 {
   "dataset_reader": {
@@ -104,15 +104,15 @@ local LM_BASE_BATCH_SIZE = 1;
       "dropout": 0.0,
     },
     "sentence_autoencoder": {
-        "input_dim": 784,
-        "embedding_dim": 49,
-        "hidden_dims": [392, 196, 98],
+        "input_dim": 768,
+        "embedding_dim": 48,
+        "hidden_dims": [384, 192, 96],
         "negative_slope": 0.1
     },
     "passage_autoencoder": {
-        "input_dim": 784,
-        "embedding_dim": 49,
-        "hidden_dims": [392, 196, 98],
+        "input_dim": 768,
+        "embedding_dim": 48,
+        "hidden_dims": [384, 192, 96],
         "negative_slope": 0.1
     }
   },
