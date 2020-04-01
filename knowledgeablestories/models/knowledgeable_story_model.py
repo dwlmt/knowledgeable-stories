@@ -58,7 +58,8 @@ class KnowledgeableStoriesModel(Model):
             passage_distance_weights = [1.0]
 
         if loss_weights is None:
-            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "tdvae_loss": 1.0, "sentence_autoencoder": 0.1,
+            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0,
+                            "tdvae_loss": 1.0, "sentence_autoencoder": 0.1,
                             "passage_autoencoder": 0.1}
 
         if metric_config is None:
@@ -139,6 +140,12 @@ class KnowledgeableStoriesModel(Model):
 
             self._metrics["lm_loss"] = Average()
             self._metrics["passage_disc_loss"] = Average()
+            self._metrics["sentence_disc_loss"] = Average()
+            self._metrics["tdvae_loss"] = Average()
+            self._metrics["tdvae_kl_loss"] = Average()
+            self._metrics["tdvae_recon_loss"] = Average()
+            self._metrics["tdvae_predict_loss"] = Average()
+            self._metrics["tdvae_optimal_loss"] = Average()
 
             if self._sentence_autoencoder:
                 self._metrics["sentence_autoencoder_loss"] = Average()
@@ -179,26 +186,36 @@ class KnowledgeableStoriesModel(Model):
         if torch.cuda.is_available():
             loss = loss.cuda()
 
-        if passages != None and "passage_disc_loss" in self._loss_weights:
+        if passages != None:
 
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
 
                 with torch.no_grad():
                     lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
-                encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
+                encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
-                loss = self._sentence_autoencoder_if_required(encoded_sentences_batch, loss, output, prediction_mode)
+                if "passage_disc_loss" in self._loss_weights:
+                    sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
+                                                                                          encoded_sentences,
+                                                                                          "sentence",
+                                                                                          dataset_name,
+                                                                                          prediction_mode)
 
-                if self._passage_seq2seq_encoder != None:
+                    loss += sentence_disc_loss
+
+                loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
+
+                if self._passage_seq2seq_encoder != None and "passage_disc_loss" in self._loss_weights:
 
                     passages_encoded, passages_mask = \
-                        self.encode_passages(encoded_sentences_batch, lm_mask)
+                        self.encode_passages(encoded_sentences, lm_mask)
 
-                    passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded,
-                                                                                            passages_encoded,
-                                                                                            dataset_name,
-                                                                                            prediction_mode)
+                    passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                    passages_encoded,
+                                                                                    "passage",
+                                                                                    dataset_name,
+                                                                                    prediction_mode)
 
                     self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
@@ -209,7 +226,7 @@ class KnowledgeableStoriesModel(Model):
                         output["passages_encoded_diff"] = passages_encoded_difference
 
                         output["passages_mask"] = passages_mask
-                        output["sentences_encoded"] = encoded_sentences_batch
+                        output["sentences_encoded"] = encoded_sentences
                         output["lm_encoded"] = lm_hidden_state
                         output["lm_mask"] = lm_mask
                         output["tokens"] = passages["tokens"]
@@ -227,16 +244,19 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
                 if self._passage_tdvae is not None:
-
                     from torch.nn import functional as F
-                    tdvae_return = self._passage_tdvae(F.sigmoid(encoded_sentences_batch))
-                    for r in tdvae_return:
-                        print(r.size())
+                    tdvae_return = self._passage_tdvae(F.sigmoid(encoded_sentences))
 
-                    losses = self._passage_tdvae.loss_function(tdvae_return)
-                    print(losses)
+                    total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, bce_optimal = self._passage_tdvae.loss_function(
+                        tdvae_return)
 
-                    loss += losses[0] * self._loss_weights["tdvae_loss"]
+                    loss += total_loss * self._loss_weights["tdvae_loss"]
+
+                    self._metrics["tdvae_loss"](total_loss)
+                    self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
+                    self._metrics["tdvae_recon_loss"](bce_diff)
+                    self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
+                    self._metrics["tdvae_optimal_loss"](bce_optimal)
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
@@ -385,7 +405,7 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text)
         return passages_output[0], passages_mask
 
-    def _calculate_disc_passage_loss(self, one_encoded, two_encoded, dataset_name, prediction_mode):
+    def _calculate_disc_loss(self, one_encoded, two_encoded, level_name, dataset_name, prediction_mode):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(one_encoded.device)
@@ -415,7 +435,8 @@ class KnowledgeableStoriesModel(Model):
             # Mask out sentences that are not present in the target classes.
             nll_loss = self._nll_loss(logit_scores, target_classes)
 
-            loss += nll_loss * distance_weight * self._loss_weights["passage_disc_loss"]  # Add the loss and scale it.
+            loss += nll_loss * distance_weight * self._loss_weights[
+                f"{level_name}_disc_loss"]  # Add the loss and scale it.
 
             if not self.training and not prediction_mode:
 
