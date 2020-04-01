@@ -464,7 +464,7 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
                 self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
 
-            return loss, output_dict
+        return loss, output_dict
 
     def _calculate_logits_and_softmax(self, encoded_one_flat, encoded_two_flat, i, level):
         logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
