@@ -90,7 +90,7 @@ class TDVAE(nn.Module, FromParams):
                                 device=x.device)
 
         # Truncate the sequence if not required to the end.
-        x = x[:, :t2.max() + 1]
+        # x = x[:, :t2.max() + 1]
 
         # Run LSTM to get belief states.
         b1, b2 = self._beliefs(x, t1, t2)
@@ -181,7 +181,7 @@ class TDVAE(nn.Module, FromParams):
         # replicate b multiple times
 
         print(b.size())
-        b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, -1, -1, -1, -1)  # size: copy, bs, time, layers, dim
+        b = b[None, ...].expand(self.samples_per_seq, -1, -1, -1, -1)  # size: copy, bs, time, layers, dim
         # Element-wise indexing. sizes: bs, layers, dim
         b1 = torch.gather(b, 2, t1[..., None, None, None].expand(-1, -1, -1, b.size(3), b.size(4))).view(
             -1, b.size(3), b.size(4))
@@ -233,6 +233,7 @@ class TDVAE(nn.Module, FromParams):
                           gaussian_log_prob(pt_z2_z1_mu, pt_z2_z1_logvar, qb_z2_b2)).mean()
 
         # Ground the t2 state of the world in the data, reconstruction loss.
+        print(pd_x2_z2.size(), x2.size())
         bce = F.binary_cross_entropy(pd_x2_z2, x2, reduction='sum') / batch_size
         bce_optimal = F.binary_cross_entropy(x2, x2, reduction='sum').detach() / batch_size
         bce_diff = bce - bce_optimal
