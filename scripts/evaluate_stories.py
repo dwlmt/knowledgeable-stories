@@ -529,8 +529,6 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
     position_df = scale_prediction_columns(position_df, metric_columns)
 
-    story_ids = annotator_df["story_id"].unique()
-
     position_story_ids = position_df["story_id"].unique()
 
     story_ids = position_story_ids#set(story_ids).union(set(position_story_ids))
@@ -549,6 +547,8 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
             plot_data = []
 
             if annotator_df is not None:
+                story_ids = annotator_df["story_id"].unique()
+
                 story_df = annotator_df.loc[annotator_df["story_id"] == story_id]
                 story_df = story_df.groupby(['story_id', 'sentence_num', 'worker_id'],
                                             as_index=False).first()
@@ -605,7 +605,7 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
                                     text=hover_text
                                 )
                                 plot_data.append(trace)
-    
+
                     plot_data.append(trace)
 
             if len(position_story_df) > 0:
