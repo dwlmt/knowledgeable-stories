@@ -456,7 +456,7 @@ class KnowledgeableStoriesModel(Model):
                     rand_columns = torch.randperm(encoded_sentences_flat.size(0))[:self._max_sample]
                     random_sentences = encoded_sentences_flat[rand_columns]
 
-                    encoded_sentences_expanded[1:] = random_sentences
+                    encoded_sentences_expanded[1:, -1] = random_sentences
 
                     encoded_passages = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
