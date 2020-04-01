@@ -192,7 +192,7 @@ class KnowledgeableStoriesModel(Model):
                         self.encode_passages(encoded_sentences_batch, lm_mask)
 
                     passage_disc_loss, disc_output_dict = self._calculate_disc_passage_loss(passages_encoded,
-                                                                                            encoded_sentences_batch,
+                                                                                            passages_encoded,
                                                                                             dataset_name,
                                                                                             prediction_mode)
 
@@ -369,30 +369,30 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text)
         return passages_output[0], passages_mask
 
-    def _calculate_disc_passage_loss(self, passage_encoded, sentence_encoded, dataset_name, prediction_mode):
+    def _calculate_disc_passage_loss(self, one_encoded, two_encoded, dataset_name, prediction_mode):
 
         output_dict = {}
-        loss = torch.tensor(0.0).to(passage_encoded.device)
+        loss = torch.tensor(0.0).to(one_encoded.device)
 
-        batch_size, sentence_num, feature_size = passage_encoded.size()
+        batch_size, sentence_num, feature_size = one_encoded.size()
 
-        encoded_one_flat = passage_encoded.view(batch_size * sentence_num, feature_size)
-        encoded_two_flat = sentence_encoded.view(batch_size * sentence_num, feature_size)
+        encoded_one_flat = one_encoded.view(batch_size * sentence_num, feature_size)
+        encoded_two_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
         logits = self.calculate_logits(encoded_one_flat,
                                        encoded_two_flat, self._passage_disc_loss_cosine)
 
         dot_product_mask = (
-                1.0 - torch.diag(torch.ones(logits.shape[0]).to(passage_encoded.device), 0).float())
+                1.0 - torch.diag(torch.ones(logits.shape[0]).to(one_encoded.device), 0).float())
         logits *= dot_product_mask
 
         for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
 
-            target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(passage_encoded.device), i).byte()
+            target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(one_encoded.device), i).byte()
             target_classes = torch.argmax(target_mask, dim=1).long()
 
             # Remove rows which spill over batches.
-            batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(passage_encoded.device)
+            batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(one_encoded.device)
             target_classes = target_classes * batch_group_mask
             logit_scores = masked_log_softmax(logits, mask=batch_group_mask)
 
@@ -458,7 +458,8 @@ class KnowledgeableStoriesModel(Model):
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine):
 
-        logits = torch.matmul(embeddings_one, embeddings_two)
+        logits = torch.matmul(embeddings_one,
+                              torch.t(embeddings_two))
 
         if cosine:
             logits /= (torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
