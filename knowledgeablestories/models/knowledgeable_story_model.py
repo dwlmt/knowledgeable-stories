@@ -227,7 +227,7 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
             if self._passage_tdvae is not None:
-                
+
                 tdvae_return = self._passage_tdvae(encoded_sentences_batch)
                 for r in tdvae_return:
                     print(r.size())
@@ -295,7 +295,7 @@ class KnowledgeableStoriesModel(Model):
             self._sentence_autoencoder = self._sentence_autoencoder.to(encoded_sentences_batch.detach())
             if self.training:
                 y, x, mu, logvar = self._sentence_autoencoder(encoded_sentences_batch)
-                vae_loss = self._passage_autoencoder.loss_function(x, y, mu, logvar)
+                vae_loss = self._sentence_autoencoder.loss_function(x, y, mu, logvar)
                 self._metrics["sentence_autoencoder_loss"](vae_loss)
                 loss += vae_loss * self._loss_weights["sentence_autoencoder"]
             elif prediction_mode:
