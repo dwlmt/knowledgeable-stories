@@ -468,15 +468,15 @@ class KnowledgeableStoriesModel(Model):
 
     def _calculate_logits_and_softmax(self, encoded_one_flat, encoded_two_flat, i, level):
         logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
-        target_mask = torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), i).byte()
+        target_mask = torch.diag(torch.ones(logits.size()).to(encoded_one_flat.device), i).byte()
         print(logits.size(), target_mask.size())
         target_classes = torch.argmax(target_mask, dim=1).long()
 
         # If sentence level then need to keep the reverse being masked out.
-        mask = (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device))).byte()
+        mask = (1 - torch.diag(torch.ones(logits.size()).to(encoded_one_flat.device))).byte()
 
         if level == "sentence":
-            mask *= (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), -i)).byte()
+            mask *= (1 - torch.diag(torch.ones(logits.size()).to(encoded_one_flat.device), -i)).byte()
 
         log_logits = masked_log_softmax(logits, mask=mask)
         return log_logits, logits, target_classes, target_mask
