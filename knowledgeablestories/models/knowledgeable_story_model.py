@@ -203,9 +203,11 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
                 with torch.no_grad():
-                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                    lm_output, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                    lm_output = lm_output.detach()
+                    lm_mask = lm_mask.detach()
 
-                encoded_sentences_batch = self._encode_sentences_batch(lm_hidden_state, lm_mask)
+                encoded_sentences_batch = self._encode_sentences_batch(lm_output, lm_mask)
 
                 sent_autoencoder_loss, sent_autoencoder_output = self._sentence_autoencoder_if_required(
                     encoded_sentences_batch, output, prediction_mode)
@@ -215,7 +217,7 @@ class KnowledgeableStoriesModel(Model):
                 passage_loss, passage_output = self.run_passage_encoder_if_required(dataset_name, prediction_mode,
                                                                                     passages,
                                                                                     encoded_sentences_batch,
-                                                                                    lm_hidden_state, lm_mask)
+                                                                                    lm_output, lm_mask)
                 loss += passage_loss
                 output = {**output, **passage_output}
 
