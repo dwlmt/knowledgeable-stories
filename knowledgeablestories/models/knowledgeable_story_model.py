@@ -428,6 +428,7 @@ class KnowledgeableStoriesModel(Model):
         output_dict = {}
         loss = torch.tensor(0.0).to(encoded_sentences.device)
 
+        print(lm_mask)
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
         passage_mask = passages_sentence_lengths > 0
         passage_lengths = torch.sum(passage_mask, dim=1)
@@ -436,16 +437,15 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences_flat = encoded_sentences.view(batch_size * sentence_num, feature_size)
 
-        print("Encoded Sentences", encoded_sentences.size(), passage_lengths.size(), passage_mask.size())
+        print("Encoded Sentences", encoded_sentences.size(), passage_lengths)
         for b in range(batch_size):
 
-            encoded_sentences_batch = encoded_sentences[b]
             passage_len = passage_lengths[0].item()
 
             for i in range(passage_len):
 
                 if i > 1:
-                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences_batch[0: passage_len], dim=0)
+                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences[b, 0: passage_len], dim=0)
                     print("trimmed size ", encoded_sentences_batch_trimmed.size())
                     encoded_sentences_expanded = encoded_sentences_batch_trimmed.expand(self._max_sample + 1,
                                                                                         encoded_sentences_batch_trimmed.size(
