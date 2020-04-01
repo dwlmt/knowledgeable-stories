@@ -477,6 +477,7 @@ class KnowledgeableStoriesModel(Model):
 
                     logits_log_softmax = self._log_softmax(logit_scores)
 
+                    print(logits_log_softmax, target_classes)
                     nll_loss = self._nll_loss(logits_log_softmax, target_classes)
 
                     loss += nll_loss * self._loss_weights[
