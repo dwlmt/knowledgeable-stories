@@ -436,6 +436,7 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences_flat = encoded_sentences.view(batch_size * sentence_num, feature_size)
 
+        print("Encoded Sentences", encoded_sentences.size(), passage_lengths.size(), passage_mask.size())
         for b in range(batch_size):
 
             encoded_sentences_batch = encoded_sentences[b]
@@ -444,7 +445,7 @@ class KnowledgeableStoriesModel(Model):
             for i in range(passage_len):
 
                 if i > 1:
-                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences_batch[b, 0: passage_len], dim=0)
+                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences_batch[0: passage_len], dim=0)
                     print("trimmed size ", encoded_sentences_batch_trimmed.size())
                     encoded_sentences_expanded = encoded_sentences_batch_trimmed.expand(self._max_sample + 1,
                                                                                         encoded_sentences_batch_trimmed.size(
