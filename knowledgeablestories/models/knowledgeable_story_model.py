@@ -472,12 +472,13 @@ class KnowledgeableStoriesModel(Model):
         target_classes = torch.argmax(target_mask, dim=1).long()
 
         # If sentence level then need to keep the reverse being masked out.
-        mask = None
-        if level == "sentence":
-            mask = (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), -i)).byte()
+        mask = (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device))).byte()
 
-        logit_scores = masked_log_softmax(logits, mask=mask)
-        return logit_scores, logits, target_classes, target_mask
+        if level == "sentence":
+            mask *= (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), -i)).byte()
+
+        log_logits = masked_log_softmax(logits, mask=mask)
+        return log_logits, logits, target_classes, target_mask
 
     def prediction_distance_metrics(self, passages_encoded):
 
