@@ -97,6 +97,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "dropout": 0.0,
     },
     "passage_tdvae": {
+        "x_size": 1024,
          "input_size": 1024,
          "belief_size": 1024,
          "z_posterior_size": 1024,
