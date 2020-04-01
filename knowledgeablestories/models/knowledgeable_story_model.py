@@ -227,8 +227,9 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
                 if self._passage_tdvae is not None:
-    
-                    tdvae_return = self._passage_tdvae(encoded_sentences_batch)
+
+                    from torch.nn import functional as F
+                    tdvae_return = self._passage_tdvae(F.sigmoid(encoded_sentences_batch))
                     for r in tdvae_return:
                         print(r.size())
 
