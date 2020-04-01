@@ -464,14 +464,14 @@ class KnowledgeableStoriesModel(Model):
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
 
-                    logit_scores = torch.matmul(context_state, final_state)
+                    logit_scores = torch.cat([torch.dot(context_state, t) for t in final_state])
 
                     target_classes = torch.zeros(logit_scores)
                     target_classes[0] = 1  # First one is always the real sentence.
 
-                    logits = self._log_softmax(logit_scores)
+                    logits_log_softmax = self._log_softmax(logit_scores)
 
-                    nll_loss = self._nll_loss(logits, target_classes)
+                    nll_loss = self._nll_loss(logits_log_softmax, target_classes)
 
                     loss += nll_loss * self._loss_weights[
                         "passage_disc_loss"]  # Add the loss and scale it.
@@ -481,15 +481,17 @@ class KnowledgeableStoriesModel(Model):
                         with torch.no_grad():
 
                             for top_k in self._metric_config["lm_accuracy_top_k"]:
-                                self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logits, target_classes)
+                                self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logits_log_softmax,
+                                                                                           target_classes)
 
                             self._similarity_metrics(context_state, final_state, dataset_name, i)
 
                             self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](
                                 logit_scores[0].item())
-                            self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](torch.exp(logits[0]).item())
+                            self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](
+                                torch.exp(logits_log_softmax[0]).item())
                             self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](
-                                logits.item())
+                                logits_log_softmax.item())
 
         return loss, output_dict
 
