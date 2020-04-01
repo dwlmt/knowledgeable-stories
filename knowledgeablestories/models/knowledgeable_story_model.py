@@ -429,8 +429,8 @@ class KnowledgeableStoriesModel(Model):
         loss = torch.tensor(0.0).to(encoded_sentences.device)
 
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
-        lm_mask = passages_sentence_lengths > 0
-        passage_mask = lm_mask
+        passage_mask = passages_sentence_lengths > 0
+        passage_lengths = torch.sum(passage_mask, dim=1)
 
         batch_size, sentence_num, feature_size = encoded_sentences.size()
 
@@ -439,7 +439,7 @@ class KnowledgeableStoriesModel(Model):
         for b in range(batch_size):
 
             encoded_sentences_batch = encoded_sentences[b]
-            passage_len = passage_mask[0]
+            passage_len = passage_lengths[0].item()
 
             for i in range(passage_len):
 
