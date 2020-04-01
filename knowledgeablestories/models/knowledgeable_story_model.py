@@ -452,15 +452,15 @@ class KnowledgeableStoriesModel(Model):
                                                                                         encoded_sentences_batch_trimmed.size(
                                                                                             1),
                                                                                         encoded_sentences_batch_trimmed.size(
-                                                                                            2))
+                                                                                            2)).clone()
                     rand_columns = torch.randperm(encoded_sentences_flat.size(0))[:self._max_sample]
                     random_sentences = encoded_sentences_flat[rand_columns]
 
                     print(encoded_sentences_expanded.size(), random_sentences.size())
-                    for i, sent in enumerate(random_sentences):
-                        encoded_sentences_expanded[i + 1, -1] = sent
+                    # for i, sent in enumerate(random_sentences):
+                    encoded_sentences_expanded[1:, -1] = random_sentences
 
-                    encoded_passages = self.encode_passages(encoded_sentences_expanded)
+                    encoded_passages, _ = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
 
