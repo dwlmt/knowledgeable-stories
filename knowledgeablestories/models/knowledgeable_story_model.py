@@ -458,8 +458,7 @@ class KnowledgeableStoriesModel(Model):
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine):
 
-        logits = torch.matmul(embeddings_one,
-                              torch.t(embeddings_two))
+        logits = torch.matmul(embeddings_one, embeddings_two)
 
         if cosine:
             logits /= (torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
