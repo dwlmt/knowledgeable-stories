@@ -478,7 +478,8 @@ class KnowledgeableStoriesModel(Model):
                     logits_log_softmax = self._log_softmax(logit_scores)
 
                     print(logits_log_softmax, target_classes)
-                    nll_loss = self._nll_loss(logits_log_softmax, target_classes)
+                    nll_loss = self._nll_loss(torch.unsqueeze(logits_log_softmax, dim=0),
+                                              torch.unsqueeze(target_classes), dim=0)
 
                     loss += nll_loss * self._loss_weights[
                         "passage_disc_loss"]  # Add the loss and scale it.
