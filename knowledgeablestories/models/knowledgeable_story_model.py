@@ -44,7 +44,7 @@ class KnowledgeableStoriesModel(Model):
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
                  dropout: float = 0.0,
-                 max_sample=10,
+                 max_sample=5,
                  passage_distance_weights: list = None,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
@@ -450,9 +450,11 @@ class KnowledgeableStoriesModel(Model):
 
             for i in range(passage_len):
 
+                hidden_state = None
+
                 # Don't run for the first sentence.
                 if i > 1:
-                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences[b, 0: i], dim=0)
+                    encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences[b, i], dim=0)
 
                     print("trimmed size ", encoded_sentences_batch_trimmed.size())
                     encoded_sentences_expanded = encoded_sentences_batch_trimmed.expand(self._max_sample + 1,
@@ -471,6 +473,8 @@ class KnowledgeableStoriesModel(Model):
 
                     # print("Raw", self._passage_seq2seq_encoder._module(encoded_sentences_expanded))
                     encoded_passages, _ = self.encode_passages(encoded_sentences_expanded)
+
+                    # encoded_passages, hidden_state = self._passage_seq2seq_encoder._module(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
 
