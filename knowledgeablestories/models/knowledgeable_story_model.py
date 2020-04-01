@@ -226,16 +226,16 @@ class KnowledgeableStoriesModel(Model):
                                                              passages_encoded, lm_mask)
                     '''
 
-            if self._passage_tdvae is not None:
+                if self._passage_tdvae is not None:
+    
+                    tdvae_return = self._passage_tdvae(encoded_sentences_batch)
+                    for r in tdvae_return:
+                        print(r.size())
 
-                tdvae_return = self._passage_tdvae(encoded_sentences_batch)
-                for r in tdvae_return:
-                    print(r.size())
+                    losses = self._passage_tdvae.loss_function(tdvae_return)
+                    print(losses)
 
-                losses = self._passage_tdvae.loss_function(tdvae_return)
-                print(losses)
-
-                loss += losses[0] * self._loss_weights["tdvae_loss"]
+                    loss += losses[0] * self._loss_weights["tdvae_loss"]
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
