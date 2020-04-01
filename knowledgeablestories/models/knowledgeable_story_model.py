@@ -422,50 +422,45 @@ class KnowledgeableStoriesModel(Model):
         encoded_one_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         encoded_two_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
+        i = 1
         logits = self.calculate_logits(encoded_one_flat,
                                        encoded_two_flat, self._passage_disc_loss_cosine)
 
-        dot_product_mask = (
-                1.0 - torch.diag(torch.ones(logits.shape[0]).to(one_encoded.device), 0).float())
-        logits *= dot_product_mask
+        target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(one_encoded.device), i).byte()
+        target_classes = torch.argmax(target_mask, dim=1).long()
 
-        for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
+        # Remove rows which spill over batches.
+        batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(one_encoded.device)
+        target_classes = target_classes * batch_group_mask
+        logit_scores = masked_log_softmax(logits, mask=batch_group_mask)
 
-            target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(one_encoded.device), i).byte()
-            target_classes = torch.argmax(target_mask, dim=1).long()
+        # Mask out sentences that are not present in the target classes.
+        nll_loss = self._nll_loss(logit_scores, target_classes)
 
-            # Remove rows which spill over batches.
-            batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(one_encoded.device)
-            target_classes = target_classes * batch_group_mask
-            logit_scores = masked_log_softmax(logits, mask=batch_group_mask)
+        loss += nll_loss * self._loss_weights[
+            f"{level_name}_disc_loss"]  # Add the loss and scale it.
 
-            # Mask out sentences that are not present in the target classes.
-            nll_loss = self._nll_loss(logit_scores, target_classes)
+        if not self.training and not prediction_mode:
 
-            loss += nll_loss * distance_weight * self._loss_weights[
-                f"{level_name}_disc_loss"]  # Add the loss and scale it.
+            with torch.no_grad():
 
-            if not self.training and not prediction_mode:
+                encoded_sentences_correct = encoded_one_flat[
+                                            i:, ]
+                encoded_target_correct = encoded_two_flat[:encoded_two_flat.shape[0] - i, :]
 
-                with torch.no_grad():
+                for top_k in self._metric_config["lm_accuracy_top_k"]:
+                    self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logit_scores, target_classes)
 
-                    encoded_sentences_correct = encoded_one_flat[
-                                                i:, ]
-                    encoded_target_correct = encoded_two_flat[:encoded_two_flat.shape[0] - i, :]
+                self._similarity_metrics(encoded_sentences_correct, encoded_target_correct, dataset_name, i)
 
-                    for top_k in self._metric_config["lm_accuracy_top_k"]:
-                        self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logit_scores, target_classes)
+                # Some extra work just for metrics.
+                correct_scores = torch.masked_select(logits, target_mask)
+                correct_log_probs = torch.masked_select(logit_scores, target_mask)
+                correct_probs = torch.exp(correct_log_probs)
 
-                    self._similarity_metrics(encoded_sentences_correct, encoded_target_correct, dataset_name, i)
-
-                    # Some extra work just for metrics.
-                    correct_scores = torch.masked_select(logits, target_mask)
-                    correct_log_probs = torch.masked_select(logit_scores, target_mask)
-                    correct_probs = torch.exp(correct_log_probs)
-
-                    self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](correct_scores.mean().item())
-                    self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
-                    self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
+                self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](correct_scores.mean().item())
+                self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
+                self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
 
         return loss, output_dict
 
