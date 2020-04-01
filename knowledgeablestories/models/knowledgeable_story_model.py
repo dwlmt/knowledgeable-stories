@@ -464,7 +464,7 @@ class KnowledgeableStoriesModel(Model):
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
 
-                    logit_scores = torch.cat([torch.dot(context_state, t) for t in final_state])
+                    logit_scores = torch.cat([torch.dot(context_state[0], t) for t in final_state])
 
                     target_classes = torch.zeros(logit_scores)
                     target_classes[0] = 1  # First one is always the real sentence.
