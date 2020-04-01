@@ -435,7 +435,11 @@ class KnowledgeableStoriesModel(Model):
 
         batch_size, sentence_num, feature_size = encoded_sentences.size()
 
-        encoded_sentences_flat = encoded_sentences.view(batch_size * sentence_num, feature_size)
+        sentences_list = []
+        for b in range(batch_size):
+            passage_len = passage_lengths[0].item()
+            sentences_list.append(encoded_sentences[b, 0: passage_len])
+        encoded_sentences_flat = torch.cat(sentences_list)
 
         print("Encoded Sentences", encoded_sentences.size(), passage_lengths)
         for b in range(batch_size):
@@ -466,6 +470,7 @@ class KnowledgeableStoriesModel(Model):
 
                     logit_scores = torch.cat(
                         [torch.unsqueeze(torch.dot(context_state[0], t), dim=0) for t in final_state])
+                    print(logit_scores)
 
                     target_classes = torch.zeros_like(logit_scores)
                     target_classes[0] = 1  # First one is always the real sentence.
