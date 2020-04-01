@@ -457,7 +457,7 @@ class KnowledgeableStoriesModel(Model):
                     random_sentences = encoded_sentences_flat[rand_columns]
 
                     print(encoded_sentences_expanded.size(), random_sentences.size())
-                    encoded_sentences_expanded[1:, -1] = random_sentences
+                    encoded_sentences_expanded[1: encoded_sentences_expanded.size(0), -1] = random_sentences
 
                     encoded_passages = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
