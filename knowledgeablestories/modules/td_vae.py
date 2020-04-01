@@ -229,7 +229,6 @@ class TDVAE(nn.Module, FromParams):
         kl_div_qs_pb = kl_div_gaussian(qs_z1_z2_b1_mu, qs_z1_z2_b1_logvar, pb_z1_b1_mu, pb_z1_b1_logvar).mean()
 
         # Predict Z2 from Z1 as if it has all the future information by known at t2.
-        print(qb_z2_b2_mu, qb_z2_b2_logvar, qb_z2_b2, )
         kl_shift_qb_pt = (gaussian_log_prob(qb_z2_b2_mu, qb_z2_b2_logvar, qb_z2_b2) -
                           gaussian_log_prob(pt_z2_z1_mu, pt_z2_z1_logvar, qb_z2_b2)).mean()
 
@@ -254,7 +253,6 @@ def reparameterize_gaussian(mu, logvar, sample, return_eps=False):
         return ret, eps
     else:
         return ret
-
 
 def gaussian_log_prob(mu, logvar, x):
     '''Batched log probability log p(x) computation.'''
