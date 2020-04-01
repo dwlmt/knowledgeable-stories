@@ -195,12 +195,12 @@ class KnowledgeableStoriesModel(Model):
                     lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
-                
+
                 # If using Td-Vae then restrict to Log space.
                 if self._passage_tdvae is not None:
                     encoded_sentences = F.sigmoid(encoded_sentences)
 
-                if "passage_disc_loss" in self._loss_weights:
+                if "sentence_disc_loss" in self._loss_weights:
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences,
                                                                                           "sentence",
@@ -209,6 +209,8 @@ class KnowledgeableStoriesModel(Model):
 
                     loss += sentence_disc_loss
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
+
+                encoded_sentences = encoded_sentences.detach()
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
 
