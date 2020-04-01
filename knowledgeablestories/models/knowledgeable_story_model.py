@@ -464,6 +464,8 @@ class KnowledgeableStoriesModel(Model):
                     # for i, sent in enumerate(random_sentences):
                     encoded_sentences_expanded[1:, -1] = random_sentences
 
+                    # self._passage_seq2seq_encoder._module
+
                     encoded_passages, _ = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
@@ -472,7 +474,7 @@ class KnowledgeableStoriesModel(Model):
                         [torch.unsqueeze(torch.dot(context_state[0], t), dim=0) for t in final_state])
                     print(logit_scores)
 
-                    target_classes = torch.zeros(1)
+                    target_classes = torch.zeros(1).to(logit_scores.device).long()
 
                     logits_log_softmax = self._log_softmax(logit_scores)
 
