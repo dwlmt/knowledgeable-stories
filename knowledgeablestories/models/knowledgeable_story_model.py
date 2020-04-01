@@ -210,7 +210,8 @@ class KnowledgeableStoriesModel(Model):
                     loss += sentence_disc_loss
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
-                encoded_sentences = encoded_sentences.detach()
+                if self._passage_tdvae is not None:
+                    encoded_sentences = encoded_sentences.detach()
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
 
@@ -423,22 +424,23 @@ class KnowledgeableStoriesModel(Model):
         encoded_two_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
         i = 1
-        logits = self.calculate_logits(encoded_one_flat,
-                                       encoded_two_flat, self._passage_disc_loss_cosine)
-
-        target_mask = torch.diag(torch.ones((batch_size * sentence_num) - i).to(one_encoded.device), i).byte()
-        target_classes = torch.argmax(target_mask, dim=1).long()
-
-        # Remove rows which spill over batches.
-        batch_group_mask = self._batch_group_mask(batch_size, sentence_num, i=i).to(one_encoded.device)
-        target_classes = target_classes * batch_group_mask
-        logit_scores = masked_log_softmax(logits, mask=batch_group_mask)
+        logit_scores, logits, target_classes, target_mask = self._calculate_logits_and_softmax(encoded_one_flat,
+                                                                                               encoded_two_flat,
+                                                                                               i, level_name)
 
         # Mask out sentences that are not present in the target classes.
         nll_loss = self._nll_loss(logit_scores, target_classes)
-
         loss += nll_loss * self._loss_weights[
             f"{level_name}_disc_loss"]  # Add the loss and scale it.
+
+        # If sentence encoding then also train on the backwards sentence.
+        if level_name == "sentence":
+            neg_logit_scores, _, neg_target_classes, _ = self._calculate_logits_and_softmax(encoded_one_flat,
+                                                                                            encoded_two_flat,
+                                                                                            -1, level_name)
+            nll_loss = self._nll_loss(neg_logit_scores, neg_target_classes)
+            loss += nll_loss * self._loss_weights[
+                f"{level_name}_disc_loss"]
 
         if not self.training and not prediction_mode:
 
@@ -462,7 +464,20 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
                 self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
 
-        return loss, output_dict
+            return loss, output_dict
+
+    def _calculate_logits_and_softmax(self, encoded_one_flat, encoded_two_flat, i, level):
+        logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
+        target_mask = torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), i).byte()
+        target_classes = torch.argmax(target_mask, dim=1).long()
+
+        # If sentence level then need to keep the reverse being masked out.
+        mask = None
+        if level == "sentence":
+            mask = (1 - torch.diag(torch.ones((encoded_one_flat.size())).to(encoded_one_flat.device), -i)).byte()
+
+        logit_scores = masked_log_softmax(logits, mask=mask)
+        return logit_scores, logits, target_classes, target_mask
 
     def prediction_distance_metrics(self, passages_encoded):
 
@@ -483,17 +498,6 @@ class KnowledgeableStoriesModel(Model):
             output_dict = predictions_metrics_dict
 
         return output_dict
-
-    def _batch_group_mask(self, batch_size, sentence_num, i=1):
-        """ Mask out the last row in each batch as will not have a prediction for for the next row.
-        """
-        batch_group = torch.ones(sentence_num)
-        batch_group.index_fill_(0, torch.tensor(list(range(sentence_num - i, sentence_num))), 0)
-        batch_group = batch_group.unsqueeze(dim=0)
-        batch_group = batch_group.expand(batch_size, sentence_num)
-        batch_group = batch_group.contiguous().view(batch_size * sentence_num).bool()
-
-        return batch_group
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine):
 
