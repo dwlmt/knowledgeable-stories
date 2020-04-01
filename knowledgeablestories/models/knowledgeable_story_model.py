@@ -467,7 +467,7 @@ class KnowledgeableStoriesModel(Model):
                     logit_scores = torch.cat(
                         [torch.unsqueeze(torch.dot(context_state[0], t), dim=0) for t in final_state])
 
-                    target_classes = torch.zeros(logit_scores)
+                    target_classes = torch.zeros_like(logit_scores)
                     target_classes[0] = 1  # First one is always the real sentence.
 
                     logits_log_softmax = self._log_softmax(logit_scores)
