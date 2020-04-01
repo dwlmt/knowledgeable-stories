@@ -179,7 +179,9 @@ class TDVAE(nn.Module, FromParams):
         # aggregate the belief b
         b = self.b_belief_rnn(x)  # size: bs, time, layers, dim
         # replicate b multiple times
-        b = b[None, ...].expand(self.samples_per_seq, -1, -1, -1, -1)  # size: copy, bs, time, layers, dim
+        
+        print(b)
+        b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, -1, -1, -1, -1)  # size: copy, bs, time, layers, dim
         # Element-wise indexing. sizes: bs, layers, dim
         b1 = torch.gather(b, 2, t1[..., None, None, None].expand(-1, -1, -1, b.size(3), b.size(4))).view(
             -1, b.size(3), b.size(4))
