@@ -61,7 +61,7 @@ class TDVAE(nn.Module, FromParams):
         self.t_diff_max = t_diff_max
 
         # Multilayer LSTM for aggregating belief states
-        self.b_belief_rnn = nn.LSTM(input_size=input_size, hidden_size=belief_size, num_layers=num_layers)
+        self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
 
         # Multilayer state model is used. Sampling is done by sampling higher layers first.
         self.z_posterior_belief = nn.ModuleList(
@@ -177,7 +177,7 @@ class TDVAE(nn.Module, FromParams):
         ''' Runs the LSTMS to obtain beliefs at t1 and t2
         '''
         # aggregate the belief b
-        b, _ = self.b_belief_rnn(x)  # size: bs, time, layers, dim
+        b = self.b_belief_rnn(x)  # size: bs, time, layers, dim
         # replicate b multiple times
 
         print(b.size())
@@ -270,3 +270,76 @@ def kl_div_gaussian(q_mu, q_logvar, p_mu=None, p_logvar=None):
     logvar_diff = q_logvar - p_logvar
     kl_div = -0.5 * (1.0 + logvar_diff - logvar_diff.exp() - ((q_mu - p_mu) ** 2 / p_logvar.exp()))
     return kl_div.sum(dim=-1)
+
+
+class MultilayerLSTMCell(nn.Module):
+    '''Provides a mutli-layer wrapper for LSTMCell.'''
+
+    def __init__(self, input_size, hidden_size, bias=True, layers=1, every_layer_input=False,
+                 use_previous_higher=False):
+        '''
+        every_layer_input: Consider raw input at every layer.
+        use_previous_higher: Take higher layer at previous timestep as input to current layer.
+        '''
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.layers = layers
+        self.every_layer_input = every_layer_input
+        self.use_previous_higher = use_previous_higher
+        input_sizes = [input_size] + [hidden_size for _ in range(1, layers)]
+        if every_layer_input:
+            for i in range(1, layers):
+                input_sizes[i] += input_size
+        if use_previous_higher:
+            for i in range(layers - 1):
+                input_sizes[i] += hidden_size
+        self.lstm_cells = nn.ModuleList([nn.LSTMCell(input_sizes[i], hidden_size, bias=bias) for i in range(layers)])
+
+    def forward(self, input_, hx=None):
+        '''
+        Input: input, [(h_0, c_0), ..., (h_L, c_L)]
+        Output: [(h_0, c_0), ..., (h_L, c_L)]
+        '''
+        if hx is None:
+            hx = [None] * self.layers
+        outputs = []
+        recent = input_
+        for layer in range(self.layers):
+            if layer > 0 and self.every_layer_input:
+                recent = torch.cat([recent, input_], dim=1)
+            if layer < self.layers - 1 and self.use_previous_higher:
+                if hx[layer + 1] is None:
+                    prev = recent.new_zeros([recent.size(0), self.hidden_size])
+                else:
+                    prev = hx[layer + 1][0]
+                recent = torch.cat([recent, prev], dim=1)
+            out = self.lstm_cells[layer](recent, hx[layer])
+            recent = out[0]
+            outputs.append(out)
+        return outputs
+
+
+class MultilayerLSTM(nn.Module, FromParams):
+    '''A multilayer LSTM that uses MultilayerLSTMCell.'''
+
+    def __init__(self, input_size, hidden_size, bias=True, layers=1, every_layer_input=False,
+                 use_previous_higher=False):
+        super().__init__()
+        self.cell = MultilayerLSTMCell(input_size, hidden_size, bias=bias, layers=layers,
+                                       every_layer_input=every_layer_input, use_previous_higher=use_previous_higher)
+
+    def forward(self, input_, reset=None):
+        '''If reset is 1.0, the RNN state is reset AFTER that timestep's output is produced, otherwise if reset is 0.0,
+        nothing is changed.'''
+        hx = None
+        outputs = []
+        for t in range(input_.size(1)):
+            hx = self.cell(input_[:, t], hx)
+            outputs.append(torch.cat([h[:, None, None, :] for (h, c) in hx], dim=2))
+            if reset is not None:
+                reset_t = reset[:, t, None]
+                if torch.any(reset_t > 1e-6):
+                    for i, (h, c) in enumerate(hx):
+                        hx[i] = (h * (1.0 - reset_t), c * (1.0 - reset_t))
+
+        return torch.cat(outputs, dim=1)  # size: batch_size, length, layers, hidden_size
