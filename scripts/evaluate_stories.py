@@ -5,13 +5,11 @@ import os
 from collections import OrderedDict, Iterable
 from io import StringIO
 from itertools import combinations
-from textwrap import TextWrapper
 
 import colorlover
 import numpy
 import pandas
 import pandas as pd
-import plotly
 import plotly.graph_objs as go
 import plotly.io as pio
 import scipy
@@ -550,64 +548,65 @@ def plot_annotator_and_model_predictions(position_df, annotator_df, args, metric
 
             plot_data = []
 
-            story_df = annotator_df.loc[annotator_df["story_id"] == story_id]
-            story_df = story_df.groupby(['story_id', 'sentence_num', 'worker_id'],
-                                        as_index=False).first()
+            if annotator_df is not None:
+                story_df = annotator_df.loc[annotator_df["story_id"] == story_id]
+                story_df = story_df.groupby(['story_id', 'sentence_num', 'worker_id'],
+                                            as_index=False).first()
 
-            if len(story_df) > 0:
+                if len(story_df) > 0:
 
-                worker_ids = set(story_df["worker_id"].unique())
+                    worker_ids = set(story_df["worker_id"].unique())
 
-                for worker_id in worker_ids:
+                    for worker_id in worker_ids:
 
-                    if worker_id == "mean":
-                        continue
+                        if worker_id == "mean":
+                            continue
 
-                    worker_df = story_df.loc[story_df["worker_id"] == worker_id]
+                        worker_df = story_df.loc[story_df["worker_id"] == worker_id]
 
-                    if len(worker_df) > 0:
+                        if len(worker_df) > 0:
 
-                        worker_df = worker_df.sort_values(by=["sentence_num"])
-                        sentence_nums = worker_df["sentence_num"].tolist()
-                        suspense = torch.tensor(worker_df["suspense"].tolist()).int()
-                        measure_values = model(suspense).tolist()
+                            worker_df = worker_df.sort_values(by=["sentence_num"])
+                            sentence_nums = worker_df["sentence_num"].tolist()
+                            suspense = torch.tensor(worker_df["suspense"].tolist()).int()
+                            measure_values = model(suspense).tolist()
 
-                        dash = "solid"
-                        if worker_id == "median":
-                            dash = "dash"
-
-                        trace = go.Scatter(
-                            x=sentence_nums,
-                            y=measure_values,
-                            mode='lines+markers',
-                            name=f"{worker_id}",
-                            line=dict(color="lightslategrey", dash=dash)
-                        )
-                        plot_data.append(trace)
-
-                        type = "peak"
-                        peak_indices, peaks_meta = find_peaks(measure_values, prominence=args["peak_prominence_weighting"],
-                                                              width=1, distance=3)
-
-                        if len(peak_indices) > 0:
-                            hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
+                            dash = "solid"
+                            if worker_id == "median":
+                                dash = "dash"
 
                             trace = go.Scatter(
-                                x=[sentence_nums[j] for j in peak_indices],
-                                y=[measure_values[j] for j in peak_indices],
-                                mode='markers',
-                                marker=dict(
-                                    color="lightslategrey",
-                                    symbol='star-triangle-up',
-                                    size=11,
-                                ),
-                                name=f'{worker_id} - {type}',
-                                text=hover_text
+                                x=sentence_nums,
+                                y=measure_values,
+                                mode='lines+markers',
+                                name=f"{worker_id}",
+                                line=dict(color="lightslategrey", dash=dash)
                             )
                             plot_data.append(trace)
 
-                plot_data.append(trace)
+                            type = "peak"
+                            peak_indices, peaks_meta = find_peaks(measure_values,
+                                                                  prominence=args["peak_prominence_weighting"],
+                                                                  width=1, distance=3)
 
+                            if len(peak_indices) > 0:
+                                hover_text = create_peak_text_and_metadata(peak_indices, peaks_meta)
+
+                                trace = go.Scatter(
+                                    x=[sentence_nums[j] for j in peak_indices],
+                                    y=[measure_values[j] for j in peak_indices],
+                                    mode='markers',
+                                    marker=dict(
+                                        color="lightslategrey",
+                                        symbol='star-triangle-up',
+                                        size=11,
+                                    ),
+                                    name=f'{worker_id} - {type}',
+                                    text=hover_text
+                                )
+                                plot_data.append(trace)
+    
+                    plot_data.append(trace)
 
             if len(position_story_df) > 0:
 
@@ -731,10 +730,13 @@ def evaluate_stories(args):
     position_df["random"] = numpy.random.randint(1, 100, position_df.shape[0])
 
     print(f"Position rows : {len(position_df)}")
-    annotator_df = pd.read_csv(args["annotator_targets"])
+    if args["annotator_targets"] is not None:
+        annotator_df = pd.read_csv(args["annotator_targets"])
+    else:
+        annotator_df = None
 
-    if args["exclude_worker_ids"] is not None and len(args["exclude_worker_ids"]) > 0:
-        annotator_df = annotator_df[~annotator_df["worker_id"].isin(args["exclude_worker_ids"])]
+        if args["exclude_worker_ids"] is not None and len(args["exclude_worker_ids"]) > 0:
+            annotator_df = annotator_df[~annotator_df["worker_id"].isin(args["exclude_worker_ids"])]
 
     plot_annotator_and_model_predictions(position_df, annotator_df, args, metric_columns)
     if annotator_df is not None:
