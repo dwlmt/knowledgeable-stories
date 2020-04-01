@@ -234,6 +234,7 @@ class TDVAE(nn.Module, FromParams):
 
         # Ground the t2 state of the world in the data, reconstruction loss.
         print(pd_x2_z2.size(), x2.size())
+        x2 = x2.detach()
         bce = F.binary_cross_entropy(pd_x2_z2, x2, reduction='sum') / batch_size
         bce_optimal = F.binary_cross_entropy(x2, x2, reduction='sum').detach() / batch_size
         bce_diff = bce - bce_optimal
