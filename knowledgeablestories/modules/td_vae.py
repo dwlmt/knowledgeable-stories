@@ -90,7 +90,7 @@ class TDVAE(nn.Module, FromParams):
                                 device=x.device)
 
         # Truncate the sequence if not required to the end.
-        # x = x[:, :t2.max() + 1]
+        x = x[:, :t2.max() + 1]
 
         # Run LSTM to get belief states.
         b1, b2 = self._beliefs(x, t1, t2)
