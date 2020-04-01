@@ -11,6 +11,7 @@ from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Ave
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
+from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
 END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
@@ -40,6 +41,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
+                 passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  passage_distance_weights: list = None,
                  loss_weights: dict = None,
@@ -56,7 +58,7 @@ class KnowledgeableStoriesModel(Model):
             passage_distance_weights = [1.0]
 
         if loss_weights is None:
-            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_autoencoder": 0.1,
+            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "tdvae_loss": 1.0, "sentence_autoencoder": 0.1,
                             "passage_autoencoder": 0.1}
 
         if metric_config is None:
@@ -79,6 +81,8 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
+
+        self._passage_tdvae = passage_tdvae
 
         self._sentence_autoencoder = sentence_autoencoder
         self._passage_autoencoder = passage_autoencoder
@@ -221,6 +225,17 @@ class KnowledgeableStoriesModel(Model):
                         self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_batch,
                                                              passages_encoded, lm_mask)
                     '''
+
+            if self._passage_tdvae is not None:
+                
+                tdvae_return = self._passage_tdvae(encoded_sentences_batch)
+                for r in tdvae_return:
+                    print(r.size())
+
+                losses = self._passage_tdvae.loss_function(tdvae_return)
+                print(losses)
+
+                loss += losses[0] * self._loss_weights["tdvae_loss"]
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
