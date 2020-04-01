@@ -445,6 +445,7 @@ class KnowledgeableStoriesModel(Model):
 
                 if i > 1:
                     encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences_batch[b, 0: passage_len], dim=0)
+                    print("trimmed size ", encoded_sentences_batch_trimmed.size())
                     encoded_sentences_expanded = encoded_sentences_batch_trimmed.expand(self._max_sample + 1,
                                                                                         encoded_sentences_batch_trimmed.size(
                                                                                             1),
