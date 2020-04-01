@@ -453,6 +453,7 @@ class KnowledgeableStoriesModel(Model):
                 # Don't run for the first sentence.
                 if i > 1:
                     encoded_sentences_batch_trimmed = torch.unsqueeze(encoded_sentences[b, 0: i], dim=0)
+
                     print("trimmed size ", encoded_sentences_batch_trimmed.size())
                     encoded_sentences_expanded = encoded_sentences_batch_trimmed.expand(self._max_sample + 1,
                                                                                         encoded_sentences_batch_trimmed.size(
@@ -468,7 +469,7 @@ class KnowledgeableStoriesModel(Model):
 
                     # self._passage_seq2seq_encoder._module
 
-                    print("Raw", self._passage_seq2seq_encoder._module(encoded_sentences_expanded))
+                    # print("Raw", self._passage_seq2seq_encoder._module(encoded_sentences_expanded))
                     encoded_passages, _ = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
