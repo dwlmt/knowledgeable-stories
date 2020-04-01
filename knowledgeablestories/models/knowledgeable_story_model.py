@@ -442,6 +442,8 @@ class KnowledgeableStoriesModel(Model):
         encoded_sentences_flat = torch.cat(sentences_list)
 
         print("Encoded Sentences", encoded_sentences.size(), passage_lengths)
+
+        logits_softmax_all = []
         for b in range(batch_size):
 
             passage_len = passage_lengths[0].item()
@@ -466,6 +468,7 @@ class KnowledgeableStoriesModel(Model):
 
                     # self._passage_seq2seq_encoder._module
 
+                    print("Raw", self._passage_seq2seq_encoder._module(encoded_sentences_expanded))
                     encoded_passages, _ = self.encode_passages(encoded_sentences_expanded)
                     final_state = encoded_passages[:, -1, :]
                     context_state = torch.unsqueeze(encoded_passages[0, -2, :], dim=0)
@@ -474,33 +477,38 @@ class KnowledgeableStoriesModel(Model):
                         [torch.unsqueeze(torch.dot(context_state[0], t), dim=0) for t in final_state])
                     print(logit_scores)
 
-                    target_classes = torch.zeros(1).to(logit_scores.device).long()
-
                     logits_log_softmax = self._log_softmax(logit_scores)
+                    logits_softmax_all.append(torch.unsqueeze(logits_log_softmax, dim=0))
 
-                    print(logits_log_softmax, target_classes)
-                    nll_loss = self._nll_loss(torch.unsqueeze(logits_log_softmax, dim=0),
-                                              torch.unsqueeze(target_classes, dim=0))
-
-                    loss += nll_loss * self._loss_weights[
-                        "passage_disc_loss"]  # Add the loss and scale it.
+                    print(logits_log_softmax)
 
                     if not self.training and not prediction_mode:
-
                         with torch.no_grad():
-
-                            for top_k in self._metric_config["lm_accuracy_top_k"]:
-                                self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logits_log_softmax,
-                                                                                           target_classes)
-
                             self._similarity_metrics(context_state, final_state, dataset_name, i)
 
-                            self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](
+                            self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_1"](
                                 logit_scores[0].item())
-                            self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](
+                            self._metrics[f"{dataset_name}_disc_correct_prob_avg_1"](
                                 torch.exp(logits_log_softmax[0]).item())
-                            self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](
+                            self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_1"](
                                 logits_log_softmax.item())
+
+        logits_softmax_all_tensor = torch.cat(logits_softmax_all)
+        target_classes = torch.zeros((logits_softmax_all_tensor.size(0), logits_softmax_all_tensor.size(1)))
+        target_classes.to(device=logits_softmax_all_tensor.device).long()
+
+        nll_loss = self._nll_loss(logits_softmax_all_tensor, target_classes)
+
+        loss += nll_loss * self._loss_weights[
+            "passage_disc_loss"]  # Add the loss and scale it.
+
+        if not self.training and not prediction_mode:
+
+            with torch.no_grad():
+
+                for top_k in self._metric_config["lm_accuracy_top_k"]:
+                    self._metrics[f"{dataset_name}_disc_accuracy_1_{top_k}"](logits_log_softmax,
+                                                                             target_classes)
 
         return loss, output_dict
 
