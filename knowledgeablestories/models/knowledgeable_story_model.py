@@ -111,7 +111,7 @@ class KnowledgeableStoriesModel(Model):
         self._dropout = torch.nn.Dropout(dropout)
         self._max_sample = max_sample
 
-        self._log_softmax = nn.LogSoftmax(dim=1)
+        self._log_softmax = nn.LogSoftmax(dim=-1)
         self._nll_loss = nn.NLLLoss(ignore_index=0)
 
         self._metrics = {}
