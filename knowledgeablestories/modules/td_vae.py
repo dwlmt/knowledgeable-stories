@@ -1,6 +1,7 @@
 """ Adapted from https://github.com/ankitkv/TD-VAE"""
 import numpy
 import torch
+from allennlp.common import FromParams
 from torch import nn
 from torch.nn import functional as F
 
@@ -41,7 +42,7 @@ class Decoder(nn.Module):
         return p
 
 
-class TDVAE(nn.Module):
+class TDVAE(nn.Module, FromParams):
     """ The full TD-VAE model with jumpy prediction.
     """
 
