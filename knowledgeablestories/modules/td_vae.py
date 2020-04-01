@@ -177,10 +177,10 @@ class TDVAE(nn.Module, FromParams):
         ''' Runs the LSTMS to obtain beliefs at t1 and t2
         '''
         # aggregate the belief b
-        b = self.b_belief_rnn(x)  # size: bs, time, layers, dim
+        b, _ = self.b_belief_rnn(x)  # size: bs, time, layers, dim
         # replicate b multiple times
-        
-        print(b)
+
+        print(b.size())
         b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, -1, -1, -1, -1)  # size: copy, bs, time, layers, dim
         # Element-wise indexing. sizes: bs, layers, dim
         b1 = torch.gather(b, 2, t1[..., None, None, None].expand(-1, -1, -1, b.size(3), b.size(4))).view(
