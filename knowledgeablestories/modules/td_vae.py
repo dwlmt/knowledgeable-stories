@@ -45,8 +45,14 @@ class TDVAE(nn.Module):
     """ The full TD-VAE model with jumpy prediction.
     """
 
-    def __init__(self, x_size, input_size, belief_size, z_posterior_size, num_layers, samples_per_seq, t_diff_min,
-                 t_diff_max):
+    def __init__(self, x_size,
+                 input_size: int = 1024,
+                 belief_size: int = 1024,
+                 z_posterior_size: int = 1024,
+                 num_layers: int = 2,
+                 samples_per_seq: int = 200,
+                 t_diff_min: int = 1,
+                 t_diff_max: int = 5):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = samples_per_seq
