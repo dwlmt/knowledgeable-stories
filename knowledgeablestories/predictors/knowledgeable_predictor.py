@@ -281,11 +281,16 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_tensor, context_encoded_representation, final_encoded_representation = self._encode_representations(
                     generated_sequences, existing_sentences_encoded)
 
+                # For multistep rollout use the base context distance for comaprison.
+                # if "parent_relation_metrics" in parent and "context_representation" in parent["parent_relation_metrics"]:
+                #    context_encoded_representation = parent["parent_relation_metrics"]["context_representation"]
+
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
 
-                #print(context_encoded_representation.size(), final_encoded_representation.size())
+                # print(context_encoded_representation.size(), final_encoded_representation.size())
+
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
@@ -590,7 +595,7 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
             encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
             if context_tensor is None:
-                context_tensor = encoded_passages[0, 0, :]
+                context_tensor = encoded_passages[0, -2, :]
 
             '''
             # Measure vector distances.
