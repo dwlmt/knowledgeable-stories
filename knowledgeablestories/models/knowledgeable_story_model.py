@@ -210,7 +210,7 @@ class KnowledgeableStoriesModel(Model):
                     loss += sentence_disc_loss
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
-                encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
+                    encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
                 # Don't back-propogate through the sentences or TD-VAE will force the input to 0.
                 if self._passage_tdvae is not None:
