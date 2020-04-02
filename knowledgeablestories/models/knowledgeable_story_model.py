@@ -420,9 +420,9 @@ class KnowledgeableStoriesModel(Model):
         return passages_output[0], passages_mask
 
     def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.1):
-        targets = torch.zeros(batch_size, batch_size, device=self.device).fill_(label_smoothing)
+        targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
-            targets += torch.diag(torch.ones(batch_size - abs(offset), device=self.device), diagonal=offset)
+            targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
         targets /= targets.sum(1, keepdim=True)
         return targets
 
@@ -433,12 +433,12 @@ class KnowledgeableStoriesModel(Model):
 
         batch_size, sentence_num, feature_size = one_encoded.size()
 
-        encoded_one_flat = one_encoded.view(batch_size * sentence_num, feature_size)
-        encoded_two_flat = two_encoded.view(batch_size * sentence_num, feature_size)
+        one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
+        two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
-        logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
+        logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets)
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(one_encoded.device)
 
         logit_scores = masked_log_softmax(logits, mask=None)
 
