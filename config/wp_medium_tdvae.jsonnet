@@ -93,11 +93,18 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "type": "lstm",
       "input_size": 1024,
       "hidden_size": 1024,
-      "num_layers": 3,
+      "num_layers": 2,
+      "dropout": 0.0,
+    },
+    "sentence_2_seq2vec_encoder": {
+      "type": "lstm",
+      "input_size": 1024,
+      "hidden_size": 1024,
+      "num_layers": 2,
       "dropout": 0.0,
     },
     "passage_tdvae": {
-        "x_size": 1024,
+         "x_size": 2028,
          "input_size": 1024,
          "belief_size": 1024,
          "z_posterior_size": 1024,
@@ -107,11 +114,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "t_diff_max": 5
     },
     "sentence_autoencoder": {
-        "input_dim": 1024,
+        "input_dim": 2048,
         "embedding_dim": 64,
-        "hidden_dims":  [512, 256, 128],
+        "hidden_dims":  [1024, 512, 256, 128],
         "negative_slope": 0.1
-    },
+    }
   },
   "trainer": {
     "num_epochs": EPOCHS,
