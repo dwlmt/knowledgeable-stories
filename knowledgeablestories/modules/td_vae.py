@@ -61,10 +61,6 @@ class TDVAE(nn.Module, FromParams):
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
 
-        self.preprocess = None
-        if x_size != belief_size:
-            self.preprocess = nn.Linear(x_size, belief_size)
-
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
 
@@ -91,10 +87,6 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
         # TODO mask so does not go beyond the length of the batch.
-        # if self.preprocess is not None:
-        #    x_processed = self.preprocess(x)
-        # else:
-        #    x_processed = x
 
         # Sample the current and future time points.
         t1 = torch.randint(0, x.size(1) - self.t_diff_max, (self.samples_per_seq, x.size(0)), device=x.device)
