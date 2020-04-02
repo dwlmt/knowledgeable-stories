@@ -203,9 +203,7 @@ class KnowledgeableStoriesModel(Model):
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
                                                                                           [1],
-                                                                                          "sentence",
-                                                                                          dataset_name,
-                                                                                          prediction_mode)
+                                                                                          "sentence")
 
                     loss += sentence_disc_loss
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
@@ -226,9 +224,7 @@ class KnowledgeableStoriesModel(Model):
                     passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                     passages_encoded,
                                                                                     [1],
-                                                                                    "passage",
-                                                                                    dataset_name,
-                                                                                    prediction_mode)
+                                                                                    "passage")
 
                     self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
@@ -432,7 +428,7 @@ class KnowledgeableStoriesModel(Model):
         targets /= targets.sum(1, keepdim=True)
         return targets
 
-    def _calculate_disc_loss(self, one_encoded, two_encoded, offsets, level_name, dataset_name, prediction_mode):
+    def _calculate_disc_loss(self, one_encoded, two_encoded, offsets, level_name):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(one_encoded.device)
