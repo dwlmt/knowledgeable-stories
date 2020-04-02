@@ -240,7 +240,7 @@ class KnowledgeableStoriesModel(Model):
 
                     output = {**output, **disc_output_dict}
 
-                    loss += passage_disc_loss * self._loss_weights["passage_disc_loss"]
+                    loss += passage_disc_loss
 
                     loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
@@ -443,9 +443,9 @@ class KnowledgeableStoriesModel(Model):
         logit_scores = masked_log_softmax(logits, mask=None)
 
         # Mask out sentences that are not present in the target classes.
-        kl_loss = self._kl_loss(logit_scores, target_mask)
-        loss += kl_loss * self._loss_weights[
-            f"{level_name}_disc_loss"]  # Add the loss and scale it.
+        kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
+            f"{level_name}_disc_loss"]
+        loss += kl_loss  # Add the loss and scale it.
 
         return loss, output_dict
 
