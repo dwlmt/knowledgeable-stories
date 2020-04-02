@@ -9,7 +9,6 @@ from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
-from torch.nn import functional as F
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -38,7 +37,9 @@ class KnowledgeableStoriesModel(Model):
                  embedder_vocab_size: int = None,
                  lm_name: str = "gpt2",
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
+                 sentence_2_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
+                 sentence_2_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
@@ -81,7 +82,9 @@ class KnowledgeableStoriesModel(Model):
                               "cbt_lm": {}, "cbt_hierarchy": {}}
 
         self._sentence_seq2vec_encoder = sentence_seq2vec_encoder
+        self._sentence_2_seq2vec_encoder = sentence_2_seq2vec_encoder
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
+        self._sentence_2_seq2seq_encoder = sentence_2_seq2seq_encoder
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
 
         self._passage_tdvae = passage_tdvae
@@ -107,8 +110,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._dropout = torch.nn.Dropout(dropout)
 
-        self._log_softmax = nn.LogSoftmax(dim=1)
-        self._nll_loss = nn.NLLLoss(ignore_index=0)
+        self._kl_loss = nn.KLDivLoss(reduction='batchmean')
 
         self._metrics = {}
         for dataset_name, values in self._dataset_config.items():
@@ -118,18 +120,6 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics[f"{dataset_name}_accuracy_{k}"] = CategoricalAccuracy(top_k=k)
 
                 self._metrics[f"{dataset_name}_perplexity"] = Perplexity()
-
-            if "hierarchy" in dataset_name:
-                for i in range(1, len(self._passage_distance_weights) + 1):
-                    for top_n in self._metric_config["lm_accuracy_top_k"]:
-                        self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_n}"] = CategoricalAccuracy(top_k=top_n)
-
-                    self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"] = Average()
-                    self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"] = Average()
-                    self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"] = Average()
-                    self._metrics[f"{dataset_name}_disc_correct_similarity_cosine_avg_{i}"] = Average()
-                    self._metrics[f"{dataset_name}_disc_correct_distance_l1_avg_{i}"] = Average()
-                    self._metrics[f"{dataset_name}_disc_correct_distance_l2_avg_{i}"] = Average()
 
             if "roc" or "atomic" or "swag" in dataset_name:
                 self._metrics[f"{dataset_name}_cloze_accuracy"] = Average()
@@ -189,7 +179,7 @@ class KnowledgeableStoriesModel(Model):
 
         if passages != None:
 
-            if self._sentence_seq2vec_encoder != None or self._sentence_seq2seq_encoder != None:
+            if self._sentence_seq2vec_encoder != None:
 
                 with torch.no_grad():
                     lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
@@ -197,12 +187,16 @@ class KnowledgeableStoriesModel(Model):
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
                 # If using Td-Vae then restrict to Log space.
-                if self._passage_tdvae is not None:
-                    encoded_sentences = F.sigmoid(encoded_sentences)
+                # if self._passage_tdvae is not None:
+                #    encoded_sentences = F.sigmoid(encoded_sentences)
 
-                if "sentence_disc_loss" in self._loss_weights:
+                if "sentence_disc_loss" in self._loss_weights and (
+                        self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
+                    encoded_sentences_2 = self._encode_sentences_2_batch(lm_hidden_state, lm_mask)
+
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
-                                                                                          encoded_sentences,
+                                                                                          encoded_sentences_2,
+                                                                                          [1],
                                                                                           "sentence",
                                                                                           dataset_name,
                                                                                           prediction_mode)
@@ -210,8 +204,11 @@ class KnowledgeableStoriesModel(Model):
                     loss += sentence_disc_loss
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
+                encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
+
                 if self._passage_tdvae is not None:
                     encoded_sentences = encoded_sentences.detach()
+                    encoded_sentences = torch.sigmoid(encoded_sentences)
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
 
@@ -222,6 +219,7 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                     passages_encoded,
+                                                                                    [1],
                                                                                     "passage",
                                                                                     dataset_name,
                                                                                     prediction_mode)
@@ -355,6 +353,14 @@ class KnowledgeableStoriesModel(Model):
         encoded_sentences_batch = torch.stack(encoded_sentences_list)
         return encoded_sentences_batch
 
+    def _encode_sentences_2_batch(self, lm_hidden_state, lm_mask):
+        encoded_sentences_list = []
+        for hs, pm in zip(lm_hidden_state, lm_mask):
+            encoded_sentences = self.encode_sentences_2(hs, pm)
+            encoded_sentences_list.append(encoded_sentences)
+        encoded_sentences_batch = torch.stack(encoded_sentences_list)
+        return encoded_sentences_batch
+
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
         # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
         # normalised ones.
@@ -413,7 +419,14 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text)
         return passages_output[0], passages_mask
 
-    def _calculate_disc_loss(self, one_encoded, two_encoded, level_name, dataset_name, prediction_mode):
+    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.1):
+        targets = torch.zeros(batch_size, batch_size, device=self.device).fill_(label_smoothing)
+        for offset in offsets:
+            targets += torch.diag(torch.ones(batch_size - abs(offset), device=self.device), diagonal=offset)
+        targets /= targets.sum(1, keepdim=True)
+        return targets
+
+    def _calculate_disc_loss(self, one_encoded, two_encoded, offsets, level_name, dataset_name, prediction_mode):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(one_encoded.device)
@@ -423,63 +436,18 @@ class KnowledgeableStoriesModel(Model):
         encoded_one_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         encoded_two_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
-        i = 1
-        logit_scores, logits, target_classes, target_mask = self._calculate_logits_and_softmax(encoded_one_flat,
-                                                                                               encoded_two_flat,
-                                                                                               i, level_name)
+        logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
+
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets)
+
+        logit_scores = masked_log_softmax(logits, mask=None)
 
         # Mask out sentences that are not present in the target classes.
-        nll_loss = self._nll_loss(logit_scores, target_classes)
-        loss += nll_loss * self._loss_weights[
+        kl_loss = self._kl_loss(logit_scores, target_mask)
+        loss += kl_loss * self._loss_weights[
             f"{level_name}_disc_loss"]  # Add the loss and scale it.
 
-        # If sentence encoding then also train on the backwards sentence.
-        if level_name == "sentence":
-            neg_logit_scores, _, neg_target_classes, _ = self._calculate_logits_and_softmax(encoded_one_flat,
-                                                                                            encoded_two_flat,
-                                                                                            -1, level_name)
-            nll_loss = self._nll_loss(neg_logit_scores, neg_target_classes)
-            loss += nll_loss * self._loss_weights[
-                f"{level_name}_disc_loss"]
-
-        if not self.training and not prediction_mode:
-
-            with torch.no_grad():
-
-                encoded_sentences_correct = encoded_one_flat[
-                                            i:, ]
-                encoded_target_correct = encoded_two_flat[:encoded_two_flat.shape[0] - i, :]
-
-                for top_k in self._metric_config["lm_accuracy_top_k"]:
-                    self._metrics[f"{dataset_name}_disc_accuracy_{i}_{top_k}"](logit_scores, target_classes)
-
-                self._similarity_metrics(encoded_sentences_correct, encoded_target_correct, dataset_name, i)
-
-                # Some extra work just for metrics.
-                correct_scores = torch.masked_select(logits, target_mask)
-                correct_log_probs = torch.masked_select(logit_scores, target_mask)
-                correct_probs = torch.exp(correct_log_probs)
-
-                self._metrics[f"{dataset_name}_disc_correct_dot_product_avg_{i}"](correct_scores.mean().item())
-                self._metrics[f"{dataset_name}_disc_correct_prob_avg_{i}"](correct_probs.mean().item())
-                self._metrics[f"{dataset_name}_disc_correct_log_prob_avg_{i}"](correct_log_probs.mean().item())
-
         return loss, output_dict
-
-    def _calculate_logits_and_softmax(self, encoded_one_flat, encoded_two_flat, i, level):
-        logits = self.calculate_logits(encoded_one_flat, encoded_two_flat, self._passage_disc_loss_cosine)
-        target_mask = torch.diag(torch.ones(logits.size(0) - 1).to(encoded_one_flat.device), i).byte()
-        # print(logits.size(), target_mask.size())
-        target_classes = torch.argmax(target_mask, dim=1).long()
-
-        # If sentence level then need to keep the reverse being masked out.
-        mask = (1 - torch.diag(torch.ones(logits.size(0)).to(encoded_one_flat.device))).byte()
-
-        if level == "sentence":
-            mask *= (1 - torch.diag(torch.ones(logits.size(0) - 1).to(encoded_one_flat.device), -i)).byte()
-
-        log_logits = masked_log_softmax(logits, mask=mask)
-        return log_logits, logits, target_classes, target_mask
 
     def prediction_distance_metrics(self, passages_encoded):
 
@@ -521,6 +489,17 @@ class KnowledgeableStoriesModel(Model):
             # self._sentence_seq2seq_encoder._module.flatten_parameters()
             self._sentence_seq2seq_encoder = self._sentence_seq2seq_encoder.to(hidden_states.device)
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
+        return encoded_sentences
+
+    def encode_sentences_2(self, hidden_states, mask):
+        if self._sentence_2_seq2vec_encoder != None:
+            # self._sentence_seq2vec_encoder._module.flatten_parameters()
+            self._sentence_2_seq2vec_encoder = self._sentence_2_seq2vec_encoder.to(hidden_states.device)
+            encoded_sentences = self._sentence_2_seq2vec_encoder(hidden_states, mask)
+        elif self._sentence_2_seq2seq_encoder != None:
+            # self._sentence_seq2seq_encoder._module.flatten_parameters()
+            self._sentence_2_seq2seq_encoder = self._sentence_2_seq2seq_encoder.to(hidden_states.device)
+            encoded_sentences = get_final_encoder_states(self._sentence_2_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
 
     def encode_passages(self, inputs, lm_mask=None, passage_mask=None):
