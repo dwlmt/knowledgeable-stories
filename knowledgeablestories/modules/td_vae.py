@@ -28,7 +28,6 @@ class DBlock(nn.Module):
 class Decoder(nn.Module):
     """ The decoder layer converting state to observation.
     """
-
     def __init__(self, z_size, hidden_size, x_size):
         super().__init__()
         self.fc1 = nn.Linear(z_size, hidden_size)
@@ -52,6 +51,8 @@ class TDVAE(nn.Module, FromParams):
                  z_posterior_size: int = 1024,
                  num_layers: int = 2,
                  samples_per_seq: int = 200,
+                 decoder_hidden_size: int = 256,
+                 d_block_hidden_size: int = 128,
                  t_diff_min: int = 1,
                  t_diff_max: int = 5):
         super().__init__()
@@ -60,29 +61,37 @@ class TDVAE(nn.Module, FromParams):
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
 
+        self.preprocess = None
+        if x_size != belief_size:
+            self.preprocess = nn.Linear(x_size, belief_size)
+
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
 
         # Multilayer state model is used. Sampling is done by sampling higher layers first.
         self.z_posterior_belief = nn.ModuleList(
-            [DBlock(belief_size + (z_posterior_size if layer < num_layers - 1 else 0), 50, z_posterior_size)
+            [DBlock(belief_size + (z_posterior_size if layer < num_layers - 1 else 0), d_block_hidden_size,
+                    z_posterior_size)
              for layer in range(num_layers)])
 
         # Given belief and state at time t2, infer the state at time t1
         self.z1_z2_b1_inference = nn.ModuleList([DBlock(
-            belief_size + num_layers * z_posterior_size + (z_posterior_size if layer < num_layers - 1 else 0), 50,
+            belief_size + num_layers * z_posterior_size + (z_posterior_size if layer < num_layers - 1 else 0),
+            d_block_hidden_size,
             z_posterior_size) for layer in range(num_layers)])
 
         # Given the state at time t1, model state at time t2 through state transition
         self.z2_z1_prediction = nn.ModuleList([DBlock(
-            num_layers * z_posterior_size + (z_posterior_size if layer < num_layers - 1 else 0), 50, z_posterior_size)
+            num_layers * z_posterior_size + (z_posterior_size if layer < num_layers - 1 else 0), d_block_hidden_size,
+            z_posterior_size)
             for layer in range(num_layers)])
 
         # state to observation
-        self.x_z_decoder = Decoder(num_layers * z_posterior_size, 200, x_size)
+        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
 
     def forward(self, x, mask=None):
         # TODO mask so does not go beyond the length of the batch.
+        x = self.preprocess(x)
 
         # Sample the current and future time points.
         t1 = torch.randint(0, x.size(1) - self.t_diff_max, (self.samples_per_seq, x.size(0)), device=x.device)
@@ -90,7 +99,7 @@ class TDVAE(nn.Module, FromParams):
                                 device=x.device)
 
         # Truncate the sequence if not required to the end.
-        x = x[:, :t2.max() + 1]
+        # x = x[:, :t2.max() + 1]
 
         # Run LSTM to get belief states.
         b1, b2 = self._beliefs(x, t1, t2)
