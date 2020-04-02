@@ -60,9 +60,9 @@ class KnowledgeableStoriesModel(Model):
             passage_distance_weights = [1.0]
 
         if loss_weights is None:
-            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0,
-                            "tdvae_loss": 1.0, "sentence_autoencoder": 0.1,
-                            "passage_autoencoder": 0.1}
+            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 100.0, "sentence_disc_loss": 100.0,
+                            "tdvae_loss": 1.0, "sentence_autoencoder": 1.0,
+                            "passage_autoencoder": 1.0}
 
         if metric_config is None:
             metric_config = {"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
