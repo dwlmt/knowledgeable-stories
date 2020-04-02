@@ -105,7 +105,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 2024,
+      "input_size": 2048,
       "hidden_size": 1024,
       "num_layers": 5,
       "dropout": 0.0,
