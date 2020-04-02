@@ -91,8 +91,10 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
         # TODO mask so does not go beyond the length of the batch.
-        if self.preprocess is not None:
-            x_processed = self.preprocess(x)
+        # if self.preprocess is not None:
+        #    x_processed = self.preprocess(x)
+        # else:
+        #    x_processed = x
 
         # Sample the current and future time points.
         t1 = torch.randint(0, x.size(1) - self.t_diff_max, (self.samples_per_seq, x.size(0)), device=x.device)
@@ -103,7 +105,7 @@ class TDVAE(nn.Module, FromParams):
         # x = x[:, :t2.max() + 1]
 
         # Run LSTM to get belief states.
-        b1, b2 = self._beliefs(x_processed, t1, t2)
+        b1, b2 = self._beliefs(x, t1, t2)
 
         # Sample the z posteriors (or states of the world for b1 and b2)
         qb_z2_b2_mu, qb_z2_b2_logvar, qb_z2_b2, qb_z2_b2_mus, qb_z2_b2_logvars, qb_z2_b2s = self.sample_posterior_z(b2)
