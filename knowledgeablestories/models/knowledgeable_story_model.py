@@ -150,8 +150,8 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_model is None:
             self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
 
-            # for param in self._lm_model.transformer.features.parameters():
-            #    param.requires_grad = False
+            for param in self._lm_model.transformer.parameters():
+                param.requires_grad = False
 
             # If additional characters have been added then the model needs updated for the additional tokens.
             self._embedder_vocab_size = embedder_vocab_size
@@ -184,8 +184,8 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None:
 
-                with torch.no_grad():
-                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                # with torch.no_grad():
+                lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
