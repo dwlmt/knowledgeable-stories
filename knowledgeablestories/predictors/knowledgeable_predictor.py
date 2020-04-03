@@ -561,6 +561,10 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
+            if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
+                encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
+                encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+
             existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
                 encoded_sentences_batch.size(0),
                 existing_sentences_encoded.size(0),
