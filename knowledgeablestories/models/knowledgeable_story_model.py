@@ -181,8 +181,8 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None:
 
-                # with torch.no_grad():
-                lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                with torch.no_grad():
+                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
