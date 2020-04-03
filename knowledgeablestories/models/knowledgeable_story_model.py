@@ -186,10 +186,6 @@ class KnowledgeableStoriesModel(Model):
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
-                # If using Td-Vae then restrict to Log space.
-                # if self._passage_tdvae is not None:
-                #    encoded_sentences = F.sigmoid(encoded_sentences)
-
                 if self._passage_tdvae is not None:
                     encoded_sentences = torch.sigmoid(encoded_sentences)
 
