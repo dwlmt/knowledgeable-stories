@@ -82,7 +82,7 @@ class TDVAE(nn.Module, FromParams):
             z_posterior_size)
             for layer in range(num_layers)])
 
-        self.preprocess = nn.Linear(x_size, input_size)
+        self.preprocess = nn.Linear(x_size, 1024)
 
         # state to observation
         self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
