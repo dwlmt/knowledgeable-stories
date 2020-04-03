@@ -184,8 +184,8 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None:
 
-                # with torch.no_grad():
-                lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                with torch.no_grad():
+                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
@@ -452,7 +452,9 @@ class KnowledgeableStoriesModel(Model):
 
         target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(one_encoded.device)
 
-        logit_scores = masked_log_softmax(logits, mask=None)
+        mask = 1 - self._generate_targets(logits.size(0), offsets=[0]).byte().to(one_encoded.device)
+
+        logit_scores = masked_log_softmax(logits, mask=mask)
 
         # Mask out sentences that are not present in the target classes.
         kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
