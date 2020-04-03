@@ -226,9 +226,10 @@ class TDVAE(nn.Module, FromParams):
             rollout_z2.append(z)
             rollout_x.append(self.x_z_decoder(z))
 
-        rollout_x = torch.stack(rollout_x, dim=0)
-        rollout_z2 = torch.stack(rollout_z2, dim=0)
+        rollout_x = torch.stack(rollout_x, dim=1)
+        rollout_z2 = torch.stack(rollout_z2, dim=1)
 
+        print("TD-VAE Rollout return vectors", rollout_x.size(), rollout_z2.size(), z1.size(), b.size())
         return rollout_x, rollout_z2, z1, b
 
     def loss_function(self, forward_ret, labels=None):
