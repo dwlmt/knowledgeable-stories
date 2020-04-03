@@ -82,7 +82,7 @@ class TDVAE(nn.Module, FromParams):
             z_posterior_size)
             for layer in range(num_layers)])
 
-        self.preprocess = nn.Linear(x_size, 1024)
+        # self.preprocess = nn.Linear(x_size, 1024)
 
         # state to observation
         self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
@@ -195,13 +195,13 @@ class TDVAE(nn.Module, FromParams):
             -1, b.size(3), b.size(4))
         return b1, b2
 
+        # def rollout_posteriors_sequence(self, x, t=None, n=None):
+        ''' Join the 
+        '''
+
     def rollout_posteriors(self, x, t=None, n=None):
-
-        if t == None:
-            t = self.t_diff_max + 1
-        if n == None:
-            n = self.t_diff_max
-
+        ''' Follout the posteriors for time t for n into the future.
+        '''
         # Run belief network
         b = self.b_belief_rnn(x)[:, t]  # size: bs, time, layers, dim
 
@@ -226,8 +226,8 @@ class TDVAE(nn.Module, FromParams):
             rollout_z2.append(z)
             rollout_x.append(self.x_z_decoder(z))
 
-        rollout_x = torch.stack(rollout_x, dim=1)
-        rollout_z2 = torch.stack(rollout_z2, dim=1)
+        rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
+        rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
 
         print("TD-VAE Rollout return vectors", rollout_x.size(), rollout_z2.size(), z1.size(), b.size())
         return rollout_x, rollout_z2, z1, b
