@@ -623,7 +623,7 @@ class KnowledgeablePredictor(Predictor):
             # print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
             '''
 
-            for p in encoded_sentences_list:
+            for p in encoded_passages_list:
                 l1 = self._l1_distance(torch.unsqueeze(context_tensor, dim=0), p)
                 print(f"Encoded Passages Distance: {l1}")
 
