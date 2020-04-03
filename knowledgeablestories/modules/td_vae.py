@@ -193,16 +193,23 @@ class TDVAE(nn.Module, FromParams):
             -1, b.size(3), b.size(4))
         return b1, b2
 
-    def rollout_posteriors(self, x, t, n):
+    def rollout_posteriors(self, x, t=None, n=None):
+
+        if t == None:
+            t = self.t_diff_max + 1
+        if n == None:
+            n = self.t_diff_max
 
         # Run belief network
         b = self.b_belief_rnn(x)[:, t]  # size: bs, time, layers, dim
 
         # Compute posterior, state of the world from belief.
-        _, _, z, _, _, _ = self.sample_posterior_z(b)
+        _, _, z1, _, _, _ = self.sample_posterior_z(b)
 
         # Rollout for n timesteps predicting the future zs at n.
         rollout_x = []
+        rollout_z2 = []
+        z = z1
         for _ in range(n):
             next_z = []
             for layer in range(self.num_layers - 1, -1, -1):
@@ -214,9 +221,13 @@ class TDVAE(nn.Module, FromParams):
                 next_z.insert(0, pt_z2_z1)
 
             z = torch.cat(next_z, dim=1)
+            rollout_z2.append(z)
             rollout_x.append(self.x_z_decoder(z))
 
-        return torch.stack(rollout_x, dim=1)
+        rollout_x = torch.stack(rollout_x, dim=0)
+        rollout_z2 = torch.stack(rollout_z2, dim=0)
+
+        return rollout_x, rollout_z2, z1, b
 
     def loss_function(self, forward_ret, labels=None):
         ''' Takes the output from the main forward.
