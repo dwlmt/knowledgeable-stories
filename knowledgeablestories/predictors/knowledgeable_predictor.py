@@ -597,9 +597,9 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_batch = blank_encoded
 
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
-            encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
+            encoded_passages_list.append(encoded_sentences_batch[:, -1, :].cpu())
             if context_tensor is None:
-                context_tensor = encoded_passages[0, -2, :]
+                context_tensor = encoded_sentences_batch[0, -2, :]
 
             '''
             # Measure vector distances.
