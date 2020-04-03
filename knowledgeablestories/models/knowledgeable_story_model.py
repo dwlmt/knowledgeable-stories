@@ -150,8 +150,8 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_model is None:
             self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
 
-            for param in self._lm_model.transformer.features.parameters():
-                param.requires_grad = False
+            # for param in self._lm_model.transformer.features.parameters():
+            #    param.requires_grad = False
 
             # If additional characters have been added then the model needs updated for the additional tokens.
             self._embedder_vocab_size = embedder_vocab_size
@@ -184,8 +184,8 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None:
 
-                # with torch.no_grad():
-                lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                with torch.no_grad():
+                    lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                 encoded_sentences = self._encode_sentences_batch(lm_hidden_state, lm_mask)
 
@@ -264,6 +264,17 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics["tdvae_recon_loss"](bce_diff)
                     self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
                     self._metrics["tdvae_optimal_loss"](bce_optimal)
+
+                    if prediction_mode:
+                        rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors(encoded_sentences)
+                        output["tdvae_rollout_x_size"] = rollout_x.size()
+                        output["tdvae_rollout_x"] = rollout_x
+                        output["tdvae_rollout_z2_size"] = rollout_z2.size()
+                        output["tdvae_rollout_z2"] = rollout_z2
+                        output["tdvae_z1_size"] = z1.size()
+                        output["tdvae_z1"] = z1
+                        output["tdvae_b_size"] = b.size()
+                        output["tdvae_b"] = b
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
