@@ -32,7 +32,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-                "batch_size" : 100,
+                "batch_size" : 50,
             }
         },
   },
