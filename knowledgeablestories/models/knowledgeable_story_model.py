@@ -193,7 +193,6 @@ class KnowledgeableStoriesModel(Model):
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
-                                                                                          mask=passage_mask,
                                                                                           offsets=[1],
                                                                                           level_name="sentence")
 
@@ -216,7 +215,6 @@ class KnowledgeableStoriesModel(Model):
                     if "passage_disc_loss" in self._loss_weights:
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
-                                                                                        mask=passage_mask,
                                                                                         offsets=[1],
                                                                                         level_name="passage")
 
