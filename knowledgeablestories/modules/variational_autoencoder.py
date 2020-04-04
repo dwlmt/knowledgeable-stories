@@ -3,7 +3,6 @@ from typing import List
 import torch
 from allennlp.common import FromParams
 from torch import nn
-from torch.nn import Parameter
 from torch.nn.functional import mse_loss
 
 
@@ -13,8 +12,7 @@ class DenseVAE(nn.Module, FromParams):
                  input_dim: int = 1024,
                  embedding_dim: int = 64,
                  hidden_dims: List[int] = [512, 256, 128],
-                 negative_slope=0.1,
-                 tied_weights: bool = False) -> None:
+                 negative_slope=0.1) -> None:
         super(DenseVAE, self).__init__()
 
         self.input_dim = input_dim
@@ -52,11 +50,6 @@ class DenseVAE(nn.Module, FromParams):
         # Final layer to get back to the input size.
         decoder_modules.append(nn.Sequential(nn.Linear(in_features=input_dim, out_features=self.input_dim)))
 
-        # Tie the weights. Don't tie the first decoder weight as this is split for mu and var on the encoder.
-        if tied_weights:
-            for enc, dec in zip(reversed(list(encoder_modules)), list(decoder_modules)[1:]):
-                dec[0].weight = Parameter(enc[0].weight.t(), requires_grad=True)
-
         self._encoder = nn.Sequential(*encoder_modules)
         self._decoder = nn.Sequential(*decoder_modules)
 
@@ -85,3 +78,13 @@ class DenseVAE(nn.Module, FromParams):
         mse = mse_loss(recons, input)
         kld = (-0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())) * kld_weighting
         return mse + kld
+
+    def sample(self,
+               num_samples: int) -> torch.Tensor:
+        """ Sample from the VAE.
+        """
+        z = torch.randn(num_samples,
+                        self.embedding_dim)
+
+        samples = self.decode(z)
+        return samples
