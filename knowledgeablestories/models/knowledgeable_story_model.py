@@ -181,15 +181,19 @@ class KnowledgeableStoriesModel(Model):
 
                     # Calculate masks for the length of the sentences.
                     passages_sentence_lengths = torch.sum(lm_mask, dim=2)
+                    print("Lengths", passages_sentence_lengths)
                     passage_mask = passages_sentence_lengths > 0
 
                     passages_sentence_lengths_flat = passages_sentence_lengths.view(
                         passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
+                    print("Lengths flat", passages_sentence_lengths_flat)
+
                     passage_flat_mask = torch.zeros((passages_sentence_lengths_flat.size(0),
                                                      passages_sentence_lengths_flat.size(0))).to(
                         device=lm_output.device)
                     for i, length in enumerate(passages_sentence_lengths_flat):
                         length = length.item()
+                        print(length)
                         if length > 0:
                             passage_flat_mask[i, :length] = torch.ones((length))
                     passage_flat_mask = passage_flat_mask.byte()
