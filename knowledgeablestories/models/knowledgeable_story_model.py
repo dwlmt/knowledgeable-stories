@@ -455,9 +455,11 @@ class KnowledgeableStoriesModel(Model):
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
         text_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
-        self._lm_model = self._lm_model.to(text.device)
         print("Tokens ", text["tokens"])
-        passages_output = self._lm_model.transformer(text["tokens"])
+
+        text_tokens = text["tokens"]
+        self._lm_model = self._lm_model.to(text_tokens.device)
+        passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
     def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.1):
