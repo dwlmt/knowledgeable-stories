@@ -191,9 +191,10 @@ class KnowledgeableStoriesModel(Model):
                     for i, length in enumerate(passages_sentence_lengths_flat):
                         length = length.item()
                         if length > 0:
-                            passage_flat_mask[0, :length] = torch.ones((length))
+                            passage_flat_mask[i, :length] = torch.ones((length))
                     passage_flat_mask = passage_flat_mask.byte()
                     print(passage_flat_mask)
+                    print(passage_flat_mask.size())
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
