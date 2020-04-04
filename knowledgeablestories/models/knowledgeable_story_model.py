@@ -181,27 +181,7 @@ class KnowledgeableStoriesModel(Model):
                 with torch.no_grad():
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
 
-                    # Calculate masks for the length of the sentences.
-                    passages_sentence_lengths = torch.sum(lm_mask, dim=2)
-                    print("Lengths", passages_sentence_lengths)
-                    passage_mask = passages_sentence_lengths > 0
-
-                    passages_sentence_lengths_flat = passages_sentence_lengths.view(
-                        passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
-                    print("Lengths flat", passages_sentence_lengths_flat)
-
-                    passage_flat_mask = torch.zeros((passages_sentence_lengths_flat.size(0),
-                                                     passages_sentence_lengths_flat.size(0))).to(
-                        device=lm_output.device)
-                    for i, length in enumerate(passages_sentence_lengths_flat):
-                        length = length.item()
-                        print(length)
-                        if length > 0:
-                            passage_flat_mask[i, :length] = torch.ones((length))
-                    passage_flat_mask = passage_flat_mask.byte()
-                    print(passage_flat_mask)
-                    print(passage_flat_mask.size())
-                    print("LM Mask")
+                    passage_flat_mask, passage_mask = self._passage_masks(lm_mask, lm_output)
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
@@ -210,7 +190,7 @@ class KnowledgeableStoriesModel(Model):
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
-                    encoded_sentences_2 = self._encode_sentences_2_batch(lm_output, lm_mask)
+                    encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
                     if self._passage_tdvae is not None:
                         encoded_sentences_2 = torch.sigmoid(encoded_sentences_2)
@@ -251,8 +231,10 @@ class KnowledgeableStoriesModel(Model):
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
                     if self._lm_to_passage_encoder is not None and self._passage_to_lm_encoder is not None and "fusion_disc_loss" in self._loss_weights:
-                        print(lm_output.size(), lm_mask.size())
-                        encoded_lm = self._lm_to_passage_encoder(lm_output, lm_mask)
+                        dim_batch, dim_sentences, dim_tokens, dim_lm_feature = lm_output.size()
+                        encoded_lm = self._lm_to_passage_encoder(
+                            lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
+                            lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
                         fused_lm = self._passage_to_lm_encoder(passages_encoded)
                         fusion_loss, fusion_output = self._calculate_disc_loss(encoded_lm, fused_lm,
                                                                                mask=passage_flat_mask,
@@ -313,7 +295,6 @@ class KnowledgeableStoriesModel(Model):
 
             self._lm_model = self._lm_model.to(argument_tokens.device)
 
-            print("Argument tokens", argument_tokens)
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
             self._metrics["lm_loss"](lm_loss.item())
@@ -342,6 +323,22 @@ class KnowledgeableStoriesModel(Model):
         output["loss"] = loss
 
         return output
+
+    def _passage_masks(self, lm_mask, lm_output):
+        # Calculate masks for the length of the sentences.
+        passages_sentence_lengths = torch.sum(lm_mask, dim=2)
+        passage_mask = passages_sentence_lengths > 0
+        passages_sentence_lengths_flat = passages_sentence_lengths.view(
+            passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
+        passage_flat_mask = torch.zeros((passages_sentence_lengths_flat.size(0),
+                                         passages_sentence_lengths_flat.size(0))).to(
+            device=lm_output.device)
+        for i, length in enumerate(passages_sentence_lengths_flat):
+            length = length.item()
+            if length > 0:
+                passage_flat_mask[i, :length] = torch.ones((length))
+        passage_flat_mask = passage_flat_mask.byte()
+        return passage_flat_mask, passage_mask
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
         if self._passage_autoencoder:
@@ -388,21 +385,19 @@ class KnowledgeableStoriesModel(Model):
                                                                                                                  2)]
         return passages_encoded_difference
 
-    def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
-        encoded_sentences_list = []
-        for hs, pm in zip(lm_hidden_state, lm_mask):
-            encoded_sentences = self.encode_sentences(hs, pm)
-            encoded_sentences_list.append(encoded_sentences)
-        encoded_sentences_batch = torch.stack(encoded_sentences_list)
-        return encoded_sentences_batch
+    def _encode_sentences_batch(self, lm_output, lm_mask, encode=1):
+        dim_batch, dim_sentences, dim_tokens, dim_lm_feature = lm_output.size()
 
-    def _encode_sentences_2_batch(self, lm_hidden_state, lm_mask):
-        encoded_sentences_list = []
-        for hs, pm in zip(lm_hidden_state, lm_mask):
-            encoded_sentences = self.encode_sentences_2(hs, pm)
-            encoded_sentences_list.append(encoded_sentences)
-        encoded_sentences_batch = torch.stack(encoded_sentences_list)
-        return encoded_sentences_batch
+        if encode == 1:
+            encoded_sentences = self.encode_sentences(
+                lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
+                lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
+        else:
+            encoded_sentences = self.encode_sentences_2(
+                lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
+                lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
+
+        return encoded_sentences
 
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
         # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
@@ -457,7 +452,6 @@ class KnowledgeableStoriesModel(Model):
             self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
-        print("Tokens ", text["tokens"])
 
         text_tokens = text["tokens"]
 
@@ -467,7 +461,7 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.1):
+    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.05):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
