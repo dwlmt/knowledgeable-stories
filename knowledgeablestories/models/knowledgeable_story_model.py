@@ -227,10 +227,11 @@ class KnowledgeableStoriesModel(Model):
                     if self._lm_to_passage_encoder is not None and self._passage_to_lm_encoder is not None and "fusion_disc_loss" in self._loss_weights:
                         encoded_lm = self._lm_to_passage_encoder(lm_output, lm_mask)
                         fused_lm = self._passage_to_lm_encoder(passages_encoded)
-                        fusion_loss, fusion_output = self._calculate_disc_loss(fused_lm, encoded_lm, mask=passage_mask,
+                        fusion_loss, fusion_output = self._calculate_disc_loss(fused_lm, encoded_lm,
                                                                                offsets=[1], level_name="fusion")
                         loss += fusion_loss
                         output = {**output, **fusion_output}
+                        self._metrics["fusion_disc_loss"](fusion_loss.item())
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
