@@ -454,7 +454,7 @@ class KnowledgeableStoriesModel(Model):
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
         if mask is not None:
-            targets = mask * targets.to(device=mask)
+            targets = mask * targets.to(device=mask.device)
         targets /= targets.sum(1, keepdim=True)
         return targets
 
