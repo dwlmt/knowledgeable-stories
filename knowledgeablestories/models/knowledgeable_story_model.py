@@ -46,7 +46,10 @@ class KnowledgeableStoriesModel(Model):
         super().__init__(vocab=vocab, regularizer=regularizer)
 
         if loss_weights is None:
-            loss_weights = {"lm_loss": 1.0, "passage_disc_loss": 1.0, "sentence_disc_loss": 1.0,
+            loss_weights = {"lm_loss": 1.0,
+                            "passage_disc_loss": 10.0,
+                            "sentence_disc_loss": 10.0,
+                            "fusion_disc_loss": 10.0,
                             "tdvae_loss": 1.0, "sentence_autoencoder": 1.0,
                             "passage_autoencoder": 1.0}
 
