@@ -177,7 +177,7 @@ class KnowledgeableStoriesModel(Model):
             if self._sentence_seq2vec_encoder != None:
 
                 with torch.no_grad():
-                    lm_output, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
+                    lm_output, lm_mask = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
 
                     # Calculate masks for the length of the sentences.
                     passages_sentence_lengths = torch.sum(lm_mask, dim=2)
@@ -199,6 +199,7 @@ class KnowledgeableStoriesModel(Model):
                     passage_flat_mask = passage_flat_mask.byte()
                     print(passage_flat_mask)
                     print(passage_flat_mask.size())
+                    print("LM Mask")
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
@@ -431,7 +432,7 @@ class KnowledgeableStoriesModel(Model):
                                         passages_mask):
 
         negative_conclusions_hidden_states, negative_conclusions_mask = self.lm_mask_and_hidden_states(
-            conclusions["tokens"])
+            conclusions)
         negative_conclusions_encoded_sentences = self.encode_sentences(negative_conclusions_hidden_states,
                                                                        negative_conclusions_mask)
 
@@ -453,9 +454,10 @@ class KnowledgeableStoriesModel(Model):
             self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
-        text_mask = get_text_field_mask({"tokens": text}, num_wrapping_dims=num_wrapping_dims)
+        text_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
         self._lm_model = self._lm_model.to(text.device)
-        passages_output = self._lm_model.transformer(text)
+        print("Tokens ", text["tokens"])
+        passages_output = self._lm_model.transformer(text["tokens"])
         return passages_output[0], text_mask
 
     def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.1):
