@@ -179,8 +179,17 @@ class KnowledgeableStoriesModel(Model):
                 with torch.no_grad():
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
+                    # Calculate masks for the length of the sentences.
                     passages_sentence_lengths = torch.sum(lm_mask, dim=2)
                     passage_mask = passages_sentence_lengths > 0
+
+                    passages_sentence_lengths_flat = passages_sentence_lengths.view(
+                        passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
+                    passage_flat_mask = torch.zeros(passages_sentence_lengths_flat.size(),
+                                                    passages_sentence_lengths_flat.size()).to(device=lm_output)
+                    for i, seq_tensor in enumerate(passage_flat_mask):
+                        length = seq_tensor.size(0)
+                        passage_flat_mask[i, :length] = seq_tensor
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
@@ -196,6 +205,7 @@ class KnowledgeableStoriesModel(Model):
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
+                                                                                          mask=passage_flat_mask,
                                                                                           offsets=[1],
                                                                                           level_name="sentence")
 
@@ -218,6 +228,7 @@ class KnowledgeableStoriesModel(Model):
                     if "passage_disc_loss" in self._loss_weights:
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
+                                                                                        mask=passage_flat_mask,
                                                                                         offsets=[1],
                                                                                         level_name="passage")
 
@@ -230,7 +241,8 @@ class KnowledgeableStoriesModel(Model):
                     if self._lm_to_passage_encoder is not None and self._passage_to_lm_encoder is not None and "fusion_disc_loss" in self._loss_weights:
                         encoded_lm = self._lm_to_passage_encoder(lm_output, lm_mask)
                         fused_lm = self._passage_to_lm_encoder(passages_encoded)
-                        fusion_loss, fusion_output = self._calculate_disc_loss(fused_lm, encoded_lm,
+                        fusion_loss, fusion_output = self._calculate_disc_loss(encoded_lm, fused_lm,
+                                                                               mask=passage_flat_mask,
                                                                                offsets=[1], level_name="fusion")
                         loss += fusion_loss
                         output = {**output, **fusion_output}
@@ -436,10 +448,12 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.1):
+    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.1):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
+        if mask is not None:
+            targets *= mask
         targets /= targets.sum(1, keepdim=True)
         return targets
 
@@ -455,15 +469,16 @@ class KnowledgeableStoriesModel(Model):
 
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(one_encoded.device)
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets, mask=mask).to(one_encoded.device)
 
-        self_mask = 1 - self._generate_targets(logits.size(0), offsets=[0]).byte().to(one_encoded.device)
+        self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
         if mask == None:
-            mask = self_mask
+            source_mask = self_mask
         else:
-            mask *= self_mask
+            source_mask = mask
+            source_mask *= self_mask
 
-        logit_scores = masked_log_softmax(logits, mask=mask)
+        logit_scores = masked_log_softmax(logits, mask=source_mask)
 
         # Mask out sentences that are not present in the target classes.
         kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
