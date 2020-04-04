@@ -50,11 +50,7 @@ class DenseVAE(nn.Module, FromParams):
 
 
         # Final layer to get back to the input size.
-        decoder_modules.append(
-            nn.Sequential(
-                nn.Linear(in_features=input_dim, out_features=self.input_dim),
-                nn.LeakyReLU(negative_slope=negative_slope))
-        )
+        decoder_modules.append(nn.Linear(in_features=input_dim, out_features=self.input_dim))
 
         # Tie the weights. Don't tie the first decoder weight as this is split for mu and var on the encoder.
         if tied_weights:
