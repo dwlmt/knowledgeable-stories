@@ -177,8 +177,7 @@ class KnowledgeableStoriesModel(Model):
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages["tokens"], num_wrapping_dims=1)
 
                     passages_sentence_lengths = torch.sum(lm_mask, dim=2)
-                    lm_mask = passages_sentence_lengths > 0
-                    passage_mask = lm_mask
+                    passage_mask = passages_sentence_lengths > 0
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
