@@ -185,8 +185,8 @@ class KnowledgeableStoriesModel(Model):
 
                     passages_sentence_lengths_flat = passages_sentence_lengths.view(
                         passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
-                    passage_flat_mask = torch.zeros(passages_sentence_lengths_flat.size(),
-                                                    passages_sentence_lengths_flat.size()).to(device=lm_output)
+                    passage_flat_mask = torch.zeros((passages_sentence_lengths_flat.size(),
+                                                     passages_sentence_lengths_flat.size())).to(device=lm_output)
                     for i, seq_tensor in enumerate(passage_flat_mask):
                         length = seq_tensor.size(0)
                         passage_flat_mask[i, :length] = seq_tensor
