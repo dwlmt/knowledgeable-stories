@@ -6,13 +6,15 @@ from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_text_field_mask, get_final_encoder_states, masked_log_softmax
+from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
+
+END_OF_TEXT_TOKEN = 50256
 
 END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
 
@@ -311,6 +313,7 @@ class KnowledgeableStoriesModel(Model):
 
             self._lm_model = self._lm_model.to(argument_tokens.device)
 
+            print("Argument tokens", argument_tokens)
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
             self._metrics["lm_loss"](lm_loss.item())
@@ -454,10 +457,12 @@ class KnowledgeableStoriesModel(Model):
             self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
     def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
-        text_mask = get_text_field_mask(text, num_wrapping_dims=num_wrapping_dims)
         print("Tokens ", text["tokens"])
 
         text_tokens = text["tokens"]
+
+        text_mask = (text_tokens != END_OF_TEXT_TOKEN).long()
+
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
