@@ -29,7 +29,7 @@ class KnowledgeableStoriesModel(Model):
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
-                 lm_encoder: Seq2SeqEncoder = None,
+                 lm_encoder: Seq2VecEncoder = None,
                  passage_to_lm: FeedForward = None,
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
