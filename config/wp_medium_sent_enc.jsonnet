@@ -109,13 +109,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "averaged": true,
     },
     "fusion_encoder": {
-      "type": "feedforward",
-      "feedforward": {
-        "input_dim": 1024,
-        "num_layers": 1,
-        "hidden_dims": 1024,
-        "activations": "linear",
-      }
+      "input_dim": 1024,
+      "num_layers": 1,
+      "hidden_dims": 1024,
+      "activations": "linear",
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
