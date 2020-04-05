@@ -335,6 +335,9 @@ class KnowledgeablePredictor(Predictor):
                     #print(f"{k} - {v.size()}")
 
                     for value, gen_seq in zip(v, generated_sequences):
+
+                        print(f"{k} - {v.size()}: {value}")
+
                         if "parent_relation_metrics" not in gen_seq:
                             gen_seq["parent_relation_metrics"] = {}
 
@@ -556,7 +559,7 @@ class KnowledgeablePredictor(Predictor):
             if torch.cuda.is_available():
                 sentence_tokens_tensor = sentence_tokens_tensor.cuda()
 
-            lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states(sentence_tokens_tensor,
+            lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor},
                                                                              num_wrapping_dims=0)
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
