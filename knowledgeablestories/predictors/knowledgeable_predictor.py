@@ -336,7 +336,7 @@ class KnowledgeablePredictor(Predictor):
 
                     for value, gen_seq in zip(v, generated_sequences):
 
-                        print(f"{k} - {v.size()}: {value}")
+                        # print(f"{k} - {v.size()}: {value}")
 
                         if "parent_relation_metrics" not in gen_seq:
                             gen_seq["parent_relation_metrics"] = {}
