@@ -463,11 +463,11 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, seq_size, offsets=[1], mask=None, label_smoothing=0.05):
-        print(batch_size, seq_size)
-        targets = torch.zeros(batch_size, seq_size).fill_(label_smoothing)
+    def _generate_targets(self, size_one, size_two, offsets=[1], mask=None, label_smoothing=0.05):
+        print(size_one, size_two)
+        targets = torch.zeros(size_one, size_two).fill_(label_smoothing)
         for offset in offsets:
-            targets += torch.diag(torch.ones(batch_size - abs(offset), seq_size), diagonal=offset)
+            targets += torch.diag(torch.ones(size_one - abs(offset), size_two - abs(offset)), diagonal=offset)
         if mask is not None:
             targets = mask * targets.to(device=mask.device)
         targets /= targets.sum(1, keepdim=True)
@@ -483,10 +483,11 @@ class KnowledgeableStoriesModel(Model):
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
+        print("Encoded ", one_encoded.size(), one_encoded_flat.size())
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
         print("Logits size", logits.size())
 
-        target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets, mask=mask).to(
+        target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets).to(
             one_encoded.device)
 
         self_mask = 1 - torch.diag(torch.ones(logits.size(0), logits.size(1))).byte().to(one_encoded.device)
