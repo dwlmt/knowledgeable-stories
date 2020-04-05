@@ -487,7 +487,7 @@ class KnowledgeableStoriesModel(Model):
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
         print("Logits size", logits.size())
 
-        target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets).to(
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(
             one_encoded.device)
 
         self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
