@@ -467,7 +467,7 @@ class KnowledgeableStoriesModel(Model):
         print(size_one, size_two)
         targets = torch.zeros(size_one, size_two).fill_(label_smoothing)
         for offset in offsets:
-            targets += torch.diag(torch.ones(size_one - abs(offset), size_two - abs(offset)), diagonal=offset)
+            targets += torch.diag(torch.ones(size_one - abs(offset)), diagonal=offset)
         if mask is not None:
             targets = mask * targets.to(device=mask.device)
         targets /= targets.sum(1, keepdim=True)
@@ -490,7 +490,7 @@ class KnowledgeableStoriesModel(Model):
         target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets).to(
             one_encoded.device)
 
-        self_mask = 1 - torch.diag(torch.ones(logits.size(0), logits.size(1))).byte().to(one_encoded.device)
+        self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
         if mask == None:
             source_mask = self_mask
         else:
