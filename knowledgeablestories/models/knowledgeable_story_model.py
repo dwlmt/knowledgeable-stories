@@ -510,15 +510,15 @@ class KnowledgeableStoriesModel(Model):
         output_dict = {}
 
         predictions_metrics_dict = {}
-        for i, (distance_weight) in enumerate(self._passage_distance_weights, start=1):
-            with torch.no_grad():
-                encoded_sentences_correct = passages_encoded[
-                                            i:, ]
-                encoded_target_correct = passages_encoded[:passages_encoded.shape[0] - i, :]
+        i = 1
+        with torch.no_grad():
+            encoded_sentences_correct = passages_encoded[
+                                        i:, ]
+            encoded_target_correct = passages_encoded[:passages_encoded.shape[0] - i, :]
 
-                sim = self._similarity_distances(encoded_sentences_correct, encoded_target_correct)
+            sim = self._similarity_distances(encoded_sentences_correct, encoded_target_correct)
 
-                predictions_metrics_dict[f"{i}"] = sim
+            predictions_metrics_dict[f"{i}"] = sim
 
         if len(predictions_metrics_dict) > 0:
             output_dict = predictions_metrics_dict
