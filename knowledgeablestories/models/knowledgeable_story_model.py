@@ -464,9 +464,10 @@ class KnowledgeableStoriesModel(Model):
         return passages_output[0], text_mask
 
     def _generate_targets(self, batch_size, seq_size, offsets=[1], mask=None, label_smoothing=0.05):
+        print(batch_size, seq_size)
         targets = torch.zeros(batch_size, seq_size).fill_(label_smoothing)
         for offset in offsets:
-            targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
+            targets += torch.diag(torch.ones(batch_size - abs(offset), seq_size), diagonal=offset)
         if mask is not None:
             targets = mask * targets.to(device=mask.device)
         targets /= targets.sum(1, keepdim=True)
@@ -487,7 +488,7 @@ class KnowledgeableStoriesModel(Model):
         target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets, mask=mask).to(
             one_encoded.device)
 
-        self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
+        self_mask = 1 - torch.diag(torch.ones(logits.size(0), logits.size(1))).byte().to(one_encoded.device)
         if mask == None:
             source_mask = self_mask
         else:
