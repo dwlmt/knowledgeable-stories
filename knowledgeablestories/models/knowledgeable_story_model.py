@@ -484,6 +484,7 @@ class KnowledgeableStoriesModel(Model):
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
+        print("Logits size", logits.size())
 
         target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets, mask=mask).to(
             one_encoded.device)
