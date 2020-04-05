@@ -106,7 +106,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_to_passage_encoder": {
       "type": "boe",
       "embedding_dim": 1024,
-      "averaged": true,
     },
     "passage_to_lm_encoder": {
       "input_dim": 1024,
