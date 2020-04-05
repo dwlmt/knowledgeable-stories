@@ -463,8 +463,8 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.05):
-        targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
+    def _generate_targets(self, batch_size, seq_size, offsets=[1], mask=None, label_smoothing=0.05):
+        targets = torch.zeros(batch_size, seq_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
         if mask is not None:
@@ -484,7 +484,8 @@ class KnowledgeableStoriesModel(Model):
 
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets, mask=mask).to(one_encoded.device)
+        target_mask = self._generate_targets(logits.size(0), logits.size(1), offsets=offsets, mask=mask).to(
+            one_encoded.device)
 
         self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
         if mask == None:
