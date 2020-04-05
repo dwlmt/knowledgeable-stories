@@ -331,9 +331,10 @@ class KnowledgeableStoriesModel(Model):
         passage_mask = passages_sentence_lengths > 0
         passages_sentence_lengths_flat = passages_sentence_lengths.view(
             passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
-        passage_flat_mask = torch.zeros((passages_sentence_lengths_flat.size(0),
-                                         passages_sentence_lengths_flat.size(0))).to(
+        passage_flat_mask = torch.zeros(
+            (passages_sentence_lengths_flat.size(0), passages_sentence_lengths_flat.size(1))).to(
             device=lm_output.device)
+        print(passage_flat_mask.size())
         for i, length in enumerate(passages_sentence_lengths_flat):
             length = length.item()
             if length > 0:
