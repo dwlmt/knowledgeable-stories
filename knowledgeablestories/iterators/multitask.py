@@ -142,7 +142,7 @@ class MultiTaskDataIterator(DataIterator):
                 n_batches_this_epoch += 1
 
     def enrich_batch(self, batch):
-        return
+        return batch
 
     def _take_instances(self, *args, **kwargs):
         raise NotImplementedError
