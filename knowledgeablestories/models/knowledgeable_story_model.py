@@ -324,7 +324,6 @@ class KnowledgeableStoriesModel(Model):
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
         output["loss"] = loss
-        print(output)
 
         return output
 
