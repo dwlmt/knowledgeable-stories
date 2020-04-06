@@ -216,11 +216,9 @@ class KnowledgeableStoriesModel(Model):
 
                     passages_encoded, passages_mask = \
                         self.encode_passages(encoded_sentences, passage_mask)
-
                     if "passage_disc_loss" in self._loss_weights:
-
-                        if self._passage_to_lm_encoder is not None:
-                            encoded_sentences = self._passage_to_lm_encoder(encoded_sentences)
+                        # if self._passage_to_lm_encoder is not None:
+                        #    encoded_sentences = self._passage_to_lm_encoder(encoded_sentences)
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         encoded_sentences,
                                                                                         mask=passage_flat_mask,
