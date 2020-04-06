@@ -222,7 +222,7 @@ class KnowledgeableStoriesModel(Model):
                             encoded_sentences = self._passage_to_lm_encoder(encoded_sentences)
 
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        encoded_sentences,
+                                                                                        passages_encoded,
                                                                                         mask=passage_mask,
                                                                                         offsets=[1],
                                                                                         level_name="passage")
@@ -486,8 +486,8 @@ class KnowledgeableStoriesModel(Model):
         # Zero out blank sentences.
         mask = torch.unsqueeze(mask, dim=-1)
         print("mask", one_encoded.size(), mask.size())
-        # one_encoded *= mask
-        # two_encoded *= mask
+        one_encoded *= mask
+        two_encoded *= mask
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
