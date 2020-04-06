@@ -15,19 +15,17 @@ Used in the KnowBert paper:
 
 from typing import Dict, List, Iterable
 
-from allennlp.data.dataset_readers.dataset_reader import DatasetReader
-from allennlp.data import Instance
-from allennlp.data.iterators import DataIterator
-from allennlp.data import Vocabulary
-
 import numpy as np
-
 import torch
+from allennlp.data import Instance
+from allennlp.data import Vocabulary
+from allennlp.data.dataset_readers.dataset_reader import DatasetReader
+from allennlp.data.iterators import DataIterator
 
 
 class MultitaskDataset:
     def __init__(self, datasets: Dict[str, Iterable[Instance]],
-                       datasets_for_vocab_creation: List[str]):
+                 datasets_for_vocab_creation: List[str]):
         self.datasets = datasets
         self.datasets_for_vocab_creation = datasets_for_vocab_creation
 
@@ -130,16 +128,21 @@ class MultiTaskDataIterator(DataIterator):
                         # something went wrong
                         raise ValueError
                     del all_indices[index]
-                    newp = np.concatenate([p[:index], p[index+1:]])
+                    newp = np.concatenate([p[:index], p[index + 1:]])
                     newp /= newp.sum()
                     p = newp
                     continue
 
                 # add the iterator id
                 batch['dataset_index'] = torch.tensor(all_indices[index])
+
+                batch = self.enrich_batch(batch)
                 yield batch
 
                 n_batches_this_epoch += 1
+
+    def enrich_batch(self, batch):
+        return
 
     def _take_instances(self, *args, **kwargs):
         raise NotImplementedError

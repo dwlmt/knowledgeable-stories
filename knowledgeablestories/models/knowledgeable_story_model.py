@@ -218,8 +218,11 @@ class KnowledgeableStoriesModel(Model):
                         self.encode_passages(encoded_sentences, passage_mask)
 
                     if "passage_disc_loss" in self._loss_weights:
+
+                        if self._passage_to_lm_encoder is not None:
+                            encoded_sentences = self._passage_to_lm_encoder(encoded_sentences)
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        passages_encoded,
+                                                                                        encoded_sentences,
                                                                                         mask=passage_flat_mask,
                                                                                         offsets=[1],
                                                                                         level_name="passage")
@@ -326,7 +329,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _passage_masks(self, lm_mask, lm_output):
         # Calculate masks for the length of the sentences.
-        print(lm_mask.size(), lm_output.size())
+        # print(lm_mask.size(), lm_output.size())
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
         passage_mask = passages_sentence_lengths > 0
         passages_sentence_lengths_flat = passages_sentence_lengths.view(
@@ -334,7 +337,7 @@ class KnowledgeableStoriesModel(Model):
         passage_flat_mask = torch.zeros(
             (passages_sentence_lengths_flat.size(0), max(passages_sentence_lengths_flat))).to(
             device=lm_output.device)
-        print(passage_flat_mask.size())
+        #print(passage_flat_mask.size())
         for i, length in enumerate(passages_sentence_lengths_flat):
             length = length.item()
             if length > 0:
@@ -468,7 +471,7 @@ class KnowledgeableStoriesModel(Model):
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
         if mask is not None:
-            print("Targets size", targets.size(), mask.size())
+            pass
             # targets = mask * targets.to(device=mask.device)
         targets /= targets.sum(1, keepdim=True)
         return targets
@@ -483,9 +486,9 @@ class KnowledgeableStoriesModel(Model):
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
-        print("Encoded ", one_encoded.size(), one_encoded_flat.size())
+        #print("Encoded ", one_encoded.size(), one_encoded_flat.size())
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
-        print("Logits size", logits.size())
+        #print("Logits size", logits.size())
 
         target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(
             one_encoded.device)

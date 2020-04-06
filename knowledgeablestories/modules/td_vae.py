@@ -89,6 +89,10 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
         # TODO mask so does not go beyond the length of the batch.
+        lengthes = None
+        if mask is not None:
+            lengthes = torch.sum(mask, dim=-1)
+            torch.max()
 
         # Sample the current and future time points.
         t1 = torch.randint(0, x.size(1) - self.t_diff_max, (self.samples_per_seq, x.size(0)), device=x.device)
