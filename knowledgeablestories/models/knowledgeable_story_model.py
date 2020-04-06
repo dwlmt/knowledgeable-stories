@@ -466,7 +466,7 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.05):
+    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
