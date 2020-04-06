@@ -240,7 +240,7 @@ class KnowledgeableStoriesModel(Model):
                             lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
                         fused_lm = self._passage_to_lm_encoder(passages_encoded)
                         fusion_loss, fusion_output = self._calculate_disc_loss(encoded_lm, fused_lm,
-                                                                               mask=passage_flat_mask,
+                                                                               mask=passage_mask,
                                                                                offsets=[1], level_name="fusion")
                         loss += fusion_loss
                         output = {**output, **fusion_output}
@@ -466,7 +466,7 @@ class KnowledgeableStoriesModel(Model):
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0):
+    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.05):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
@@ -482,6 +482,10 @@ class KnowledgeableStoriesModel(Model):
         loss = torch.tensor(0.0).to(one_encoded.device)
 
         batch_size, sentence_num, feature_size = one_encoded.size()
+
+        # Zero out blank sentences.
+        one_encoded *= mask
+        two_encoded *= mask
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
