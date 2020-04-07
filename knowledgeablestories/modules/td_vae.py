@@ -199,9 +199,27 @@ class TDVAE(nn.Module, FromParams):
             -1, b.size(3), b.size(4))
         return b1, b2
 
-        # def rollout_posteriors_sequence(self, x, t=None, n=None):
-        ''' Join the 
+    def rollout_posteriors_sequence(self, x, n=None):
+        ''' Calculate the rollout for all the ns in the sequence.
         '''
+
+        if n == None:
+            n = self.t_diff_max
+
+        rollout_xs = []
+        rollout_z2s = []
+        z1s = []
+        bs = []
+
+        batch_size, seq_size, embedding_size = x.size()
+        for i in enumerate(seq_size):
+            rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n)
+            rollout_xs.append(rollout_x)
+            rollout_z2s.append(rollout_z2)
+            z1s.append(z1)
+            bs.append(b)
+
+        return torch.stack(rollout_xs), torch.stack(rollout_z2s), torch.stack(z1s), torch.stack(bs)
 
     def rollout_posteriors(self, x, t=None, n=None):
         ''' Follout the posteriors for time t for n into the future.
@@ -232,6 +250,9 @@ class TDVAE(nn.Module, FromParams):
 
         rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
         rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
+
+        b = torch.squeeze(b)
+        z1 = torch.squeeze(z1)
 
         print("TD-VAE Rollout return vectors", rollout_x.size(), rollout_z2.size(), z1.size(), b.size())
         return rollout_x, rollout_z2, z1, b

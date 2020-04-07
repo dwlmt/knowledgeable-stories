@@ -14,8 +14,6 @@ from transformers.modeling_auto import AutoModelWithLMHead
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
-END_OF_TEXT_TOKEN = 50256
-
 END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
 
 
@@ -460,20 +458,18 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        text_mask = (text_tokens != END_OF_TEXT_TOKEN).long()
+        text_mask = (text_tokens in END_OF_TEXT_TOKEN_IDS).long()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.05):
+    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.0):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
-        if mask is not None:
-            print("Targets size", targets.size(), mask.size())
-            # targets = mask * targets.to(device=mask.device)
-        targets /= targets.sum(1, keepdim=True)
+
+        targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
 
     def _calculate_disc_loss(self, one_encoded, two_encoded, mask=None, offsets=[1], level_name="passage"):
@@ -484,10 +480,7 @@ class KnowledgeableStoriesModel(Model):
         batch_size, sentence_num, feature_size = one_encoded.size()
 
         # Zero out blank sentences.
-        mask = torch.unsqueeze(mask, dim=-1)
-        print("mask", one_encoded.size(), mask.size())
-        one_encoded *= mask
-        two_encoded *= mask
+        mask_expanded = torch.unsqueeze(mask, dim=-1)
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
@@ -501,9 +494,12 @@ class KnowledgeableStoriesModel(Model):
 
         self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
         source_mask = self_mask
-        # else:
-        #    source_mask = mask
-        #    source_mask *= self_mask
+
+        if mask is not None:
+            mask = torch.matmul(mask, mask).byte()
+            print(target_mask.size(), mask.size())
+            target_mask *= mask
+            source_mask *= mask
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
