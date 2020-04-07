@@ -1,20 +1,18 @@
-from itertools import groupby
-from string import punctuation
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 import more_itertools
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.fields import MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
+# Categories for relations in the commonsense reasoning dataset.
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
     cleanup_text, strip_repeating_punctuation
-# Categories for relations in the commonsense reasoning dataset.
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,
@@ -29,7 +27,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._batch_size = batch_size
         self._max_sentence_grouping = max_sentence_grouping
         self._max_token_len = max_token_len
@@ -44,7 +42,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
@@ -74,8 +72,10 @@ class WritingPromptsAbstractReader(DatasetReader):
 
                     text_sentences = self.convert_text_to_sentences(line)
 
-                    for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size, 
-                                                                       step=int(round(self._batch_size * self._slide)),fillvalue=" ")):
+                    for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
+                                                                       step=int(round(
+                                                                           max(self._batch_size * self._slide, 1))),
+                                                                       fillvalue="<|endoftext|>")):
                         row["story_text"] = sentence_batch
 
                         yield self.text_to_instance(row)
@@ -87,6 +87,7 @@ class WritingPromptsAbstractReader(DatasetReader):
 
     def text_to_instance(self, text_dict) -> Instance:
         raise NotImplementedError
+
 
 @DatasetReader.register("writing_prompts_lm")
 class WritingPromptsLMReader(WritingPromptsAbstractReader):
@@ -102,9 +103,9 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
                  slide: float = 0.5,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
-                         sentence_splitter= sentence_splitter, batch_size=batch_size, max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, slide= slide, start_and_end_tokens=start_and_end_tokens)
-
+                         sentence_splitter=sentence_splitter, batch_size=batch_size,
+                         max_sentence_grouping=max_sentence_grouping,
+                         max_token_len=max_token_len, slide=slide, start_and_end_tokens=start_and_end_tokens)
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
@@ -117,7 +118,8 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
-        text_field_list =  convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
+        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len,
+                                               self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -139,8 +141,8 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
-                         max_token_len=max_token_len, 
-                         slide = slide,
+                         max_token_len=max_token_len,
+                         slide=slide,
                          start_and_end_tokens=start_and_end_tokens)
 
     """

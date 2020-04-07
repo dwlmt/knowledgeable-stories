@@ -1,9 +1,9 @@
 import csv
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 import more_itertools
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.fields import MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
@@ -72,8 +72,9 @@ class CmuAbstractBookReader(DatasetReader):
                 text_sentences = self.convert_text_to_sentences(line["story_text"])
 
                 for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
-                                                                   step=int(round(self._batch_size * self._slide)),
-                                                                   fillvalue=" ")):
+                                                                   step=int(
+                                                                       round(max(self._batch_size * self._slide, 1))),
+                                                                   fillvalue="<|endoftext|>")):
                     line["story_text"] = sentence_batch
 
                     yield self.text_to_instance(line)

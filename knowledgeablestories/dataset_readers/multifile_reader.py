@@ -1,9 +1,8 @@
-import csv
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 import more_itertools
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.fields import MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
@@ -13,6 +12,7 @@ from allennlp.nn.util import logger
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
+
 
 class MultifileAbstractReader(DatasetReader):
     """ Just reads one story per file and skips over blank lines. For use with a multiprocess reader.
@@ -76,8 +76,8 @@ class MultifileAbstractReader(DatasetReader):
 
     def _chunk_instances(self, text_sentences):
         for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
-                                                           step=int(round(self._batch_size * self._slide)),
-                                                           fillvalue=" ")):
+                                                           step=int(round(max(self._batch_size * self._slide, 1))),
+                                                           fillvalue="<|endoftext|>")):
             row = {}
             row["story_text"] = sentence_batch
 

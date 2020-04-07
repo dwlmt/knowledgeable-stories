@@ -1,5 +1,4 @@
-import csv
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 import more_itertools
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
@@ -82,8 +81,8 @@ class CbtAbstractReader(DatasetReader):
 
     def _chunk_instances(self, orig_row_num, text_sentences):
         for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
-                                                           step=int(round(self._batch_size * self._slide)),
-                                                           fillvalue=" ")):
+                                                           step=int(round(max(self._batch_size * self._slide, 1))),
+                                                           fillvalue="<|endoftext|>")):
             row = {}
             row["orig_row_num"] = orig_row_num
             row["story_text"] = sentence_batch
