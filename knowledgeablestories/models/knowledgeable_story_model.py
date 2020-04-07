@@ -14,7 +14,7 @@ from transformers.modeling_auto import AutoModelWithLMHead
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
-END_OF_TEXT_TOKEN_IDS = tuple([50256, 0])
+END_OF_TEXT_TOKEN_IDS = (50256, 0)
 
 
 @Model.register("know_stories")
@@ -458,7 +458,8 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        text_mask = (text_tokens != END_OF_TEXT_TOKEN_IDS[0] and text_tokens != END_OF_TEXT_TOKEN_IDS[1]).long()
+        text_mask = (1 - ((text_tokens == END_OF_TEXT_TOKEN_IDS[0]) *
+                          (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
