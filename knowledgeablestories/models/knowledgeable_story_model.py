@@ -179,7 +179,7 @@ class KnowledgeableStoriesModel(Model):
                 with torch.no_grad():
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
 
-                    passage_flat_mask, passage_mask = self._passage_masks(lm_mask, lm_output)
+                    passage_mask = self._passage_masks(lm_mask, lm_output)
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
@@ -326,22 +326,10 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def _passage_masks(self, lm_mask, lm_output):
-        # Calculate masks for the length of the sentences.
-        print(lm_mask.size(), lm_output.size())
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
         passage_mask = passages_sentence_lengths > 0
-        passages_sentence_lengths_flat = passages_sentence_lengths.view(
-            passages_sentence_lengths.size(0) * passages_sentence_lengths.size(1))
-        passage_flat_mask = torch.zeros(
-            (passages_sentence_lengths_flat.size(0), max(passages_sentence_lengths_flat))).to(
-            device=lm_output.device)
-        print(passage_flat_mask.size())
-        for i, length in enumerate(passages_sentence_lengths_flat):
-            length = length.item()
-            if length > 0:
-                passage_flat_mask[i, :length] = torch.ones((length))
-        passage_flat_mask = passage_flat_mask.byte()
-        return passage_flat_mask, passage_mask
+        
+        return passage_mask
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
         if self._passage_autoencoder:
