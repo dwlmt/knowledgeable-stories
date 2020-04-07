@@ -458,7 +458,7 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        text_mask = (text_tokens in END_OF_TEXT_TOKEN_IDS).long()
+        text_mask = (text_tokens != END_OF_TEXT_TOKEN_IDS[0] and text_tokens != END_OF_TEXT_TOKEN_IDS[1]).long()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
@@ -496,10 +496,11 @@ class KnowledgeableStoriesModel(Model):
         source_mask = self_mask
 
         if mask is not None:
-            mask = torch.matmul(mask, mask).byte()
-            print(target_mask.size(), mask.size())
-            target_mask *= mask
-            source_mask *= mask
+            mask_flat = mask.view(mask.size(0) * mask.size(1))
+            mask_flat = torch.matmul(mask_flat, mask_flat).byte()
+            print(target_mask.size(), mask_flat.size())
+            target_mask *= mask_flat
+            source_mask *= mask_flat
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
