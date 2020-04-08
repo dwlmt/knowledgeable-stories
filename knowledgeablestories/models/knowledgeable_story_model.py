@@ -450,7 +450,7 @@ class KnowledgeableStoriesModel(Model):
         text_mask = (text_mask < 1).bool()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
-        passages_output = self._lm_model.transformer(text_tokens).to(text_tokens.device)
+        passages_output = self._lm_model.transformer(text_tokens)
         print(text_mask)
         return passages_output[0], text_mask
 
