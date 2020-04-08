@@ -35,6 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
+                 label_smoothing: float = 0.05,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
                  dataset_config: dict = None,
@@ -47,10 +48,11 @@ class KnowledgeableStoriesModel(Model):
 
         if loss_weights is None:
             loss_weights = {"lm_loss": 1.0,
-                            "passage_disc_loss": 10.0,
-                            # "sentence_disc_loss": 10.0,
-                            # "fusion_disc_loss": 10.0,
-                            "tdvae_loss": 1.0, "sentence_autoencoder": 1.0,
+                            "passage_disc_loss": 1.0,
+                            "sentence_disc_loss": 1.0,
+                            "fusion_disc_loss": 1.0,
+                            "tdvae_loss": 1.0,
+                            "sentence_autoencoder": 1.0,
                             "passage_autoencoder": 1.0}
 
         if metric_config is None:
@@ -86,6 +88,8 @@ class KnowledgeableStoriesModel(Model):
 
         self._loss_weights = loss_weights
         self._passage_disc_loss_cosine = passage_disc_loss_cosine
+
+        self._label_smoothing = label_smoothing
 
         self._dataset_config = dataset_config
         self._generation_config = generation_config
@@ -478,7 +482,7 @@ class KnowledgeableStoriesModel(Model):
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
         print("Logits size", logits.size())
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets, label_smoothing=self._label_smoothing).to(
             one_encoded.device)
 
         self_mask = 1 - (torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
@@ -487,7 +491,6 @@ class KnowledgeableStoriesModel(Model):
         if mask is not None:
             mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
             mask_flat = torch.matmul(mask_flat, mask_flat).byte()
-            print(target_mask.size(), mask_flat.size())
             target_mask *= mask_flat
             source_mask *= mask_flat
 

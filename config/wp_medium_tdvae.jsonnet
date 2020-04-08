@@ -31,7 +31,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-                "batch_size" : 50,
+                "batch_size" : 100,
+                "slide" : 1.0,
             }
         },
   },
@@ -88,6 +89,12 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+    },
+    "loss_weights" : {
+        "lm_loss": 1.0,
+        "sentence_disc_loss": 1.0,
+        "tdvae_loss": 1.0,
+        "sentence_autoencoder": 1.0,
     },
     "sentence_seq2vec_encoder": {
       "type": "lstm",
