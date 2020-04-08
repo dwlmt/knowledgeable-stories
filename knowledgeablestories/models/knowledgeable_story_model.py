@@ -374,15 +374,6 @@ class KnowledgeableStoriesModel(Model):
                                                                                                                  2)]
         return passages_encoded_difference
 
-    def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
-        encoded_sentences_list = []
-        for hs, pm in zip(lm_hidden_state, lm_mask):
-            encoded_sentences = self.encode_sentences(hs, pm)
-            encoded_sentences_list.append(encoded_sentences)
-        encoded_sentences_batch = torch.stack(encoded_sentences_list)
-        return encoded_sentences_batch
-
-    '''
     def _encode_sentences_batch(self, lm_output, lm_mask, encode=1):
         dim_batch, dim_sentences, dim_tokens, dim_lm_feature = lm_output.size()
 
@@ -396,7 +387,6 @@ class KnowledgeableStoriesModel(Model):
                 lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
                 
         return encoded_sentences
-    '''
 
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
         # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
@@ -454,11 +444,13 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        text_mask = ~(((text_tokens == END_OF_TEXT_TOKEN_IDS[0]) *
-                       (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte().to(device=text_tokens.device)
+        text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
+        for id in END_OF_TEXT_TOKEN_IDS:
+            text_mask += (text_tokens == id)
+        text_mask = (text_mask < 1).bool()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
-        passages_output = self._lm_model.transformer(text_tokens)
+        passages_output = self._lm_model.transformer(text_tokens).to(text_tokens.device)
         print(text_mask)
         return passages_output[0], text_mask
 
