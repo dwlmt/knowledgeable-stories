@@ -44,7 +44,6 @@ class Decoder(nn.Module):
 class TDVAE(nn.Module, FromParams):
     """ The full TD-VAE model with jumpy prediction.
     """
-
     def __init__(self, x_size,
                  input_size: int = 1024,
                  belief_size: int = 1024,
@@ -81,8 +80,6 @@ class TDVAE(nn.Module, FromParams):
             num_layers * z_posterior_size + (z_posterior_size if layer < num_layers - 1 else 0), d_block_hidden_size,
             z_posterior_size)
             for layer in range(num_layers)])
-
-        # self.preprocess = nn.Linear(x_size, 1024)
 
         # state to observation
         self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
@@ -202,7 +199,6 @@ class TDVAE(nn.Module, FromParams):
     def rollout_posteriors_sequence(self, x, n=None):
         ''' Calculate the rollout for all the ns in the sequence.
         '''
-
         if n == None:
             n = self.t_diff_max
 
