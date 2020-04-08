@@ -481,13 +481,13 @@ class KnowledgeableStoriesModel(Model):
         target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(
             one_encoded.device)
 
-        self_mask = ~(torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
+        self_mask = 1 - (torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
         source_mask = self_mask
 
         if mask is not None:
-            mask_flat = mask.view(mask.size(0) * mask.size(1)).byte()
+            mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
             mask_flat = torch.matmul(mask_flat, mask_flat).byte()
-            # print(target_mask.size(), mask_flat.size())
+            print(target_mask.size(), mask_flat.size())
             target_mask *= mask_flat
             source_mask *= mask_flat
 
