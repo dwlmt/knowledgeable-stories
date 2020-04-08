@@ -326,7 +326,7 @@ class KnowledgeableStoriesModel(Model):
     def _passage_masks(self, lm_mask):
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
         passage_mask = (passages_sentence_lengths > 0).detach()
-
+        print(passage_mask)
         return passage_mask
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
@@ -459,6 +459,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
+        print(text_mask)
         return passages_output[0], text_mask
 
     def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.0):
