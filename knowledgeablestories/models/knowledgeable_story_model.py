@@ -442,8 +442,8 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        text_mask = (1 - ((text_tokens == END_OF_TEXT_TOKEN_IDS[0]) *
-                          (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte()
+        text_mask = ~(((text_tokens == END_OF_TEXT_TOKEN_IDS[0]) *
+                       (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
@@ -477,7 +477,7 @@ class KnowledgeableStoriesModel(Model):
         target_mask = self._generate_targets(logits.size(0), offsets=offsets).to(
             one_encoded.device)
 
-        self_mask = 1 - torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device)
+        self_mask = ~(torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
         source_mask = self_mask
 
         if mask is not None:
