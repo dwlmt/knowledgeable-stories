@@ -280,13 +280,9 @@ class KnowledgeableStoriesModel(Model):
 
                     if prediction_mode:
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors(encoded_sentences)
-                        output["tdvae_rollout_x_size"] = rollout_x.size()
                         output["tdvae_rollout_x"] = rollout_x
-                        output["tdvae_rollout_z2_size"] = rollout_z2.size()
                         output["tdvae_rollout_z2"] = rollout_z2
-                        output["tdvae_z1_size"] = z1.size()
                         output["tdvae_z1"] = z1
-                        output["tdvae_b_size"] = b.size()
                         output["tdvae_b"] = b
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
@@ -328,7 +324,7 @@ class KnowledgeableStoriesModel(Model):
     def _passage_masks(self, lm_mask, lm_output):
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
         passage_mask = passages_sentence_lengths > 0
-        
+
         return passage_mask
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
