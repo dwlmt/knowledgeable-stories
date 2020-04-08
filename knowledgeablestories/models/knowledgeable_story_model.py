@@ -178,8 +178,10 @@ class KnowledgeableStoriesModel(Model):
 
                 with torch.no_grad():
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
+                    lm_output = lm_output.detach()
+                    lm_mask = lm_mask.detach()
 
-                    passage_mask = self._passage_masks(lm_mask, lm_output)
+                    passage_mask = self._passage_masks(lm_mask)
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
@@ -321,9 +323,9 @@ class KnowledgeableStoriesModel(Model):
 
         return output
 
-    def _passage_masks(self, lm_mask, lm_output):
+    def _passage_masks(self, lm_mask):
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
-        passage_mask = passages_sentence_lengths > 0
+        passage_mask = (passages_sentence_lengths > 0).detach()
 
         return passage_mask
 
