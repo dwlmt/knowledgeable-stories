@@ -374,6 +374,15 @@ class KnowledgeableStoriesModel(Model):
                                                                                                                  2)]
         return passages_encoded_difference
 
+    def _encode_sentences_batch(self, lm_hidden_state, lm_mask):
+        encoded_sentences_list = []
+        for hs, pm in zip(lm_hidden_state, lm_mask):
+            encoded_sentences = self.encode_sentences(hs, pm)
+            encoded_sentences_list.append(encoded_sentences)
+        encoded_sentences_batch = torch.stack(encoded_sentences_list)
+        return encoded_sentences_batch
+
+    '''
     def _encode_sentences_batch(self, lm_output, lm_mask, encode=1):
         dim_batch, dim_sentences, dim_tokens, dim_lm_feature = lm_output.size()
 
@@ -385,8 +394,9 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = self.encode_sentences_2(
                 lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
                 lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
-
+                
         return encoded_sentences
+    '''
 
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
         # If using cosine similarity then these will be calculated on the unnormalised vectors. Since the measure don't make sense on the
@@ -531,11 +541,11 @@ class KnowledgeableStoriesModel(Model):
 
     def encode_sentences(self, hidden_states, mask):
         if self._sentence_seq2vec_encoder != None:
-            # self._sentence_seq2vec_encoder._module.flatten_parameters()
+            self._sentence_seq2vec_encoder._module.flatten_parameters()
             self._sentence_seq2vec_encoder = self._sentence_seq2vec_encoder.to(hidden_states.device)
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
-            # self._sentence_seq2seq_encoder._module.flatten_parameters()
+            self._sentence_seq2seq_encoder._module.flatten_parameters()
             self._sentence_seq2seq_encoder = self._sentence_seq2seq_encoder.to(hidden_states.device)
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
