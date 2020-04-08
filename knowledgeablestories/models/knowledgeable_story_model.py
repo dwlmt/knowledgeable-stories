@@ -48,8 +48,8 @@ class KnowledgeableStoriesModel(Model):
         if loss_weights is None:
             loss_weights = {"lm_loss": 1.0,
                             "passage_disc_loss": 10.0,
-                            "sentence_disc_loss": 10.0,
-                            "fusion_disc_loss": 10.0,
+                            # "sentence_disc_loss": 10.0,
+                            # "fusion_disc_loss": 10.0,
                             "tdvae_loss": 1.0, "sentence_autoencoder": 1.0,
                             "passage_autoencoder": 1.0}
 
@@ -183,7 +183,7 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
+                encoded_sentences = self._encode_sentences_batch(lm_output)  #, lm_mask)
 
                 if self._passage_tdvae is not None:
                     encoded_sentences = torch.sigmoid(encoded_sentences)
@@ -197,7 +197,7 @@ class KnowledgeableStoriesModel(Model):
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
-                                                                                          mask=passage_mask,
+                                                                                          #mask=passage_mask,
                                                                                           offsets=[1],
                                                                                           level_name="sentence")
 
