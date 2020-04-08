@@ -177,13 +177,13 @@ class KnowledgeableStoriesModel(Model):
             if self._sentence_seq2vec_encoder != None:
 
                 with torch.no_grad():
-                    lm_output, lm_mask = self.lm_mask_and_hidden_states(passages, num_wrapping_dims=1)
+                    lm_output, lm_mask = self.lm_mask_and_hidden_states(passages)
                     lm_output = lm_output.detach()
                     lm_mask = lm_mask.detach()
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                encoded_sentences = self._encode_sentences_batch(lm_output)  #, lm_mask)
+                encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
                 if self._passage_tdvae is not None:
                     encoded_sentences = torch.sigmoid(encoded_sentences)
@@ -197,7 +197,7 @@ class KnowledgeableStoriesModel(Model):
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
-                                                                                          #mask=passage_mask,
+                                                                                          mask=passage_mask,
                                                                                           offsets=[1],
                                                                                           level_name="sentence")
 
@@ -440,12 +440,12 @@ class KnowledgeableStoriesModel(Model):
         for r in res.split(1):
             self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
-    def lm_mask_and_hidden_states(self, text, num_wrapping_dims=0):
+    def lm_mask_and_hidden_states(self, text):
 
         text_tokens = text["tokens"]
 
         text_mask = ~(((text_tokens == END_OF_TEXT_TOKEN_IDS[0]) *
-                       (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte()
+                       (text_tokens == END_OF_TEXT_TOKEN_IDS[1]))).byte().to(device=text_tokens.device)
 
         self._lm_model = self._lm_model.to(text_tokens.device)
         passages_output = self._lm_model.transformer(text_tokens)
