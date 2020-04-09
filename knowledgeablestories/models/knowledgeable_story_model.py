@@ -36,6 +36,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.05,
+                 lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
                  dataset_config: dict = None,
@@ -90,6 +91,8 @@ class KnowledgeableStoriesModel(Model):
         self._passage_disc_loss_cosine = passage_disc_loss_cosine
 
         self._label_smoothing = label_smoothing
+
+        self._lm_gradients_for_hierarchy = lm_gradients_for_hierarchy
 
         self._dataset_config = dataset_config
         self._generation_config = generation_config
@@ -180,9 +183,9 @@ class KnowledgeableStoriesModel(Model):
 
             if self._sentence_seq2vec_encoder != None:
 
-                with torch.no_grad():
+                with torch.set_grad_enabled(self._lm_gradients_for_hierarchy and self.training):
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages)
-                    lm_output = lm_output.detach()
+                    lm_output = lm_output
                     lm_mask = lm_mask.detach()
 
                     passage_mask = self._passage_masks(lm_mask)
