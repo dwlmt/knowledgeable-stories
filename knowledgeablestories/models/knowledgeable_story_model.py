@@ -457,10 +457,13 @@ class KnowledgeableStoriesModel(Model):
 
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.0):
+    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.0):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
+
+        if mask is not None:
+            targets *= mask
 
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
@@ -480,19 +483,19 @@ class KnowledgeableStoriesModel(Model):
 
         print("Encoded ", one_encoded.size(), one_encoded_flat.size())
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
-        print("Logits size", logits.size())
-
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets, label_smoothing=self._label_smoothing).to(
-            one_encoded.device)
 
         self_mask = 1 - (torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
         source_mask = self_mask
 
+        mask_flat = None
         if mask is not None:
             mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
             mask_flat = torch.matmul(mask_flat, mask_flat).byte()
-            target_mask *= mask_flat
             source_mask *= mask_flat
+
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets, mask=mask_flat,
+                                             label_smoothing=self._label_smoothing).to(
+            one_encoded.device)
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
