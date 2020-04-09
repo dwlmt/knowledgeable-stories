@@ -559,8 +559,7 @@ class KnowledgeablePredictor(Predictor):
             if torch.cuda.is_available():
                 sentence_tokens_tensor = sentence_tokens_tensor.cuda()
 
-            lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor},
-                                                                             num_wrapping_dims=0)
+            lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
