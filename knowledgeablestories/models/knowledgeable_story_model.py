@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.05,
+                 label_smoothing: float = 0.005,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
@@ -477,12 +477,13 @@ class KnowledgeableStoriesModel(Model):
         batch_size, sentence_num, feature_size = one_encoded.size()
 
         # Zero out blank sentences.
-        mask_expanded = torch.unsqueeze(mask, dim=-1)
+        mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
+        one_encoded *= mask_expanded
+        two_encoded *= mask_expanded
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
-        print("Encoded ", one_encoded.size(), one_encoded_flat.size())
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
         # Mask out the same sentence.
@@ -491,22 +492,15 @@ class KnowledgeableStoriesModel(Model):
         eye = torch.eye(one_encoded_flat.size(0), dtype=torch.bool, device=one_encoded.device)
         source_mask.masked_fill_(eye, 0)
 
-        # Mask to zero out empty sentences in the matrix.
-        mask_flat = None
-        if mask is not None:
-            mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
-            mask_flat = torch.matmul(mask_flat, torch.t(mask_flat)).byte()
-            # source_mask *= mask_flat
-
         source_mask = source_mask.bool()
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets,  # mask=mask_flat,
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets,
                                              label_smoothing=self._label_smoothing).to(
             one_encoded.device)
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
-        print(logit_scores, target_mask, source_mask, mask_flat)
+        # print(logit_scores, target_mask, source_mask, mask_flat)
         kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
             f"{level_name}_disc_loss"]
         loss += kl_loss  # Add the loss and scale it.
