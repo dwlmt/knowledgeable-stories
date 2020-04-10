@@ -195,14 +195,14 @@ class KnowledgeableStoriesModel(Model):
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
                 if self._passage_tdvae is not None:
-                    pass  # encoded_sentences = torch.sigmoid(encoded_sentences).clone()
+                    encoded_sentences = torch.sigmoid(encoded_sentences).clone()
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
                     if self._passage_tdvae is not None:
-                        pass  #encoded_sentences_2 = torch.sigmoid(encoded_sentences_2).clone()
+                        encoded_sentences_2 = torch.sigmoid(encoded_sentences_2).clone()
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
@@ -480,8 +480,8 @@ class KnowledgeableStoriesModel(Model):
 
         # Zero out blank sentences.
         mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
-        one_encoded *= mask_expanded
-        two_encoded *= mask_expanded
+        # one_encoded *= mask_expanded
+        # two_encoded *= mask_expanded
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
