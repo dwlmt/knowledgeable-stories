@@ -188,7 +188,7 @@ class KnowledgeableStoriesModel(Model):
                 with torch.set_grad_enabled(self._lm_gradients_for_hierarchy and self.training):
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages)
                     lm_output = lm_output
-                    lm_mask = lm_mask.detach()
+                    lm_mask = lm_mask
 
                     passage_mask = self._passage_masks(lm_mask)
 
@@ -332,7 +332,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _passage_masks(self, lm_mask):
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
-        passage_mask = (passages_sentence_lengths > 0).detach()
+        passage_mask = (passages_sentence_lengths > 0)
         return passage_mask
 
     def _passage_autoencoder_if_required(self, loss, output, passages_encoded, prediction_mode):
@@ -480,8 +480,8 @@ class KnowledgeableStoriesModel(Model):
 
         # Zero out blank sentences.
         mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
-        # one_encoded *= mask_expanded
-        # two_encoded *= mask_expanded
+        one_encoded *= mask_expanded
+        two_encoded *= mask_expanded
 
         one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
