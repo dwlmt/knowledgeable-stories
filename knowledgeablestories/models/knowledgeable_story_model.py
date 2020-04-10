@@ -225,7 +225,6 @@ class KnowledgeableStoriesModel(Model):
                         self.encode_passages(encoded_sentences, passage_mask)
 
                     if "passage_disc_loss" in self._loss_weights:
-
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
                                                                                         mask=passage_mask,
@@ -390,7 +389,7 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = self.encode_sentences_2(
                 lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
                 lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
-                
+
         return encoded_sentences
 
     def _similarity_metrics(self, encoded_source, encoded_target, dataset_name, i):
@@ -487,9 +486,10 @@ class KnowledgeableStoriesModel(Model):
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
         # Mask out the same sentence.
-        source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0))
-        eye = torch.eye(one_encoded_flat.size(0))
-        source_mask.masked_fill_(eye, 0).byte().to(one_encoded.device)
+        source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0), dtype=torch.bool,
+                                 device=one_encoded.device)
+        eye = torch.eye(one_encoded_flat.size(0), dtype=torch.bool, device=one_encoded.device)
+        source_mask.masked_fill_(eye, 0).to(one_encoded.device)
 
         # Mask to zero out empty sentences in the matrix.
         mask_flat = None
