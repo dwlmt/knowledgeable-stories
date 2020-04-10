@@ -286,7 +286,8 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics["tdvae_optimal_loss"](bce_optimal)
 
                     if prediction_mode:
-                        rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors(encoded_sentences)
+                        rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
+                            encoded_sentences)
                         output["tdvae_rollout_x"] = rollout_x
                         output["tdvae_rollout_z2"] = rollout_z2
                         output["tdvae_z1"] = z1
