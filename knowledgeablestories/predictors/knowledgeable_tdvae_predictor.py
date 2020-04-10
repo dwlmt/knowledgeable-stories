@@ -106,10 +106,7 @@ class KnowledgeableTdvaePredictor(Predictor):
         cached_dict = {}
         for field in ["tokens",
                       "sentence_autoencoded_mu", "sentence_autoencoded_var",
-                      "tdvae_rollout_x_size", "tdvae_rollout_x"
-                                              "tdvae_rollout_z2_size", "tdvae_rollout_z2",
-                      "tdvae_z1_size", "tdvae_z1",
-                      "tdvae_b_size", "tdvae_b"]:
+                      "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1", "tdvae_b"]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
