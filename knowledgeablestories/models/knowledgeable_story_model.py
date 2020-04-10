@@ -487,7 +487,7 @@ class KnowledgeableStoriesModel(Model):
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
         # Mask out the same sentence.
-        source_mask = torch.ones_like(one_encoded_flat)
+        source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0))
         eye = torch.eye(one_encoded_flat.size(0))
         source_mask.masked_fill_(eye, 0).byte().to(one_encoded.device)
 
