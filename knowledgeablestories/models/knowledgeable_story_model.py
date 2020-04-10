@@ -485,14 +485,19 @@ class KnowledgeableStoriesModel(Model):
         print("Encoded ", one_encoded.size(), one_encoded_flat.size())
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
 
-        self_mask = 1 - (torch.diag(torch.ones(logits.size(0))).byte().to(one_encoded.device))
-        source_mask = self_mask
+        # Mask out the same sentence.
+        source_mask = torch.ones_like(one_encoded_flat)
+        eye = torch.eye(one_encoded_flat.size(0))
+        source_mask.masked_fill_(eye, 0).byte().to(one_encoded.device)
 
+        # Mask to zero out empty sentences in the matrix.
         mask_flat = None
         if mask is not None:
-            mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
-            mask_flat = torch.matmul(mask_flat, mask_flat).byte()
-            source_mask *= mask_flat
+            mask_flat = mask.view(mask.size(0) * mask.size(1)).byte()
+            mask_flat = torch.matmul(mask_flat, torch.t(mask_flat)).byte()
+            # source_mask *= mask_flat
+
+        source_mask = source_mask.bool()
 
         target_mask = self._generate_targets(logits.size(0), offsets=offsets, mask=mask_flat,
                                              label_smoothing=self._label_smoothing).to(
@@ -500,7 +505,7 @@ class KnowledgeableStoriesModel(Model):
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
-        # Mask out sentences that are not present in the target classes.
+        print(logit_scores, target_mask, source_mask, mask_flat)
         kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
             f"{level_name}_disc_loss"]
         loss += kl_loss  # Add the loss and scale it.
