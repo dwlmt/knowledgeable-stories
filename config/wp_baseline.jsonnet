@@ -3,7 +3,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local PASSAGE_BASE_BATCH_SIZE = 2;
+local PASSAGE_BASE_BATCH_SIZE = 1;
 local LM_BASE_BATCH_SIZE = 1;
 local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
@@ -85,6 +85,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   "model": {
     "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
+    "lm_gradients_for_hierarchy": true,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
