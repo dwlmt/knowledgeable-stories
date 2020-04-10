@@ -208,7 +208,7 @@ class TDVAE(nn.Module, FromParams):
         bs = []
 
         batch_size, seq_size, embedding_size = x.size()
-        for i in enumerate(seq_size):
+        for i in range(seq_size):
             rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n)
             rollout_xs.append(rollout_x)
             rollout_z2s.append(rollout_z2)
