@@ -102,7 +102,7 @@ class KnowledgeableTdvaePredictor(Predictor):
             s["sentiment"] = p
 
     def convert_output_to_tensors(self, output_dict):
-        print(output_dict)
+        print(f"Output: {output_dict.keys()}")
         cached_dict = {}
         for field in ["tokens",
                       "sentence_autoencoded_mu", "sentence_autoencoded_var",
