@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Any
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
@@ -31,8 +31,6 @@ class KnowledgeableStoriesModel(Model):
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2seq_encoder: Seq2VecEncoder = None,
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
-                 lm_to_passage_encoder: Seq2VecEncoder = None,
-                 passage_to_lm_encoder: FeedForward = None,
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
@@ -80,9 +78,6 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
         self._sentence_2_seq2seq_encoder = sentence_2_seq2seq_encoder
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
-
-        self._lm_to_passage_encoder = lm_to_passage_encoder
-        self._passage_to_lm_encoder = passage_to_lm_encoder
 
         self._passage_tdvae = passage_tdvae
 
@@ -238,19 +233,6 @@ class KnowledgeableStoriesModel(Model):
                         loss += passage_disc_loss
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
-
-                    if self._lm_to_passage_encoder is not None and self._passage_to_lm_encoder is not None and "fusion_disc_loss" in self._loss_weights:
-                        dim_batch, dim_sentences, dim_tokens, dim_lm_feature = lm_output.size()
-                        encoded_lm = self._lm_to_passage_encoder(
-                            lm_output.view(dim_batch * dim_sentences, dim_tokens, dim_lm_feature),
-                            lm_mask.view(dim_batch * dim_sentences, dim_tokens)).view(dim_batch, dim_sentences, -1)
-                        fused_lm = self._passage_to_lm_encoder(passages_encoded)
-                        fusion_loss, fusion_output = self._calculate_disc_loss(encoded_lm, fused_lm,
-                                                                               mask=passage_mask,
-                                                                               offsets=[1], level_name="fusion")
-                        loss += fusion_loss
-                        output = {**output, **fusion_output}
-                        self._metrics["fusion_disc_loss"](fusion_loss.item())
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
