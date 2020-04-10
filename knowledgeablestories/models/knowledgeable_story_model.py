@@ -500,7 +500,7 @@ class KnowledgeableStoriesModel(Model):
 
         source_mask = source_mask.bool()
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets, mask=mask_flat,
+        target_mask = self._generate_targets(logits.size(0), offsets=offsets,  # mask=mask_flat,
                                              label_smoothing=self._label_smoothing).to(
             one_encoded.device)
 
