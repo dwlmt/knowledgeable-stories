@@ -489,12 +489,12 @@ class KnowledgeableStoriesModel(Model):
         source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0), dtype=torch.bool,
                                  device=one_encoded.device)
         eye = torch.eye(one_encoded_flat.size(0), dtype=torch.bool, device=one_encoded.device)
-        source_mask.masked_fill_(eye, 0).to(one_encoded.device)
+        source_mask.masked_fill_(eye, 0)
 
         # Mask to zero out empty sentences in the matrix.
         mask_flat = None
         if mask is not None:
-            mask_flat = mask.view(mask.size(0) * mask.size(1)).byte()
+            mask_flat = mask.view(mask.size(0) * mask.size(1)).float()
             mask_flat = torch.matmul(mask_flat, torch.t(mask_flat)).byte()
             # source_mask *= mask_flat
 
