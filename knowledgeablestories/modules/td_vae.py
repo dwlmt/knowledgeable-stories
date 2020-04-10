@@ -215,7 +215,17 @@ class TDVAE(nn.Module, FromParams):
             z1s.append(z1)
             bs.append(b)
 
-        return torch.stack(rollout_xs), torch.stack(rollout_z2s), torch.stack(z1s), torch.stack(bs)
+        rollout_xs = torch.stack(rollout_xs)
+        rollout_z2s = torch.stack(rollout_z2s)
+        z1s = torch.stack(z1s)
+        bs = torch.stack(bs)
+
+        rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), self.num_layers, int(rollout_z2s.size(1) / self.num_layers),
+                                       -1)
+        z1s = z1s.view(self.num_layers, int(z1s.size(0) / self.num_layers),
+                       -1)
+
+        return (rollout_xs, rollout_z2s, z1s, bs)
 
     def rollout_posteriors(self, x, t=None, n=None):
         ''' Follout the posteriors for time t for n into the future.
