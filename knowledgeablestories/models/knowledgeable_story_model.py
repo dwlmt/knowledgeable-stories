@@ -36,6 +36,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.01,
+                 tdvae_detach: bool = False,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
@@ -80,6 +81,7 @@ class KnowledgeableStoriesModel(Model):
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
 
         self._passage_tdvae = passage_tdvae
+        self._tdvae_detach = tdvae_detach
 
         self._sentence_autoencoder = sentence_autoencoder
         self._passage_autoencoder = passage_autoencoder
@@ -211,7 +213,7 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
                 # Don't back-propogate through the sentences or TD-VAE will force the input to 0.
-                if self._passage_tdvae is not None:
+                if self._passage_tdvae is not None and self._tdvae_detach:
                     encoded_sentences = encoded_sentences.detach()
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
