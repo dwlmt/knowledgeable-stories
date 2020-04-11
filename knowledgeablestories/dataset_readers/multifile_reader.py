@@ -130,7 +130,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 100,
                  max_token_len: int = 64,
-                 slide: float = 0.5,
+                 slide: float = 1.0,
                  start_and_end_tokens=False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
