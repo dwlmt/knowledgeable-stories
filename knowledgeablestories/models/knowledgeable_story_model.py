@@ -449,11 +449,14 @@ class KnowledgeableStoriesModel(Model):
 
         return passages_output[0], text_mask
 
-    def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing):
+    def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, mask=None):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
 
         for offset, scale in zip(offsets, scales):
             targets += scale * torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
+            
+        if mask is not None:
+            targets.masked_fill_(mask, 0)
 
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
@@ -487,14 +490,13 @@ class KnowledgeableStoriesModel(Model):
         source_mask = source_mask.bool()
 
         target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
-                                                      label_smoothing=label_smoothing).to(
+                                                      label_smoothing=label_smoothing, mask=zero_mask).to(
             source_encoded.device)
-        target_mask.masked_fill_(zero_mask, 0)
 
-        logit_scores = masked_log_softmax(logits, mask=source_mask)
+        logits_softmax = masked_log_softmax(logits, mask=source_mask)
 
         # print(logit_scores, target_mask, source_mask, mask_flat)
-        kl_loss = self._kl_loss(logit_scores, target_mask) * self._loss_weights[
+        kl_loss = self._kl_loss(logits_softmax, target_mask) * self._loss_weights[
             f"{level_name}_disc_loss"]
         loss += kl_loss  # Add the loss and scale it.
 
