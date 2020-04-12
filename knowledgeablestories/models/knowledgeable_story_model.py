@@ -290,7 +290,7 @@ class KnowledgeableStoriesModel(Model):
                         tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
                         tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
                         tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
-                        tdvae_output["tdvae_b"] = torch.unsqueeze(b, dim=0)
+                        tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
                         print(f"TDVAE Keys: {tdvae_output.keys()}")
 
                         output = {**output, **tdvae_output}

@@ -691,7 +691,7 @@ class KnowledgeablePredictor(Predictor):
         cached_dict = {}
         print(f"Output Keys: {output_dict.keys()}")
         for field in ["passages_encoded", "passages_mask", "sentences_encoded",
-                      "lm_encoded", "lm_mask", "tokens", "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1", "tdvae_b"]:
+                      "lm_encoded", "lm_mask", "tokens", "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1"]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
