@@ -36,6 +36,10 @@ class KnowledgeableStoriesModel(Model):
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.0,
+                 sent_offsets: List[int] = [-3, -2, -1, 1, 2, 3],
+                 sent_scales: List[float] = [1.0, 1.0, 10.0, 10.0, 1.0, 1.0],
+                 passage_offsets: List[int] = [1, 2, 3],
+                 passage_scales: List[float] = [10.0, 1.0, 1.0],
                  tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
@@ -90,6 +94,10 @@ class KnowledgeableStoriesModel(Model):
         self._passage_disc_loss_cosine = passage_disc_loss_cosine
 
         self._label_smoothing = label_smoothing
+        self._sent_offsets = sent_offsets
+        self._sent_scales = sent_scales
+        self._passage_offsets = passage_offsets
+        self._passage_scales = passage_scales
 
         self._lm_gradients_for_hierarchy = lm_gradients_for_hierarchy
 
@@ -204,9 +212,8 @@ class KnowledgeableStoriesModel(Model):
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
                                                                                           mask=passage_mask,
-                                                                                          offsets=[-3, -2, -1, 1, 2, 3],
-                                                                                          scales=[1.0, 1.0, 10.0, 10.0,
-                                                                                                  1.0, 1.0],
+                                                                                          offsets=self._sent_offsets,
+                                                                                          scales=self._sent_scales,
                                                                                           label_smoothing=self._label_smoothing,
                                                                                           level_name="sentence")
 
@@ -230,8 +237,8 @@ class KnowledgeableStoriesModel(Model):
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
                                                                                         mask=passage_mask,
-                                                                                        offsets=[1, 2, 3],
-                                                                                        scales=[10.0, 1.0, 1.0],
+                                                                                        offsets=self._passage_offsets,
+                                                                                        scales=self._passage_scales,
                                                                                         label_smoothing=self._label_smoothing,
                                                                                         level_name="passage")
 
@@ -279,10 +286,10 @@ class KnowledgeableStoriesModel(Model):
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
                             encoded_sentences)
                         tdvae_output = {}
-                        tdvae_output["tdvae_rollout_x"] = rollout_x
-                        tdvae_output["tdvae_rollout_z2"] = rollout_z2
-                        tdvae_output["tdvae_z1"] = z1
-                        tdvae_output["tdvae_b"] = b
+                        tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
+                        tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
+                        tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
+                        tdvae_output["tdvae_b"] = torch.unsqueeze(b, dim=0)
                         print(f"TDVAE Keys: {tdvae_output.keys()}")
 
                         output = {**output, **tdvae_output}
@@ -320,9 +327,6 @@ class KnowledgeableStoriesModel(Model):
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
         output["loss"] = loss
-
-        for k, v in output.items():
-            print(f"{k} - {v.size()}")
 
         return output
 
