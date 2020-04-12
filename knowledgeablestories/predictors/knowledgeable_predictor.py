@@ -53,6 +53,9 @@ class KnowledgeablePredictor(Predictor):
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
+        # Whether is a TD-VAE model
+        self._tdvae = parse_bool(os.getenv("TDVAE", default="False"))
+
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
@@ -69,12 +72,12 @@ class KnowledgeablePredictor(Predictor):
         # Config for text generation
         gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=0))
-        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
+        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.95))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
-        repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.0))
+        repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> ."))
         self._eos_token_ids = [0, 764]
@@ -160,15 +163,17 @@ class KnowledgeablePredictor(Predictor):
                         merged_sentences_encoded = torch.cat(
                             [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
 
-                    if story_idx in rollout_indices:
-                        self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
-                                             self._num_levels_rollout, original_sentences, story_idx)
+                    if self._tdvae:
+                        if story_idx in rollout_indices:
+                            self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                                 self._num_levels_rollout, original_sentences, story_idx)
 
-                        # print("Parent", parent)
-                        self._calculate_metrics(parent, previous_prediction_metrics)
+                            # print("Parent", parent)
+                            if not self._tdvae:
+                                self._calculate_next_step_metrics(parent, previous_prediction_metrics)
 
-                        if not self._retain_full_output:
-                            del parent["sentences"]
+                            if not self._retain_full_output:
+                                del parent["sentences"]
 
                     logger.info(f"Position output: {parent}")
 
@@ -187,7 +192,7 @@ class KnowledgeablePredictor(Predictor):
 
             return inputs
 
-    def _calculate_metrics(self, parent, previous_prediction_metrics):
+    def _calculate_next_step_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
         level = 1
         sentences = parent["sentences"]
@@ -598,28 +603,6 @@ class KnowledgeablePredictor(Predictor):
             if context_tensor is None:
                 context_tensor = encoded_passages[0, -1, :]
 
-            '''
-            # Measure vector distances.
-            print(
-                f" Original Sentences: {existing_sentences_encoded.size()}, Encoded Sentences: {encoded_sentences_batch.size()}, Merged Sentences: {context_sentences_to_encode.size()} Encoded Passages : {encoded_passages.size()}")
-
-            print(f" Original Sentences Distance: {torch.nn.functional.pdist(existing_sentences_encoded, p=1)}")
-            print(f" Encoded Sentences Distance: {torch.nn.functional.pdist(encoded_sentences_batch, p=1)}")
-
-            e_list = []
-            for e in context_sentences_to_encode:
-                e_list.append(torch.nn.functional.pdist(e, p=1))
-            print(f" Merged Sentences Distance: {torch.stack(e_list)}")
-
-            e_list = []
-            for e in encoded_passages:
-                e_list.append(torch.nn.functional.pdist(e, p=1))
-            print(f" Encoded Passages Distance: {torch.stack(e_list)}")
-
-            # print(f"Encoded Passages Extract {encoded_passages[:, -1, :].cpu()}")
-            # print(f"Context Passages Extract {encoded_passages[:, -2, :].cpu()}")
-            '''
-
             for p in encoded_passages_list:
                 l1 = self._l1_distance(torch.unsqueeze(context_tensor, dim=0), p)
                 print(f"Encoded Passages Distance: {l1}")
@@ -629,8 +612,6 @@ class KnowledgeablePredictor(Predictor):
                                       encoded_sentences_tensor.size(2))
 
         final_tensor = torch.cat(encoded_passages_list, dim=0)
-
-        #print("Encoded", encoded_sentences_tensor.size(), context_tensor.size(), final_tensor.size())
 
         return encoded_sentences_tensor, context_tensor, final_tensor
 
