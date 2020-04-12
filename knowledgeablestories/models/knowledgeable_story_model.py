@@ -321,6 +321,9 @@ class KnowledgeableStoriesModel(Model):
 
         output["loss"] = loss
 
+        for k, v in output.items():
+            print(f"{k} - {v.size()}")
+
         return output
 
     def _passage_masks(self, lm_mask):
