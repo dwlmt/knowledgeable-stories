@@ -219,7 +219,7 @@ class TDVAE(nn.Module, FromParams):
 
         rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
                                        int(rollout_z2s.size(2) / self.num_layers))
-        z1s = z1s.view(z1s.size(0), self.num_layers, int(rollout_z2s.size(1) / self.num_layers))
+        z1s = z1s.view(z1s.size(0), self.num_layers, int(z1s.size(1) / self.num_layers))
 
         print("TD-VAE Rollout return vectors", rollout_xs.size(), rollout_z2s.size(), z1s.size(), bs.size())
 
