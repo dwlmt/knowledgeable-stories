@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.01,
+                 label_smoothing: float = 0.00,
                  tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
@@ -207,6 +207,7 @@ class KnowledgeableStoriesModel(Model):
                                                                                           offsets=[-3, -2, -1, 1, 2, 3],
                                                                                           scales=[1.0, 1.0, 10.0, 10.0,
                                                                                                   1.0, 1.0],
+                                                                                          label_smoothing=self._label_smoothing,
                                                                                           level_name="sentence")
 
                     loss += sentence_disc_loss
@@ -231,6 +232,7 @@ class KnowledgeableStoriesModel(Model):
                                                                                         mask=passage_mask,
                                                                                         offsets=[1, 2, 3],
                                                                                         scales=[10.0, 1.0, 1.0],
+                                                                                        label_smoothing=self._label_smoothing,
                                                                                         level_name="passage")
 
                         output = {**output, **disc_output_dict}
@@ -447,16 +449,8 @@ class KnowledgeableStoriesModel(Model):
 
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.0):
+    def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
-        for offset in offsets:
-            targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
-
-        targets /= torch.sum(targets, keepdim=True, dim=-1)
-        return targets
-
-    def _generate_smoothed_targets(self, batch_size, offsets, scales):
-        targets = torch.zeros(batch_size, batch_size)
 
         for offset, scale in zip(offsets, scales):
             targets += scale * torch.diag(torch.ones(batch_size - abs(offset), device=self.device), diagonal=offset)
@@ -465,7 +459,7 @@ class KnowledgeableStoriesModel(Model):
         return targets
 
     def _calculate_disc_loss(self, source_encoded, target_encoded, mask=None, offsets=[1, 2, 3],
-                             scales=[10.0, 1.0, 1.0], level_name="passage"):
+                             scales=[10.0, 1.0, 1.0], label_smoothing=0.0, level_name="passage"):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(source_encoded.device)
@@ -492,7 +486,8 @@ class KnowledgeableStoriesModel(Model):
 
         source_mask = source_mask.bool()
 
-        target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales).to(
+        target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
+                                                      label_smoothing=label_smoothing).to(
             source_encoded.device)
         target_mask.masked_fill_(zero_mask, 0)
 
