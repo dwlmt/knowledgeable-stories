@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.00,
+                 label_smoothing: float = 0.0,
                  tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
@@ -453,7 +453,7 @@ class KnowledgeableStoriesModel(Model):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
 
         for offset, scale in zip(offsets, scales):
-            targets += scale * torch.diag(torch.ones(batch_size - abs(offset), device=self.device), diagonal=offset)
+            targets += scale * torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
 
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
