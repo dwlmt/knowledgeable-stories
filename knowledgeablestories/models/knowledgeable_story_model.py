@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.1,
+                 label_smoothing: float = 0.0,
                  tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
