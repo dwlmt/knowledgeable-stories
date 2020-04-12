@@ -229,9 +229,9 @@ class TDVAE(nn.Module, FromParams):
         ''' Follout the posteriors for time t for n into the future.
         '''
         # Run belief network
-        print("X", x.size())
+        # print("X", x.size())
         b = self.b_belief_rnn(x)[:, min(t, x.size(1))]  # size: bs, time, layers, dim
-        print("Beliefs", x.size())
+        #print("Beliefs", x.size())
 
         # Compute posterior, state of the world from belief.
         _, _, z1, _, _, _ = self.sample_posterior_z(b)
