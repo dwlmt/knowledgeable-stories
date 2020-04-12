@@ -163,17 +163,20 @@ class KnowledgeablePredictor(Predictor):
                         merged_sentences_encoded = torch.cat(
                             [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
 
-                    if self._tdvae:
-                        if story_idx in rollout_indices:
+                    if story_idx in rollout_indices:
+
+                        if not self._tdvae:
                             self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
                                                  self._num_levels_rollout, original_sentences, story_idx)
 
-                            # print("Parent", parent)
-                            if not self._tdvae:
-                                self._calculate_next_step_metrics(parent, previous_prediction_metrics)
+                        # print("Parent", parent)
+                        if not self._tdvae:
+                            self._calculate_autoregressive_metrics(parent, previous_prediction_metrics)
+                        else:
+                            self._calculate_tdvae_metrics(parent, previous_prediction_metrics)
 
-                            if not self._retain_full_output:
-                                del parent["sentences"]
+                        if not self._retain_full_output:
+                            del parent["sentences"]
 
                     logger.info(f"Position output: {parent}")
 
@@ -192,7 +195,10 @@ class KnowledgeablePredictor(Predictor):
 
             return inputs
 
-    def _calculate_next_step_metrics(self, parent, previous_prediction_metrics):
+    def _calculate_tdvae_metrics(self, parent, previous_prediction_metrics):
+        pass
+
+    def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
         level = 1
         sentences = parent["sentences"]
