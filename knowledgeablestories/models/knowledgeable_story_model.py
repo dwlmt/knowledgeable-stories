@@ -56,7 +56,7 @@ class KnowledgeableStoriesModel(Model):
             loss_weights = {"lm_loss": 1.0,
                             "passage_disc_loss": 1.0,
                             "sentence_disc_loss": 1.0,
-                            "fusion_disc_loss": 1.0,
+                            # "fusion_disc_loss": 1.0,
                             "tdvae_loss": 1.0,
                             "sentence_autoencoder": 1.0,
                             "passage_autoencoder": 1.0}
@@ -142,7 +142,6 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["tdvae_kl_loss"] = Average()
             self._metrics["tdvae_recon_loss"] = Average()
             self._metrics["tdvae_predict_loss"] = Average()
-            self._metrics["tdvae_optimal_loss"] = Average()
 
             if self._sentence_autoencoder:
                 self._metrics["sentence_autoencoder_loss"] = Average()
@@ -272,7 +271,7 @@ class KnowledgeableStoriesModel(Model):
                 if self._passage_tdvae is not None:
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
-                    total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, bce_optimal = self._passage_tdvae.loss_function(
+                    total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
                         tdvae_return)
 
                     loss += total_loss * self._loss_weights["tdvae_loss"]
@@ -281,7 +280,6 @@ class KnowledgeableStoriesModel(Model):
                     self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
                     self._metrics["tdvae_recon_loss"](bce_diff)
                     self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
-                    self._metrics["tdvae_optimal_loss"](bce_optimal)
 
                     if prediction_mode:
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
