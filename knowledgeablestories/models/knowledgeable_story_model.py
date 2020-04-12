@@ -228,6 +228,11 @@ class KnowledgeableStoriesModel(Model):
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
 
+                output["sentences_encoded"] = encoded_sentences
+                output["lm_encoded"] = lm_output
+                output["lm_mask"] = lm_mask
+                output["tokens"] = passages["tokens"]
+
                 if self._passage_seq2seq_encoder != None:
 
                     passages_encoded, passages_mask = \
@@ -255,10 +260,6 @@ class KnowledgeableStoriesModel(Model):
                         output["passages_encoded_diff"] = passages_encoded_difference
 
                         output["passages_mask"] = passages_mask
-                        output["sentences_encoded"] = encoded_sentences
-                        output["lm_encoded"] = lm_output
-                        output["lm_mask"] = lm_mask
-                        output["tokens"] = passages["tokens"]
 
                     loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
