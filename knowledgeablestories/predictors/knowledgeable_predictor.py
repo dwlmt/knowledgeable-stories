@@ -150,39 +150,36 @@ class KnowledgeablePredictor(Predictor):
 
                 self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
 
-                for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
+                if not self._tdvae:
+                    for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
 
-                    parent = sentence_batch[s_upper_bound - 1]
-                    parent["level"] = 0
+                        parent = sentence_batch[s_upper_bound - 1]
+                        parent["level"] = 0
 
-                    input_tokens = previous_tokens + current_tokens[: s_upper_bound]
+                        input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
-                    merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+                        merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
 
-                    if previous_tensor_dict:
-                        merged_sentences_encoded = torch.cat(
-                            [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
+                        if previous_tensor_dict:
+                            merged_sentences_encoded = torch.cat(
+                                [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
 
-                    if story_idx in rollout_indices:
+                        if story_idx in rollout_indices:
 
-                        if not self._tdvae:
-                            self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
-                                                 self._num_levels_rollout, original_sentences, story_idx)
+                            if not self._tdvae:
+                                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                                     self._num_levels_rollout, original_sentences, story_idx)
 
-                        # print("Parent", parent)
-                        if not self._tdvae:
                             self._calculate_autoregressive_metrics(parent, previous_prediction_metrics)
-                        else:
-                            self._calculate_tdvae_metrics(parent, previous_prediction_metrics)
 
-                        if not self._retain_full_output:
-                            del parent["sentences"]
+                            if not self._retain_full_output:
+                                del parent["sentences"]
 
-                    logger.info(f"Position output: {parent}")
+                        logger.info(f"Position output: {parent}")
 
-                    previous_prediction_metrics = parent["prediction_metrics"]
+                        previous_prediction_metrics = parent["prediction_metrics"]
 
-                    story_idx += 1
+                        story_idx += 1
 
                 all_processed_sentences.extend(sentence_batch)
 
@@ -194,9 +191,6 @@ class KnowledgeablePredictor(Predictor):
             inputs["sentences"] = all_processed_sentences
 
             return inputs
-
-    def _calculate_tdvae_metrics(self, parent, previous_prediction_metrics):
-        pass
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
@@ -695,8 +689,9 @@ class KnowledgeablePredictor(Predictor):
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
+        print(f"Output Keys: {output_dict.keys()}")
         for field in ["passages_encoded", "passages_mask", "sentences_encoded",
-                      "lm_encoded", "lm_mask", "tokens"]:
+                      "lm_encoded", "lm_mask", "tokens", "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1", "tdvae_b"]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
