@@ -85,14 +85,14 @@ class TDVAE(nn.Module, FromParams):
         self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
 
     def forward(self, x, mask=None):
-        # Only sample up to the length of the shortest sequence if there are multiple sequences in the batch.
-        min_length = x.size(1)
+
+        max_length = x.size(1)
         if mask is not None and x.size(0) > 1:
             lengthes = torch.sum(mask, dim=-1)
-            min_length, min_indices = torch.min(lengthes, dim=0)
+            max_length, max_indices = torch.max(lengthes, dim=0)
 
         # Sample the current and future time points.
-        t1 = torch.randint(0, min_length - self.t_diff_max, (self.samples_per_seq, x.size(0)), device=x.device)
+        t1 = torch.randint(0, max(max_length - self.t_diff_max, 0), (self.samples_per_seq, x.size(0)), device=x.device)
         t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, x.size(0)),
                                 device=x.device)
 
