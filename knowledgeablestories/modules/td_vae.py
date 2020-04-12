@@ -221,6 +221,8 @@ class TDVAE(nn.Module, FromParams):
                                        -1)
         z1s = z1s.view(z1s.size(), self.num_layers, int(z1s.size(0) / self.num_layers))
 
+        print("TD-VAE Rollout return vectors", rollout_xs.size(), rollout_z2s.size(), z1s.size(), bs.size())
+
         return (rollout_xs, rollout_z2s, z1s, bs)
 
     def rollout_posteriors(self, x, t=None, n=None):
@@ -258,7 +260,6 @@ class TDVAE(nn.Module, FromParams):
         b = torch.squeeze(b)
         z1 = torch.squeeze(z1)
 
-        print("TD-VAE Rollout return vectors", rollout_x.size(), rollout_z2.size(), z1.size(), b.size())
         return rollout_x, rollout_z2, z1, b
 
     def loss_function(self, forward_ret, labels=None):

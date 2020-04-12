@@ -278,10 +278,14 @@ class KnowledgeableStoriesModel(Model):
                     if prediction_mode:
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
                             encoded_sentences)
-                        output["tdvae_rollout_x"] = rollout_x
-                        output["tdvae_rollout_z2"] = rollout_z2
-                        output["tdvae_z1"] = z1
-                        output["tdvae_b"] = b
+                        tdvae_output = {}
+                        tdvae_output["tdvae_rollout_x"] = rollout_x
+                        tdvae_output["tdvae_rollout_z2"] = rollout_z2
+                        tdvae_output["tdvae_z1"] = z1
+                        tdvae_output["tdvae_b"] = b
+                        print(f"TDVAE Keys: {tdvae_output.keys()}")
+
+                        output = {**output, **tdvae_output}
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
