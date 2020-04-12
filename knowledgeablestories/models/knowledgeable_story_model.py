@@ -36,7 +36,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.01,
-                 tdvae_detach: bool = False,
+                 tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
                  passage_disc_loss_cosine: bool = False,
@@ -204,7 +204,9 @@ class KnowledgeableStoriesModel(Model):
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
                                                                                           mask=passage_mask,
-                                                                                          offsets=[1],
+                                                                                          offsets=[-3, -2, -1, 1, 2, 3],
+                                                                                          scales=[1.0, 1.0, 10.0, 10.0,
+                                                                                                  1.0, 1.0],
                                                                                           level_name="sentence")
 
                     loss += sentence_disc_loss
@@ -227,7 +229,8 @@ class KnowledgeableStoriesModel(Model):
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
                                                                                         mask=passage_mask,
-                                                                                        offsets=[1],
+                                                                                        offsets=[1, 2, 3],
+                                                                                        scales=[10.0, 1.0, 1.0],
                                                                                         level_name="passage")
 
                         output = {**output, **disc_output_dict}
@@ -444,18 +447,25 @@ class KnowledgeableStoriesModel(Model):
 
         return passages_output[0], text_mask
 
-    def _generate_targets(self, batch_size, offsets=[1], mask=None, label_smoothing=0.0):
+    def _generate_targets(self, batch_size, offsets=[1], label_smoothing=0.0):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
         for offset in offsets:
             targets += torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
 
-        if mask is not None:
-            targets *= mask
+        targets /= torch.sum(targets, keepdim=True, dim=-1)
+        return targets
+
+    def _generate_smoothed_targets(self, batch_size, offsets, scales):
+        targets = torch.zeros(batch_size, batch_size)
+
+        for offset, scale in zip(offsets, scales):
+            targets += scale * torch.diag(torch.ones(batch_size - abs(offset), device=self.device), diagonal=offset)
 
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
 
-    def _calculate_disc_loss(self, one_encoded, two_encoded, mask=None, offsets=[1], level_name="passage"):
+    def _calculate_disc_loss(self, one_encoded, two_encoded, mask=None, offsets=[1, 2, 3],
+                             scales=[10.0, 1.0, 1.0], level_name="passage"):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(one_encoded.device)
@@ -471,18 +481,20 @@ class KnowledgeableStoriesModel(Model):
         two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
 
         logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
+        zero_mask = logits == 0.0
 
         # Mask out the same sentence.
         source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0), dtype=torch.bool,
                                  device=one_encoded.device)
         eye = torch.eye(one_encoded_flat.size(0), dtype=torch.bool, device=one_encoded.device)
         source_mask.masked_fill_(eye, 0)
+        source_mask.masked_fill_(zero_mask, 0)
 
         source_mask = source_mask.bool()
 
-        target_mask = self._generate_targets(logits.size(0), offsets=offsets,
-                                             label_smoothing=self._label_smoothing).to(
+        target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales).to(
             one_encoded.device)
+        target_mask.fill_(zero_mask, 0)
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
