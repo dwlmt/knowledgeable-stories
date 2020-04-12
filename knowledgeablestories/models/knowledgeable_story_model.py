@@ -464,37 +464,37 @@ class KnowledgeableStoriesModel(Model):
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
 
-    def _calculate_disc_loss(self, one_encoded, two_encoded, mask=None, offsets=[1, 2, 3],
+    def _calculate_disc_loss(self, source_encoded, target_encoded, mask=None, offsets=[1, 2, 3],
                              scales=[10.0, 1.0, 1.0], level_name="passage"):
 
         output_dict = {}
-        loss = torch.tensor(0.0).to(one_encoded.device)
+        loss = torch.tensor(0.0).to(source_encoded.device)
 
-        batch_size, sentence_num, feature_size = one_encoded.size()
+        batch_size, sentence_num, feature_size = source_encoded.size()
 
         # Zero out blank sentences.
         mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
-        one_encoded *= mask_expanded
-        two_encoded *= mask_expanded
+        source_encoded *= mask_expanded
+        target_encoded *= mask_expanded
 
-        one_encoded_flat = one_encoded.view(batch_size * sentence_num, feature_size)
-        two_encoded_flat = two_encoded.view(batch_size * sentence_num, feature_size)
+        source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
+        target_encoded_flat = target_encoded.view(batch_size * sentence_num, feature_size)
 
-        logits = self.calculate_logits(one_encoded_flat, two_encoded_flat, self._passage_disc_loss_cosine)
+        logits = self.calculate_logits(source_encoded_flat, target_encoded_flat, self._passage_disc_loss_cosine)
         zero_mask = logits == 0.0
 
         # Mask out the same sentence.
-        source_mask = torch.ones(one_encoded_flat.size(0), one_encoded_flat.size(0), dtype=torch.bool,
-                                 device=one_encoded.device)
-        eye = torch.eye(one_encoded_flat.size(0), dtype=torch.bool, device=one_encoded.device)
+        source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
+                                 device=source_encoded.device)
+        eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
         source_mask.masked_fill_(eye, 0)
         source_mask.masked_fill_(zero_mask, 0)
 
         source_mask = source_mask.bool()
 
         target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales).to(
-            one_encoded.device)
-        target_mask.fill_(zero_mask, 0)
+            source_encoded.device)
+        target_mask.masked_fill_(zero_mask, 0)
 
         logit_scores = masked_log_softmax(logits, mask=source_mask)
 
