@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.0,
+                 label_smoothing: float = 0.1,
                  tdvae_detach: bool = True,
                  lm_gradients_for_hierarchy: bool = False,
                  loss_weights: dict = None,
@@ -449,14 +449,15 @@ class KnowledgeableStoriesModel(Model):
 
         return passages_output[0], text_mask
 
-    def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, mask=None):
+    def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, blank_mask=None):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
 
         for offset, scale in zip(offsets, scales):
             targets += scale * torch.diag(torch.ones(batch_size - abs(offset)), diagonal=offset)
-            
-        if mask is not None:
-            targets.masked_fill_(mask, 0)
+
+        if blank_mask is not None:
+            targets = targets.to(blank_mask.device)
+            targets.masked_fill_(blank_mask, 0)
 
         targets /= torch.sum(targets, keepdim=True, dim=-1)
         return targets
@@ -490,7 +491,7 @@ class KnowledgeableStoriesModel(Model):
         source_mask = source_mask.bool()
 
         target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
-                                                      label_smoothing=label_smoothing, mask=zero_mask).to(
+                                                      label_smoothing=label_smoothing, blank_mask=zero_mask).to(
             source_encoded.device)
 
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
