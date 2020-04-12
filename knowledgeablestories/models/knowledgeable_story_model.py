@@ -262,7 +262,7 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
                 if self._passage_tdvae is not None:
-                    tdvae_return = self._passage_tdvae(encoded_sentences)
+                    tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
                     total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, bce_optimal = self._passage_tdvae.loss_function(
                         tdvae_return)
