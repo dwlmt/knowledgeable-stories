@@ -53,7 +53,7 @@ class TDVAE(nn.Module, FromParams):
                  decoder_hidden_size: int = 256,
                  d_block_hidden_size: int = 128,
                  t_diff_min: int = 1,
-                 t_diff_max: int = 5):
+                 t_diff_max: int = 6):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = samples_per_seq
