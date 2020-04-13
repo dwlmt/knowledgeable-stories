@@ -221,12 +221,13 @@ class KnowledgeablePredictor(Predictor):
                 sentence["prediction_metrics"] = {}
 
             if self._retain_full_output:
-                for k, v in tdvae_predictions[i]:
-                    if v.size() > 0:
-                        conv_v = v.tolist()
-                    else:
-                        conv_v = v.item()
-                    sentence["tdvae_predictions"][k] = conv_v
+                for k, v in tdvae_predictions[i].items():
+                    if k != "index":
+                        if v.size() > 0:
+                            conv_v = v.tolist()
+                        else:
+                            conv_v = v.item()
+                        sentence["tdvae_predictions"][k] = conv_v
 
             predictions_at_i = tdvae_predictions[i]
             print(f"Position {i}")
