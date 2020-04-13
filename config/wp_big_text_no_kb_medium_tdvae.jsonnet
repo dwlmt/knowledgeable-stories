@@ -393,7 +393,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "decoder_hidden_size": 256,
     },
     "sentence_autoencoder": {
-        "input_dim": 1024,
+        "input_dim": 2048,
         "embedding_dim": 64,
         "hidden_dims":  [512, 256, 128],
         "negative_slope": 0.1
