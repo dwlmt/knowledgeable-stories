@@ -213,18 +213,42 @@ class KnowledgeablePredictor(Predictor):
                 tdvae_predictions[i + j][f"tdvae_rollout_x-{j}"] = x
                 tdvae_predictions[i + j][f"tdvae_rollout_z2-{j}"] = z2
 
+        sentences_encoded = cached_dict["sentences_encoded"]
+
         for i, sentence in enumerate(sentence_batch):
 
             if not "prediction_metrics" in sentence:
                 sentence["prediction_metrics"] = {}
 
+            if self._retain_full_output:
+                sentence["tdvae_predictions"] = tdvae_predictions[i]
+
             predictions_at_i = tdvae_predictions[i]
             print(f"Position {i}")
+            if "tdvae_z1" in predictions_at_i:
+                tdvae_z1 = predictions_at_i["tdvae_z1"]
+            else:
+                tdvae_z1
+
             for k, v in predictions_at_i.items():
                 if k == "index":
                     pass
-                else:
+                elif "z2" in k:
                     print(f"{k} - {v.size()}")
+
+                    self.assign_metric(sentence, "l1_dist", self._l1_distance(tdvae_z1, v), k)
+                    self.assign_metric(sentence, "l2_dist", self._l2_distance(tdvae_z1, v), k)
+                    self.assign_metric(sentence, "cosine_dist", 1.0 - self._cosine_similarity(tdvae_z1, v), k)
+                elif "x" in k:
+                    if i > len(sentences_encoded):
+                        sent_enc = sentences_encoded[i]
+                        sentence["prediction_metrics"][f"{k}_l1_dist"] = self._l1_distance(sent_enc, v)
+                        sentence["prediction_metrics"][f"{k}_l2_dist"] = self._l2_distance(sent_enc, v)
+                        sentence["prediction_metrics"][f"{k}_cosine_dist"] = 1.0 - self._cosine_similarity(sent_enc, v)
+
+    def assign_metric(self, sentence, name, l1_dist, k):
+        for j, value in enumerate(l1_dist):
+            sentence["prediction_metrics"][f"{k}_{j}_{name}"] = value
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
