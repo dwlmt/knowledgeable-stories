@@ -53,12 +53,14 @@ class TDVAE(nn.Module, FromParams):
                  decoder_hidden_size: int = 256,
                  d_block_hidden_size: int = 128,
                  t_diff_min: int = 1,
-                 t_diff_max: int = 6):
+                 t_diff_max: int = 6,
+                 min_samples: int = 5):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = samples_per_seq
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
+        self.min_samples = min_samples
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
@@ -86,21 +88,25 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
 
-        max_length = x.size(1)
-        if mask is not None and x.size(0) > 1:
-            lengthes = torch.sum(mask, dim=-1)
-            max_length, max_indices = torch.max(lengthes, dim=0)
-
-        t_from = max(max_length - self.t_diff_max, 0)
-        t_to = x.size(0)
-
-        if t_to - 3 <= t_from:
-            return None
+        lengthes = torch.sum(mask, dim=-1)
+        max_length, max_indices = torch.max(lengthes, dim=0)
+                      
+        t_begin = 0
+        t_end = max_length.item()  # max(max_length - self.t_diff_max, 0)
 
         # Sample the current and future time points.
-        t1 = torch.randint(0, t_from, (self.samples_per_seq, t_to), device=x.device)
-        t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, t_to),
+        t1 = torch.randint(t_begin, t_end, (self.samples_per_seq, x.size(0)), device=x.device)
+        t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, x.size(0)),
                                 device=x.device)
+
+        # Filter out samples that go beyond the end of the sequence.
+        lengthes_expanded = torch.unsqueeze(lengthes, dim=0).expand_as(t2)
+        sample_mask = t2 > lengthes_expanded
+        t1 = t1[sample_mask]
+        t2 = t2[sample_mask]
+
+        if t1.size(0) < self.min_samples:
+            return None
 
         # Run LSTM to get belief states.
         b1, b2 = self._beliefs(x, t1, t2)
