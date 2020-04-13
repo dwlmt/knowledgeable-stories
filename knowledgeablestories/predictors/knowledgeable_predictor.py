@@ -223,7 +223,7 @@ class KnowledgeablePredictor(Predictor):
             if self._retain_full_output:
                 for k, v in tdvae_predictions[i].items():
                     if k != "index":
-                        if v.size() > 0:
+                        if len(v.size()) > 0:
                             conv_v = v.tolist()
                         else:
                             conv_v = v.item()
