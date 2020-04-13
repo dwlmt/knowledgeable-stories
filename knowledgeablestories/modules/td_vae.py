@@ -94,7 +94,7 @@ class TDVAE(nn.Module, FromParams):
         t_begin = 0
         t_end = max_length.item() - self.t_diff_max
 
-        if t_end - self.min_length > 0:
+        if t_end - self.min_length <= 0:
             return None
 
         # Sample the current and future time points.
