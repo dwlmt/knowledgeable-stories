@@ -204,7 +204,7 @@ class KnowledgeablePredictor(Predictor):
 
         print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
 
-        tdvae_predictions = [{"index": i} for i in range(len(sentence_batch))]
+        tdvae_predictions = [{"index": i} for i in range(len(sentence_batch) + self._num_levels_rollout)]
         for i, sentence in enumerate(sentence_batch):
             tdvae_predictions[i]["tdvae_z1"] = curr_z1[i]
             tdvae_predictions[i]["passages_encoded"] = curr_passages[i]
