@@ -210,13 +210,21 @@ class KnowledgeablePredictor(Predictor):
             tdvae_predictions[i]["passages_encoded"] = curr_passages[i]
 
             for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
-                tdvae_predictions[i][f"tdvae_rollout_x-{j}"] = x
-                tdvae_predictions[i][f"tdvae_rollout_z2-{j}"] = z2
+                tdvae_predictions[i + j][f"tdvae_rollout_x-{j}"] = x
+                tdvae_predictions[i + j][f"tdvae_rollout_z2-{j}"] = z2
 
         for i, sentence in enumerate(sentence_batch):
 
             if not "prediction_metrics" in sentence:
                 sentence["prediction_metrics"] = {}
+
+            predictions_at_i = tdvae_predictions[i]
+            print(f"Position {i}")
+            for k, v in predictions_at_i.items():
+                if k == "index":
+                    pass
+                else:
+                    print(f"{k} - {v.size()}")
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
