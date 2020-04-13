@@ -99,7 +99,7 @@ class TDVAE(nn.Module, FromParams):
         t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, x.size(0)),
                                 device=x.device)
 
-        if t_end < self.min_length:
+        if t_end - self.min_length > 0:
             return None
 
         # Run LSTM to get belief states.
