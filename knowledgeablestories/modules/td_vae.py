@@ -95,7 +95,7 @@ class TDVAE(nn.Module, FromParams):
         t_to = x.size(0)
 
         if t_to - 3 <= t_from:
-            return
+            return None
 
         # Sample the current and future time points.
         t1 = torch.randint(0, t_from, (self.samples_per_seq, t_to), device=x.device)
