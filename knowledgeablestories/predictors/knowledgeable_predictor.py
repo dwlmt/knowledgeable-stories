@@ -249,13 +249,14 @@ class KnowledgeablePredictor(Predictor):
                 elif "x" in k:
                     if i > len(sentences_encoded):
                         sent_enc = sentences_encoded[i]
-                        sentence["prediction_metrics"][f"{k}_l1_dist"] = self._l1_distance(sent_enc, v)
-                        sentence["prediction_metrics"][f"{k}_l2_dist"] = self._l2_distance(sent_enc, v)
-                        sentence["prediction_metrics"][f"{k}_cosine_dist"] = 1.0 - self._cosine_similarity(sent_enc, v)
+                        sentence["prediction_metrics"][f"{k}_l1_dist"] = self._l1_distance(sent_enc, v).item()
+                        sentence["prediction_metrics"][f"{k}_l2_dist"] = self._l2_distance(sent_enc, v).item()
+                        sentence["prediction_metrics"][f"{k}_cosine_dist"] = 1.0 - self._cosine_similarity(sent_enc,
+                                                                                                           v).item()
 
     def assign_metric(self, sentence, name, l1_dist, k):
         for j, value in enumerate(l1_dist):
-            sentence["prediction_metrics"][f"{k}_{j}_{name}"] = value
+            sentence["prediction_metrics"][f"{k}_{j}_{name}"] = value.item()
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
