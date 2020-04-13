@@ -54,13 +54,13 @@ class TDVAE(nn.Module, FromParams):
                  d_block_hidden_size: int = 128,
                  t_diff_min: int = 1,
                  t_diff_max: int = 6,
-                 min_samples: int = 5):
+                 min_length: int = 3):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = samples_per_seq
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
-        self.min_samples = min_samples
+        self.min_length = min_length
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
@@ -92,20 +92,14 @@ class TDVAE(nn.Module, FromParams):
         max_length, max_indices = torch.max(lengthes, dim=0)
 
         t_begin = 0
-        t_end = max_length.item()  # max(max_length - self.t_diff_max, 0)
+        t_end = max_length.item() - self.t_diff_max
 
         # Sample the current and future time points.
         t1 = torch.randint(t_begin, t_end, (self.samples_per_seq, x.size(0)), device=x.device)
         t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, x.size(0)),
                                 device=x.device)
 
-        # Filter out samples that go beyond the end of the sequence.
-        lengthes_expanded = torch.unsqueeze(lengthes, dim=0).expand_as(t2)
-        sample_mask = t2 < lengthes_expanded - 1
-        t1 = t1[sample_mask]
-        t2 = t2[sample_mask]
-
-        if t1.size(0) < self.min_samples:
+        if t_end < self.min_length:
             return None
 
         # Run LSTM to get belief states.
