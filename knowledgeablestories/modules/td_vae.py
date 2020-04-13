@@ -90,7 +90,7 @@ class TDVAE(nn.Module, FromParams):
 
         lengthes = torch.sum(mask, dim=-1)
         max_length, max_indices = torch.max(lengthes, dim=0)
-                      
+
         t_begin = 0
         t_end = max_length.item()  # max(max_length - self.t_diff_max, 0)
 
@@ -101,7 +101,7 @@ class TDVAE(nn.Module, FromParams):
 
         # Filter out samples that go beyond the end of the sequence.
         lengthes_expanded = torch.unsqueeze(lengthes, dim=0).expand_as(t2)
-        sample_mask = t2 > lengthes_expanded
+        sample_mask = t2 < lengthes_expanded - 1
         t1 = t1[sample_mask]
         t2 = t2[sample_mask]
 
