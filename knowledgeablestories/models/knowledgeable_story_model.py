@@ -35,7 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.0,
+                 label_smoothing: float = 0.1,
                  sent_offsets: List[int] = [-3, -2, -1, 1, 2, 3],
                  sent_scales: List[float] = [1.0, 1.0, 10.0, 10.0, 1.0, 1.0],
                  passage_offsets: List[int] = [1, 2, 3],
