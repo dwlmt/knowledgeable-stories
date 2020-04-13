@@ -148,7 +148,10 @@ class KnowledgeablePredictor(Predictor):
 
                 passages_encoded_tensor = cached_dict["passages_encoded"]
 
-                self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
+                if not self._tdvae:
+                    self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
+                else:
+                    self._tdvae_metrics(sentence_batch, cached_dict, previous_tensor_dict)
 
                 if not self._tdvae:
                     for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
@@ -191,6 +194,35 @@ class KnowledgeablePredictor(Predictor):
             inputs["sentences"] = all_processed_sentences
 
             return inputs
+
+    def _tdvae_metrics(self, sentence_batch, cached_dict, previous_tensor_dict):
+
+        curr_x = cached_dict['tdvae_rollout_x']
+        curr_z2 = cached_dict['tdvae_rollout_z2']
+        curr_z1 = cached_dict['tdvae_z1']
+        curr_passages = cached_dict['passages_encoded']
+
+        print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
+
+        tdvae_predictions = []
+        for i, sentence in enumerate(sentence_batch):
+            pass
+
+        if previous_tensor_dict is not None:
+            prev_x = previous_tensor_dict['tdvae_rollout_x']
+            prev_z2 = previous_tensor_dict['tdvae_rollout_z2']
+            prev_z1 = previous_tensor_dict['tdvae_z1']
+            prev_passages = previous_tensor_dict['passages_encoded']
+        else:
+            prev_x = None
+            prev_z2 = None
+            prev_z1 = None
+            prev_passages = None
+
+        for i, sentence in enumerate(sentence_batch):
+
+            if not "prediction_metrics" in sentence:
+                sentence["prediction_metrics"] = {}
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
