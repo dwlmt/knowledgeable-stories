@@ -204,20 +204,14 @@ class KnowledgeablePredictor(Predictor):
 
         print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
 
-        tdvae_predictions = []
+        tdvae_predictions = [{"index": i} for i in range(len(sentence_batch))]
         for i, sentence in enumerate(sentence_batch):
-            pass
+            tdvae_predictions[i]["tdvae_z1"] = curr_z1[i]
+            tdvae_predictions[i]["passages_encoded"] = curr_passages[i]
 
-        if previous_tensor_dict is not None:
-            prev_x = previous_tensor_dict['tdvae_rollout_x']
-            prev_z2 = previous_tensor_dict['tdvae_rollout_z2']
-            prev_z1 = previous_tensor_dict['tdvae_z1']
-            prev_passages = previous_tensor_dict['passages_encoded']
-        else:
-            prev_x = None
-            prev_z2 = None
-            prev_z1 = None
-            prev_passages = None
+            for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
+                tdvae_predictions[i][f"tdvae_rollout_x-{j}"] = x
+                tdvae_predictions[i][f"tdvae_rollout_z2-{j}"] = z2
 
         for i, sentence in enumerate(sentence_batch):
 

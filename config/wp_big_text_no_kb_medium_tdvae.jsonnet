@@ -367,27 +367,42 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     },
     "embedder_vocab_size": embedder_vocab_size,
     "sentence_seq2vec_encoder": {
-      "type": "augmented_lstm",
+      "type": "lstm",
       "input_size": 1024,
       "hidden_size": 1024,
       "num_layers": 3,
+      "dropout": 0.0,
     },
-    "passage_seq2seq_encoder": {
-      "type": "augmented_lstm",
+    "sentence_seq2vec_encoder": {
+      "type": "lstm",
       "input_size": 1024,
       "hidden_size": 1024,
-      "num_layers": 5,
+      "num_layers": 3,
+      "dropout": 0.0,
+    },
+    "sentence_2_seq2vec_encoder": {
+      "type": "lstm",
+      "input_size": 1024,
+      "hidden_size": 1024,
+      "num_layers": 3,
+      "dropout": 0.0,
+    },
+    "passage_tdvae": {
+         "x_size": 2048,
+         "input_size": 2048,
+         "belief_size": 1024,
+         "z_posterior_size": 1024,
+         "num_layers": 5,
+         "samples_per_seq": 200,
+         "t_diff_min": 1,
+         "t_diff_max": 6,
+         "d_block_hidden_size": 128,
+         "decoder_hidden_size": 256,
     },
     "sentence_autoencoder": {
         "input_dim": 1024,
         "embedding_dim": 64,
         "hidden_dims":  [512, 256, 128],
-        "negative_slope": 0.1
-    },
-    "passage_autoencoder": {
-        "input_dim": 1024,
-        "embedding_dim": 64,
-        "hidden_dims": [512, 256, 128],
         "negative_slope": 0.1
     }
   },
