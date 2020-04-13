@@ -271,27 +271,29 @@ class KnowledgeableStoriesModel(Model):
                 if self._passage_tdvae is not None:
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
-                    total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
-                        tdvae_return)
+                    if tdvae_return is not None:
 
-                    loss += total_loss * self._loss_weights["tdvae_loss"]
+                        total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
+                            tdvae_return)
 
-                    self._metrics["tdvae_loss"](total_loss)
-                    self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
-                    self._metrics["tdvae_recon_loss"](bce_diff)
-                    self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
+                        loss += total_loss * self._loss_weights["tdvae_loss"]
 
-                    if prediction_mode:
-                        rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                            encoded_sentences)
-                        tdvae_output = {}
-                        tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
-                        tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
-                        tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
-                        tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
-                        print(f"TDVAE Keys: {tdvae_output.keys()}")
+                        self._metrics["tdvae_loss"](total_loss)
+                        self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
+                        self._metrics["tdvae_recon_loss"](bce_diff)
+                        self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
 
-                        output = {**output, **tdvae_output}
+                        if prediction_mode:
+                            rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
+                                encoded_sentences)
+                            tdvae_output = {}
+                            tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
+                            tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
+                            tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
+                            tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
+                            print(f"TDVAE Keys: {tdvae_output.keys()}")
+
+                            output = {**output, **tdvae_output}
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
