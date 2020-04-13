@@ -222,6 +222,7 @@ class KnowledgeablePredictor(Predictor):
 
             if self._retain_full_output:
                 for k, v in tdvae_predictions[i].items():
+                    sentence["tdvae_predictions"] = {}
                     if k != "index":
                         if len(v.size()) > 0:
                             conv_v = v.tolist()
