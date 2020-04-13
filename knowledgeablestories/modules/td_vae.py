@@ -94,13 +94,13 @@ class TDVAE(nn.Module, FromParams):
         t_begin = 0
         t_end = max_length.item() - self.t_diff_max
 
+        if t_end - self.min_length > 0:
+            return None
+
         # Sample the current and future time points.
         t1 = torch.randint(t_begin, t_end, (self.samples_per_seq, x.size(0)), device=x.device)
         t2 = t1 + torch.randint(self.t_diff_min, self.t_diff_max + 1, (self.samples_per_seq, x.size(0)),
                                 device=x.device)
-
-        if t_end - self.min_length > 0:
-            return None
 
         # Run LSTM to get belief states.
         b1, b2 = self._beliefs(x, t1, t2)
