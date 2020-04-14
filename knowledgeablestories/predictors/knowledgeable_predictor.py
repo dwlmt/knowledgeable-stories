@@ -235,7 +235,7 @@ class KnowledgeablePredictor(Predictor):
             if "tdvae_z1" in predictions_at_i:
                 tdvae_z1 = predictions_at_i["tdvae_z1"]
             else:
-                tdvae_z1
+                tdvae_z1 = None
 
             for k, v in predictions_at_i.items():
                 if k == "index":
@@ -253,6 +253,15 @@ class KnowledgeablePredictor(Predictor):
                         sentence["prediction_metrics"][f"{k}_l2_dist"] = self._l2_distance(sent_enc, v).item()
                         sentence["prediction_metrics"][f"{k}_cosine_dist"] = 1.0 - self._cosine_similarity(sent_enc,
                                                                                                            v).item()
+
+            if i + 1 < len(curr_passages):
+                sentence["prediction_metrics"][f"belief_l1_dist"] = self._l1_distance(curr_passages[i],
+                                                                                      curr_passages[i + 1]).item()
+                sentence["prediction_metrics"][f"belief_l2_dist"] = self._l2_distance(curr_passages[i],
+                                                                                      curr_passages[i + 1]).item()
+                sentence["prediction_metrics"][f"belief_cosine_dist"] = 1.0 - self._cosine_similarity(curr_passages[i],
+                                                                                                      curr_passages[
+                                                                                                          i + 1]).item()
 
     def assign_metric(self, sentence, name, l1_dist, k):
         for j, value in enumerate(l1_dist):
