@@ -375,13 +375,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "type": "lstm",
       "input_size": 1024,
       "hidden_size": 1024,
-      "num_layers": 3,
-      "dropout": 0.0,
-    },
-    "sentence_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
       "num_layers": 4,
       "dropout": 0.0,
     },
