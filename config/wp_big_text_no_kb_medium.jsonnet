@@ -349,7 +349,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
-    "label_smoothing":  0.1,
+    "label_smoothing":  0.0,
     "sent_offsets": [-1, 1],
     "sent_scales":  [1.0, 1.0],
     "passage_offsets": [1],
