@@ -255,13 +255,13 @@ class KnowledgeablePredictor(Predictor):
                                                                                                            v).item()
 
             if i + 1 < len(curr_passages):
-                sentence["prediction_metrics"][f"belief_l1_dist"] = self._l1_distance(curr_passages[i],
-                                                                                      curr_passages[i + 1]).item()
-                sentence["prediction_metrics"][f"belief_l2_dist"] = self._l2_distance(curr_passages[i],
-                                                                                      curr_passages[i + 1]).item()
-                sentence["prediction_metrics"][f"belief_cosine_dist"] = 1.0 - self._cosine_similarity(curr_passages[i],
-                                                                                                      curr_passages[
-                                                                                                          i + 1]).item()
+                self.assign_metric(sentence, "l1_dist", self._l1_distance(curr_passages[i],
+                                                                          curr_passages[i + 1]), "belief")
+                self.assign_metric(sentence, "l2_dist", self._l1_distance(curr_passages[i],
+                                                                          curr_passages[i + 1]), "belief")
+                self.assign_metric(sentence, "cosine_dist", 1.0 - self._cosine_similarity(curr_passages[i],
+                                                                                          curr_passages[i + 1]),
+                                   "belief")
 
     def assign_metric(self, sentence, name, l1_dist, k):
         for j, value in enumerate(l1_dist):
