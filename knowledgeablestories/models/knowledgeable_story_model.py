@@ -263,7 +263,7 @@ class KnowledgeableStoriesModel(Model):
 
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
-                            lm_loss, lm_logits, _ = self._lm_model(fused_tokens, labels=passages["tokens"])
+                            lm_loss, lm_logits, _ = self._lm_model(fused_tokens, labels=passages["tokens"].long())
 
                             self._metrics["fusion_lm_loss"](lm_loss.item()) * self._loss_weights["fusion_lm_loss"]
 
