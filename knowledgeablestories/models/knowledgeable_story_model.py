@@ -9,7 +9,7 @@ from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
-from torch.nn import CrossEntropyLoss
+from torch.nn.functional import mse_loss
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -261,12 +261,21 @@ class KnowledgeableStoriesModel(Model):
                         elif fusion and self._fusion_dense is not None:
 
                             lm_output = lm_output.detach()
+                            lm_output *= lm_mask
 
-                            fused_tokens = self._fusion_dense(torch.cat((lm_output, torch.unsqueeze(passages_encoded,
-                                                                                                    dim=2).expand(
+                            passages_expanded = torch.unsqueeze(passages_encoded,
+                                                                dim=2).expand(
                                 passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
-                                passages_encoded.size(2))), dim=-1))
+                                passages_encoded.size(2))
+                            passages_expanded *= lm_mask
 
+                            lm_loss = mse_loss(passages_expanded, lm_output)
+
+                            '''
+
+                            fused_tokens = self._fusion_dense(torch.cat((lm_output, passages_expanded, dim=-1))
+
+                            
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
                             lm_logits = self._lm_model.lm_head(fused_tokens)
@@ -277,6 +286,7 @@ class KnowledgeableStoriesModel(Model):
                             # Flatten the tokens
                             loss_fct = CrossEntropyLoss()
                             lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                            '''
 
                             lm_loss *= self._loss_weights["fusion_lm_loss"]
                             loss += lm_loss
