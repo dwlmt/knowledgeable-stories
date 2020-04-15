@@ -111,7 +111,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "hidden_dims": 1024,
         "activations": "linear",
         "dropout": 0.0
-    }
+    },
     "passage_seq2seq_encoder": {
       "type": "lstm",
       "input_size": 1024,
