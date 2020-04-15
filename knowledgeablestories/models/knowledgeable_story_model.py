@@ -267,7 +267,7 @@ class KnowledgeableStoriesModel(Model):
 
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
-                            lm_logits, _ = self._lm_model.lm_head(fused_tokens)
+                            lm_logits = self._lm_model.lm_head(fused_tokens)
 
                             # Shift so that tokens < n predict n
                             shift_logits = lm_logits[..., :-1, :].contiguous()
