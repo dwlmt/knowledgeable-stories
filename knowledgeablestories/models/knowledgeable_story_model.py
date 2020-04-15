@@ -9,6 +9,7 @@ from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
+from torch.nn import CrossEntropyLoss
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -266,10 +267,18 @@ class KnowledgeableStoriesModel(Model):
 
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
-                            print(fused_tokens.size(), passages["tokens"].size())
-                            lm_loss, lm_logits, _ = self._lm_model(fused_tokens, labels=passages["tokens"].long())
+                            lm_logits, _ = self._lm_model.lm_head(fused_tokens)
 
-                            self._metrics["fusion_lm_loss"](lm_loss.item()) * self._loss_weights["fusion_lm_loss"]
+                            # Shift so that tokens < n predict n
+                            shift_logits = lm_logits[..., :-1, :].contiguous()
+                            shift_labels = passages["tokens"][..., 1:].contiguous()
+                            # Flatten the tokens
+                            loss_fct = CrossEntropyLoss()
+                            lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
+                            lm_loss *= self._loss_weights["fusion_lm_loss"]
+                            loss += lm_loss
+                            self._metrics["fusion_lm_loss"](lm_loss.item())
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
