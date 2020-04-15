@@ -269,6 +269,8 @@ class KnowledgeableStoriesModel(Model):
                                                                 dim=2).expand(
                                 passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
                                 passages_encoded.size(2))
+                            passages_expanded = self._fusion_dense(passages_expanded)
+                            print(lm_output.size(), passages_expanded.size(), lm_output.size())
                             passages_expanded *= lm_mask_expanded
 
                             lm_loss = mse_loss(passages_expanded, lm_output)
