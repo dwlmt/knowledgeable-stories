@@ -24,7 +24,8 @@ class WritingPromptsAbstractReader(DatasetReader):
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
                  slide: float = 0.5,
-                 start_and_end_tokens=False) -> None:
+                 start_and_end_tokens=False,
+                 fusion=False) -> None:
         super().__init__(lazy=lazy)
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
@@ -36,6 +37,7 @@ class WritingPromptsAbstractReader(DatasetReader):
 
         self._batch_size = batch_size
         self._slide = slide
+        self._fusion = fusion
 
         # Add the relations as new tokens.
         self._tokenizer._tokenizer.add_tokens(token_tags)
@@ -144,8 +146,8 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide,
-                         start_and_end_tokens=start_and_end_tokens)
-        self._fusion = fusion
+                         start_and_end_tokens=start_and_end_tokens,
+                         fusion=fusion)
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
