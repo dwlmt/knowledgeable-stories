@@ -260,7 +260,10 @@ class KnowledgeableStoriesModel(Model):
                         elif fusion and self._fusion_dense is not None:
 
                             print(lm_output.size(), passages_encoded.size())
-                            fused_tokens = self._fusion_dense(torch.cat((lm_output, passages_encoded), dim=-1))
+                            fused_tokens = self._fusion_dense(torch.cat((lm_output, torch.unsqueeze(passages_encoded,
+                                                                                                    dim=2).expand(
+                                passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
+                                passages_encoded.size(2))), dim=-1))
 
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
