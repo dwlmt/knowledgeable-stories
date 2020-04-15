@@ -3,7 +3,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local PASSAGE_BASE_BATCH_SIZE = 1;
+local PASSAGE_BASE_BATCH_SIZE = 2;
 local LM_BASE_BATCH_SIZE = 1;
 local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
@@ -24,7 +24,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
              "writing_prompts_lm": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-                "batch_size" : 50,
+                "batch_size" : 10,
                 "fusion": true,
             },
             "writing_prompts_hierarchy": {
@@ -115,14 +115,11 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "negative_slope": 0.1
     },
     "fusion_dense": {
-      "type": "feedforward",
-      "feedforward": {
         "input_dim": 1536,
         "num_layers": 2,
         "hidden_dims": 768,
         "activations": "elu",
         "dropout": 0.0
-      }
     }
   },
   "trainer": {
