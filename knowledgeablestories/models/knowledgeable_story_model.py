@@ -259,7 +259,7 @@ class KnowledgeableStoriesModel(Model):
                             self._metrics["passage_disc_loss"](passage_disc_loss.item())
                         elif fusion and self._fusion_dense is not None:
 
-                            fused_tokens = torch.cat(encoded_sentences, passages_encoded)
+                            fused_tokens = torch.cat((encoded_sentences, passages_encoded), dim=-1)
 
                             self._lm_model = self._lm_model.to(fused_tokens.device)
 
