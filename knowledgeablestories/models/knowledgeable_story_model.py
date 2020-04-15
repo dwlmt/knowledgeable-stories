@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Any
 import torch
 from allennlp.data import Vocabulary
 from allennlp.models import Model
-from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder
+from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
@@ -33,6 +33,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_seq2seq_encoder: Seq2SeqEncoder = None,
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
+                 fusion_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.1,
@@ -56,7 +57,7 @@ class KnowledgeableStoriesModel(Model):
             loss_weights = {"lm_loss": 1.0,
                             "passage_disc_loss": 1.0,
                             "sentence_disc_loss": 1.0,
-                            # "fusion_disc_loss": 1.0,
+                            "fusion_lm_loss": 1.0,
                             "tdvae_loss": 1.0,
                             "sentence_autoencoder": 1.0,
                             "passage_autoencoder": 1.0}
@@ -83,6 +84,8 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_seq2seq_encoder = sentence_seq2seq_encoder
         self._sentence_2_seq2seq_encoder = sentence_2_seq2seq_encoder
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
+
+        self._fusion_dense = fusion_dense
 
         self._passage_tdvae = passage_tdvae
         self._tdvae_detach = tdvae_detach
@@ -136,7 +139,7 @@ class KnowledgeableStoriesModel(Model):
 
             self._metrics["lm_loss"] = Average()
             self._metrics["passage_disc_loss"] = Average()
-            self._metrics["fusion_disc_loss"] = Average()
+            self._metrics["fusion_lm_loss"] = Average()
             self._metrics["sentence_disc_loss"] = Average()
             self._metrics["tdvae_loss"] = Average()
             self._metrics["tdvae_kl_loss"] = Average()
@@ -180,6 +183,7 @@ class KnowledgeableStoriesModel(Model):
         dataset_name = metadata[0]["dataset"]
 
         prediction_mode = metadata[0].pop("prediction", False)
+        fusion = metadata[0].pop("fusion", False)
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
@@ -238,19 +242,30 @@ class KnowledgeableStoriesModel(Model):
                         self.encode_passages(encoded_sentences, passage_mask)
 
                     if "passage_disc_loss" in self._loss_weights:
-                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        passages_encoded,
-                                                                                        mask=passage_mask,
-                                                                                        offsets=self._passage_offsets,
-                                                                                        scales=self._passage_scales,
-                                                                                        label_smoothing=self._label_smoothing,
-                                                                                        level_name="passage")
 
-                        output = {**output, **disc_output_dict}
+                        if not fusion:
+                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                            passages_encoded,
+                                                                                            mask=passage_mask,
+                                                                                            offsets=self._passage_offsets,
+                                                                                            scales=self._passage_scales,
+                                                                                            label_smoothing=self._label_smoothing,
+                                                                                            level_name="passage")
 
-                        loss += passage_disc_loss
+                            output = {**output, **disc_output_dict}
 
-                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                            loss += passage_disc_loss
+
+                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                        elif fusion and self._fusion_dense is not None:
+
+                            fused_tokens = torch.cat(encoded_sentences, passages_encoded)
+
+                            self._lm_model = self._lm_model.to(fused_tokens.device)
+
+                            lm_loss, lm_logits, _ = self._lm_model(fused_tokens, labels=passages["tokens"])
+
+                            self._metrics["fusion_lm_loss"](lm_loss.item()) * self._loss_weights["fusion_lm_loss"]
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded

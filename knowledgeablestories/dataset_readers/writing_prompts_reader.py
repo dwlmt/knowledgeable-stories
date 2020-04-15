@@ -138,12 +138,14 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                  batch_size: int = 50,
                  max_token_len: int = 64,
                  slide: float = 1.0,
-                 start_and_end_tokens=False) -> None:
+                 start_and_end_tokens: bool = False,
+                 fusion: bool = False) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide,
                          start_and_end_tokens=start_and_end_tokens)
+        self._fusion = fusion
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
@@ -154,6 +156,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         fields = {}
 
         text_dict["dataset"] = "writing_prompts_hierarchy"
+        text_dict["fusion"] = self._fusion
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
