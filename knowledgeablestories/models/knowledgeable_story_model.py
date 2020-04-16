@@ -38,7 +38,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
-                 label_smoothing: float = 0.1,
+                 label_smoothing: float = 0.0,
                  sent_offsets: List[int] = [-3, -2, -1, 1, 2, 3],
                  sent_scales: List[float] = [1.0, 1.0, 10.0, 10.0, 1.0, 1.0],
                  passage_offsets: List[int] = [1, 2, 3],
@@ -88,6 +88,7 @@ class KnowledgeableStoriesModel(Model):
         self._passage_seq2seq_encoder = passage_seq2seq_encoder
 
         self._fusion_dense = fusion_dense
+        self._passage_dense = passage_dense
 
         self._passage_tdvae = passage_tdvae
         self._tdvae_detach = tdvae_detach
@@ -243,6 +244,9 @@ class KnowledgeableStoriesModel(Model):
                     passages_encoded, passages_mask = \
                         self.encode_passages(encoded_sentences, passage_mask)
 
+                    if self._passage_dense is not None:
+                        encoded_sentences = self._passage_dense(encoded_sentences)
+
                     if "passage_disc_loss" in self._loss_weights:
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         encoded_sentences,
@@ -258,7 +262,7 @@ class KnowledgeableStoriesModel(Model):
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                        loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
+                        # loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
@@ -525,9 +529,11 @@ class KnowledgeableStoriesModel(Model):
         # Mask out the same sentence.
         source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
                                  device=source_encoded.device)
-        eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
-        source_mask.masked_fill_(eye, 0)
-        source_mask.masked_fill_(zero_mask, 0)
+        if level_name != "passage":
+            eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
+            source_mask.masked_fill_(eye, 0)
+            source_mask.masked_fill_(zero_mask, 0)
+        source_mask *= zero_mask
 
         source_mask = source_mask.bool()
 
