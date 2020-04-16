@@ -531,7 +531,7 @@ class KnowledgeableStoriesModel(Model):
 
         # Zero out blank sentences.
         mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
-        source_encoded *= source_encoded.clone() * mask_expanded
+        source_encoded = source_encoded.clone() * mask_expanded
         target_encoded = target_encoded.clone() * mask_expanded
 
         source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
