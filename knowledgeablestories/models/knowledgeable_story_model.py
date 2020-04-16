@@ -35,6 +35,7 @@ class KnowledgeableStoriesModel(Model):
                  sentence_autoencoder: DenseVAE = None,
                  passage_autoencoder: DenseVAE = None,
                  fusion_dense: FeedForward = None,
+                 passage_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.1,
@@ -513,7 +514,7 @@ class KnowledgeableStoriesModel(Model):
         # Zero out blank sentences.
         mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
         source_encoded *= mask_expanded
-        target_encoded *= mask_expanded
+        target_encoded = target_encoded.clone() * mask_expanded
 
         source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
         target_encoded_flat = target_encoded.view(batch_size * sentence_num, feature_size)
