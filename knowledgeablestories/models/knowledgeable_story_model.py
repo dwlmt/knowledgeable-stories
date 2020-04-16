@@ -263,6 +263,7 @@ class KnowledgeableStoriesModel(Model):
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
+                        '''
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         passages_encoded,
                                                                                         mask=passage_mask,
@@ -273,6 +274,7 @@ class KnowledgeableStoriesModel(Model):
                                                                                         exclude_self=True)
 
                         loss += passage_disc_loss
+                        '''
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
