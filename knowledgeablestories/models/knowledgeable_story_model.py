@@ -254,9 +254,23 @@ class KnowledgeableStoriesModel(Model):
                                                                                         offsets=self._passage_offsets,
                                                                                         scales=self._passage_scales,
                                                                                         label_smoothing=self._label_smoothing,
-                                                                                        level_name="passage")
+                                                                                        level_name="passage",
+                                                                                        exclude_self=False)
 
                         output = {**output, **disc_output_dict}
+
+                        loss += passage_disc_loss
+
+                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
+
+                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                        passages_encoded,
+                                                                                        mask=passage_mask,
+                                                                                        offsets=self._passage_offsets,
+                                                                                        scales=self._passage_scales,
+                                                                                        label_smoothing=self._label_smoothing,
+                                                                                        level_name="passage",
+                                                                                        exclude_self=True)
 
                         loss += passage_disc_loss
 
@@ -508,7 +522,7 @@ class KnowledgeableStoriesModel(Model):
         return targets
 
     def _calculate_disc_loss(self, source_encoded, target_encoded, mask=None, offsets=[1, 2, 3],
-                             scales=[10.0, 1.0, 1.0], label_smoothing=0.0, level_name="passage"):
+                             scales=[10.0, 1.0, 1.0], label_smoothing=0.0, level_name="passage", exclude_self=True):
 
         output_dict = {}
         loss = torch.tensor(0.0).to(source_encoded.device)
@@ -529,7 +543,8 @@ class KnowledgeableStoriesModel(Model):
         # Mask out the same sentence.
         source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
                                  device=source_encoded.device)
-        if level_name != "passage":
+        # Zero out the vector diagonal as this will always be the highest dot product.
+        if exclude_self:
             eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
             source_mask.masked_fill_(eye, 0)
             source_mask.masked_fill_(zero_mask, 0)
