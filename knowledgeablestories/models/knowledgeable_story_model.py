@@ -496,7 +496,7 @@ class KnowledgeableStoriesModel(Model):
         for r in res.split(1):
             self._metrics[f"{dataset_name}_cloze_accuracy"](r.item())
 
-    def lm_mask_and_hidden_states(self, text):
+    def lm_mask_and_hidden_states(self, text, last_hidden_state_only=True):
 
         text_tokens = text["tokens"]
 
@@ -506,9 +506,14 @@ class KnowledgeableStoriesModel(Model):
         text_mask = (text_mask < 1).bool()
 
         self._lm_model = self._lm_model.to(text_tokens.device)
-        passages_output = self._lm_model.transformer(text_tokens)
+        lm_output = self._lm_model.transformer(text_tokens)
 
-        return passages_output[0], text_mask
+        if last_hidden_state_only:
+            lm_output = lm_output[0]
+        else:
+            lm_output = torch.stack(lm_output)
+
+        return lm_output, text_mask
 
     def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, blank_mask=None):
         targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
