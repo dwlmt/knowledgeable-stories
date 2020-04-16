@@ -243,57 +243,21 @@ class KnowledgeableStoriesModel(Model):
                         self.encode_passages(encoded_sentences, passage_mask)
 
                     if "passage_disc_loss" in self._loss_weights:
+                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                        encoded_sentences,
+                                                                                        mask=passage_mask,
+                                                                                        offsets=self._passage_offsets,
+                                                                                        scales=self._passage_scales,
+                                                                                        label_smoothing=self._label_smoothing,
+                                                                                        level_name="passage")
 
-                        if not fusion:
-                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                            passages_encoded,
-                                                                                            mask=passage_mask,
-                                                                                            offsets=self._passage_offsets,
-                                                                                            scales=self._passage_scales,
-                                                                                            label_smoothing=self._label_smoothing,
-                                                                                            level_name="passage")
+                        output = {**output, **disc_output_dict}
 
-                            output = {**output, **disc_output_dict}
+                        loss += passage_disc_loss
 
-                            loss += passage_disc_loss
+                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
-
-                        if "fusion_lm_loss" in self._loss_weights and self._fusion_dense is not None:
-                            lm_mask_expanded = torch.unsqueeze(lm_mask, dim=-1).expand_as(lm_output)
-
-                            lm_output = lm_output.detach()
-                            lm_output *= lm_mask_expanded
-
-                            passages_expanded = torch.unsqueeze(passages_encoded,
-                                                                dim=2).expand(
-                                passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
-                                passages_encoded.size(2))
-                            passages_expanded = self._fusion_dense(passages_expanded)
-                            passages_expanded *= lm_mask_expanded
-
-                            lm_loss = mse_loss(passages_expanded, lm_output)
-
-                            '''
-
-                            fused_tokens = self._fusion_dense(torch.cat((lm_output, passages_expanded, dim=-1))
-
-                            
-                            self._lm_model = self._lm_model.to(fused_tokens.device)
-
-                            lm_logits = self._lm_model.lm_head(fused_tokens)
-
-                            # Shift so that tokens < n predict n
-                            shift_logits = lm_logits[..., :-1, :].contiguous()
-                            shift_labels = passages["tokens"][..., 1:].contiguous()
-                            # Flatten the tokens
-                            loss_fct = CrossEntropyLoss()
-                            lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                            '''
-
-                            lm_loss *= self._loss_weights["fusion_lm_loss"]
-                            loss += lm_loss
-                            self._metrics["fusion_lm_loss"](lm_loss.item())
+                        loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
@@ -373,6 +337,27 @@ class KnowledgeableStoriesModel(Model):
         output["loss"] = loss
 
         return output
+
+    def fusion_loss_if_required(self, lm_mask, lm_output, loss, passages_encoded):
+        if "fusion_lm_loss" in self._loss_weights and self._fusion_dense is not None:
+            lm_mask_expanded = torch.unsqueeze(lm_mask, dim=-1).expand_as(lm_output)
+
+            lm_output = lm_output.detach()
+            lm_output *= lm_mask_expanded
+
+            passages_expanded = torch.unsqueeze(passages_encoded,
+                                                dim=2).expand(
+                passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
+                passages_encoded.size(2))
+            passages_expanded = self._fusion_dense(passages_expanded)
+            passages_expanded *= lm_mask_expanded
+
+            lm_loss = mse_loss(passages_expanded, lm_output)
+
+            lm_loss *= self._loss_weights["fusion_lm_loss"]
+            loss += lm_loss
+            self._metrics["fusion_lm_loss"](lm_loss.item())
+        return loss
 
     def _passage_masks(self, lm_mask):
         passages_sentence_lengths = torch.sum(lm_mask, dim=2)
