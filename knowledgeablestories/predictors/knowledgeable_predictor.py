@@ -201,7 +201,7 @@ class KnowledgeablePredictor(Predictor):
         curr_z2 = cached_dict['tdvae_rollout_z2']
         curr_z1 = cached_dict['tdvae_z1']
         curr_passages = cached_dict['passages_encoded']
-        sentences_encoded = cached_dict["sentences_encoded"]
+        curr_sentences = cached_dict["sentences_encoded"]
 
         print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
 
@@ -209,7 +209,7 @@ class KnowledgeablePredictor(Predictor):
         for i, sentence in enumerate(sentence_batch):
             reference_points[i]["tdvae_z1"] = curr_z1[i]
             reference_points[i]["passages_encoded"] = curr_passages[i]
-            reference_points[i]["sentences_encoded"] = curr_passages[i]
+            reference_points[i]["sentences_encoded"] = curr_sentences[i]
 
         for i, sentence in enumerate(sentence_batch):
 
