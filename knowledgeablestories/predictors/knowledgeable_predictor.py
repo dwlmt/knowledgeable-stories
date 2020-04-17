@@ -217,13 +217,13 @@ class KnowledgeablePredictor(Predictor):
                 sentence["prediction_metrics"] = {}
 
             def distance_metrics(name, x, y):
-                print(name, x.size(), y.size())
                 res_dict = {}
 
                 if len(x.size()) < 1:
                     x = torch.unsqueeze(x, dim=0)
                     y = torch.unsqueeze(y, dim=0)
 
+                print(name, x.size(), y.size())
                 l1_dist = self._l1_distance(x, y).item()
                 l2_dist = self._l2_distance(x, y).item()
                 cosine_dist = 1.0 - self._cosine_similarity(x, y).item()
