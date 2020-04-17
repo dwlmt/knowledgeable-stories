@@ -692,7 +692,7 @@ class KnowledgeablePredictor(Predictor):
                 context_tensor = encoded_passages[0, -2, :]
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
-        encoded_sentences_tensor = torch.rand_like(encoded_sentences_tensor).float().to(encoded_sentences_tensor.device)
+        # encoded_sentences_tensor = torch.rand_like(encoded_sentences_tensor).float().to(encoded_sentences_tensor.device)
 
         encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
                                       encoded_sentences_tensor.size(2))
