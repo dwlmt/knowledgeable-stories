@@ -381,7 +381,7 @@ class KnowledgeablePredictor(Predictor):
                 target_representation = target_representation.to(context_encoded_representation.device)
 
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
-                                                      target_representation,
+                                                      final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
@@ -659,7 +659,7 @@ class KnowledgeablePredictor(Predictor):
             existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
                 encoded_sentences_batch.size(0),
                 existing_sentences_encoded.size(0),
-                existing_sentences_encoded.size(1))
+                existing_sentences_encoded.size(1)).clone()
 
             if torch.cuda.is_available():
                 existing_sentences_expanded = existing_sentences_expanded.cuda()
@@ -685,7 +685,7 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
             encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
             if context_tensor is None:
-                context_tensor = encoded_passages[0, -1, :]
+                context_tensor = encoded_passages[0, -2, :]
 
             for p in encoded_passages_list:
                 l1 = self._l1_distance(torch.unsqueeze(context_tensor, dim=0), p)
