@@ -265,7 +265,7 @@ class KnowledgeablePredictor(Predictor):
 
             res_dict = sentence["prediction_metrics"][f"{i}"]
 
-            if len(reference_points) > i + 1:
+            if len(reference_points) > i + 1 and "passages_encoded" in reference_points[i + 1]:
                 dist_dict = distance_metrics("tdvae_belief", reference_points[i]["passages_encoded"],
                                              reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
