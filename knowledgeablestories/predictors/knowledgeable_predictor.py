@@ -217,6 +217,7 @@ class KnowledgeablePredictor(Predictor):
                 sentence["prediction_metrics"] = {}
 
             def distance_metrics(name, x, y):
+                print(name, x.size(), y.size())
                 res_dict = {}
                 l1_dist = self._l1_distance(x, y).item()
                 l2_dist = self._l2_distance(x, y).item()
@@ -251,10 +252,13 @@ class KnowledgeablePredictor(Predictor):
             if f"{i}" not in sentence["prediction_metrics"]:
                 sentence["prediction_metrics"][f"{i}"] = {}
 
+            res_dict = sentence["prediction_metrics"][f"{i}"]
+
             if len(reference_points) > i + 1:
-                dist_dict = distance_metrics("tdvae_rollout_z2", reference_points[i],
+                dist_dict = distance_metrics("tdvae_belief", reference_points[i]["passages_encoded"],
                                              reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
+                sentence["prediction_metrics"][f"{i}"] = res_dict
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
