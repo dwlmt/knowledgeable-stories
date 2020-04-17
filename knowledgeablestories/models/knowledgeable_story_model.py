@@ -5,6 +5,7 @@ import torch
 from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
+from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
@@ -604,6 +605,9 @@ class KnowledgeableStoriesModel(Model):
         return logits
 
     def encode_sentences(self, hidden_states, mask):
+
+        boe = BagOfEmbeddingsEncoder()
+        return boe(hidden_states, mask)
         if self._sentence_seq2vec_encoder != None:
             self._sentence_seq2vec_encoder._module.flatten_parameters()
             self._sentence_seq2vec_encoder = self._sentence_seq2vec_encoder.to(hidden_states.device)
@@ -615,6 +619,9 @@ class KnowledgeableStoriesModel(Model):
         return encoded_sentences
 
     def encode_sentences_2(self, hidden_states, mask):
+        boe = BagOfEmbeddingsEncoder()
+        return boe(hidden_states, mask)
+
         if self._sentence_2_seq2vec_encoder != None:
             # self._sentence_seq2vec_encoder._module.flatten_parameters()
             self._sentence_2_seq2vec_encoder = self._sentence_2_seq2vec_encoder.to(hidden_states.device)
