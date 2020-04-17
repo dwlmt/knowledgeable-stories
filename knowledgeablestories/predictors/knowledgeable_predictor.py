@@ -687,7 +687,7 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_batch = blank_encoded
 
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
-            encoded_passages_list.append(torch.rand_like(encoded_passages[:, -1, :].cpu()).cpu().float())
+            encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
             if context_tensor is None:
                 context_tensor = encoded_passages[0, -2, :]
 
