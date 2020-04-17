@@ -151,7 +151,7 @@ class KnowledgeablePredictor(Predictor):
                 if not self._tdvae:
                     self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
                 else:
-                    self._tdvae_metrics(sentence_batch, cached_dict, previous_tensor_dict)
+                    self._tdvae_metrics(sentence_batch, cached_dict)
 
                 if not self._tdvae:
                     for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
@@ -195,77 +195,66 @@ class KnowledgeablePredictor(Predictor):
 
             return inputs
 
-    def _tdvae_metrics(self, sentence_batch, cached_dict, previous_tensor_dict):
+    def _tdvae_metrics(self, sentence_batch, cached_dict):
 
         curr_x = cached_dict['tdvae_rollout_x']
         curr_z2 = cached_dict['tdvae_rollout_z2']
         curr_z1 = cached_dict['tdvae_z1']
         curr_passages = cached_dict['passages_encoded']
+        sentences_encoded = cached_dict["sentences_encoded"]
 
         print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
 
-        tdvae_predictions = [{"index": i} for i in range(len(sentence_batch) + self._num_levels_rollout)]
+        reference_points = [{} for i in range(len(sentence_batch) + self._num_levels_rollout)]
         for i, sentence in enumerate(sentence_batch):
-            tdvae_predictions[i]["tdvae_z1"] = curr_z1[i]
-            tdvae_predictions[i]["passages_encoded"] = curr_passages[i]
-
-            for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
-                tdvae_predictions[i + j][f"tdvae_rollout_x-{j}"] = x
-                tdvae_predictions[i + j][f"tdvae_rollout_z2-{j}"] = z2
-
-        sentences_encoded = cached_dict["sentences_encoded"]
+            reference_points[i]["tdvae_z1"] = curr_z1[i]
+            reference_points[i]["passages_encoded"] = curr_passages[i]
+            reference_points[i]["sentences_encoded"] = curr_passages[i]
 
         for i, sentence in enumerate(sentence_batch):
 
             if not "prediction_metrics" in sentence:
                 sentence["prediction_metrics"] = {}
 
-            if self._retain_full_output:
-                for k, v in tdvae_predictions[i].items():
-                    sentence["tdvae_predictions"] = {}
-                    if k != "index":
-                        if len(v.size()) > 0:
-                            conv_v = v.tolist()
-                        else:
-                            conv_v = v.item()
-                        sentence["tdvae_predictions"][k] = conv_v
+            def distance_metrics(name, x, y):
+                res_dict = {}
+                l1_dist = self._l1_distance(x, y).item()
+                l2_dist = self._l2_distance(x, y).item()
+                cosine_dist = 1.0 - self._cosine_similarity(x, y).item()
 
-            predictions_at_i = tdvae_predictions[i]
-            print(f"Position {i}")
-            if "tdvae_z1" in predictions_at_i:
-                tdvae_z1 = predictions_at_i["tdvae_z1"]
-            else:
-                tdvae_z1 = None
+                if len(l1_dist.size) < 1:
+                    res_dict[f"{name}_l1_dist"] = l1_dist.item()
+                    res_dict[f"{name}_l2_dist"] = l2_dist.item()
+                    res_dict[f"{name}_cosine_dist"] = cosine_dist.item()
+                else:
+                    for i in range(l1_dist.size(0)):
+                        res_dict[f"{name}_{i}_l1_dist"] = l1_dist.item()
+                        res_dict[f"{name}_{i}_l2_dist"] = l2_dist.item()
+                        res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist.item()
 
-            for k, v in predictions_at_i.items():
-                if k == "index":
-                    pass
-                elif "z2" in k:
-                    print(f"{k} - {v.size()}")
+                return res_dict
 
-                    self.assign_metric(sentence, "l1_dist", self._l1_distance(tdvae_z1, v), k)
-                    self.assign_metric(sentence, "l2_dist", self._l2_distance(tdvae_z1, v), k)
-                    self.assign_metric(sentence, "cosine_dist", 1.0 - self._cosine_similarity(tdvae_z1, v), k)
-                elif "x" in k:
-                    if i > len(sentences_encoded):
-                        sent_enc = sentences_encoded[i]
-                        sentence["prediction_metrics"][f"{k}_l1_dist"] = self._l1_distance(sent_enc, v).item()
-                        sentence["prediction_metrics"][f"{k}_l2_dist"] = self._l2_distance(sent_enc, v).item()
-                        sentence["prediction_metrics"][f"{k}_cosine_dist"] = 1.0 - self._cosine_similarity(sent_enc,
-                                                                                                           v).item()
+            for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
 
-            if i + 1 < len(curr_passages):
-                self.assign_metric(sentence, "l1_dist", self._l1_distance(curr_passages[i],
-                                                                          curr_passages[i + 1]), "belief")
-                self.assign_metric(sentence, "l2_dist", self._l1_distance(curr_passages[i],
-                                                                          curr_passages[i + 1]), "belief")
-                self.assign_metric(sentence, "cosine_dist", 1.0 - self._cosine_similarity(curr_passages[i],
-                                                                                          curr_passages[i + 1]),
-                                   "belief")
+                if f"{i + j}" not in sentence["prediction_metrics"]:
+                    sentence["prediction_metrics"][f"{i + j}"] = {}
 
-    def assign_metric(self, sentence, name, l1_dist, k):
-        for j, value in enumerate(l1_dist):
-            sentence["prediction_metrics"][f"{k}_{j}_{name}"] = value.item()
+                res_dict = sentence["prediction_metrics"][f"{i + j}"]
+
+                dist_dict = distance_metrics("tdvae_rollout_x", x, reference_points[i + j]["sentences_encoded"])
+                res_dict = {**res_dict, **dist_dict}
+                dist_dict = distance_metrics("tdvae_rollout_z2", x, reference_points[i + j]["tdvae_z1"])
+                res_dict = {**res_dict, **dist_dict}
+
+                sentence["prediction_metrics"][f"{i + j}"] = res_dict
+
+            if f"{i}" not in sentence["prediction_metrics"]:
+                sentence["prediction_metrics"][f"{i}"] = {}
+
+            if len(reference_points) > i + 1:
+                dist_dict = distance_metrics("tdvae_rollout_z2", reference_points[i],
+                                             reference_points[i + 1]["passages_encoded"])
+                res_dict = {**res_dict, **dist_dict}
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
