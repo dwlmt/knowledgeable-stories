@@ -380,6 +380,8 @@ class KnowledgeablePredictor(Predictor):
                     target_representation = self._model._passage_dense(target_representation)
                 target_representation = target_representation.to(context_encoded_representation.device)
 
+                print("Logits input size:", context_encoded_representation.size(), final_encoded_representation.size(),
+                      target_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
                                                       self._encoder_cosine)
