@@ -219,7 +219,7 @@ class KnowledgeablePredictor(Predictor):
             def distance_metrics(name, x, y):
                 res_dict = {}
 
-                if len(x.size()) < 1:
+                if len(x.size()) < 2:
                     x = torch.unsqueeze(x, dim=0)
                     y = torch.unsqueeze(y, dim=0)
 
