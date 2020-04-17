@@ -252,7 +252,7 @@ class KnowledgeablePredictor(Predictor):
 
                 dist_dict = distance_metrics("tdvae_rollout_x", x, reference_points[i + j]["sentences_encoded"])
                 res_dict = {**res_dict, **dist_dict}
-                dist_dict = distance_metrics("tdvae_rollout_z2", x, reference_points[i + j]["tdvae_z1"])
+                dist_dict = distance_metrics("tdvae_rollout_z2", z2, reference_points[i + j]["tdvae_z1"])
                 res_dict = {**res_dict, **dist_dict}
 
                 sentence["prediction_metrics"][f"{i + j}"] = res_dict
