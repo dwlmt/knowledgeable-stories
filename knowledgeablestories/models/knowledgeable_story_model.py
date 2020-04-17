@@ -500,7 +500,7 @@ class KnowledgeableStoriesModel(Model):
 
         text_tokens = text["tokens"]
 
-        with torch.no_grad:
+        with torch.no_grad():
             text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
             for id in END_OF_TEXT_TOKEN_IDS:
                 text_mask += (text_tokens == id)
@@ -517,7 +517,7 @@ class KnowledgeableStoriesModel(Model):
         return lm_output, text_mask
 
     def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, blank_mask=None):
-        with torch.no_grad:
+        with torch.no_grad():
             targets = torch.zeros(batch_size, batch_size).fill_(label_smoothing)
 
             for offset, scale in zip(offsets, scales):
