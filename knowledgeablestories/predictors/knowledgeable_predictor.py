@@ -237,9 +237,9 @@ class KnowledgeablePredictor(Predictor):
                     res_dict[f"{name}_cosine_dist"] = cosine_dist.item()
                 else:
                     for i in range(l1_dist.size(0)):
-                        res_dict[f"{name}_{i}_l1_dist"] = l1_dist.item()
-                        res_dict[f"{name}_{i}_l2_dist"] = l2_dist.item()
-                        res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist.item()
+                        res_dict[f"{name}_{i}_l1_dist"] = l1_dist[i].item()
+                        res_dict[f"{name}_{i}_l2_dist"] = l2_dist[i].item()
+                        res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist[i].item()
 
                 return res_dict
 
