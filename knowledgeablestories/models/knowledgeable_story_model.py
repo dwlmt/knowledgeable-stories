@@ -565,7 +565,8 @@ class KnowledgeableStoriesModel(Model):
         # print(logit_scores, target_mask, source_mask, mask_flat)
         # disc_loss = self._kl_loss(logits_softmax, target_mask) * self._loss_weights[
         #    f"{level_name}_disc_loss"]
-        disc_loss = torch.mean(torch.sum(-target_dist * logits_softmax, dim=self.dim))
+        disc_loss = torch.mean(torch.sum(-target_dist * logits_softmax, dim=-1)) * self._loss_weights[
+            f"{level_name}_disc_loss"]
         loss += disc_loss  # Add the loss and scale it.
 
         return loss, output_dict
