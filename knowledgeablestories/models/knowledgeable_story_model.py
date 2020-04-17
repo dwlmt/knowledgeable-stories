@@ -559,16 +559,17 @@ class KnowledgeableStoriesModel(Model):
 
         source_mask = source_mask.bool()
 
-        target_mask = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
+        target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
                                                       label_smoothing=label_smoothing, blank_mask=zero_mask).to(
             source_encoded.device)
 
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
 
         # print(logit_scores, target_mask, source_mask, mask_flat)
-        kl_loss = self._kl_loss(logits_softmax, target_mask) * self._loss_weights[
-            f"{level_name}_disc_loss"]
-        loss += kl_loss  # Add the loss and scale it.
+        # disc_loss = self._kl_loss(logits_softmax, target_mask) * self._loss_weights[
+        #    f"{level_name}_disc_loss"]
+        disc_loss = torch.mean(torch.sum(-target_dist * logits_softmax, dim=self.dim))
+        loss += disc_loss  # Add the loss and scale it.
 
         return loss, output_dict
 
