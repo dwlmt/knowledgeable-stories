@@ -228,7 +228,7 @@ class KnowledgeablePredictor(Predictor):
                 l2_dist = self._l2_distance(x, y).item()
                 cosine_dist = 1.0 - self._cosine_similarity(x, y).item()
 
-                if len(l1_dist.size) < 1:
+                if len(l1_dist.size()) < 1:
                     res_dict[f"{name}_l1_dist"] = l1_dist.item()
                     res_dict[f"{name}_l2_dist"] = l2_dist.item()
                     res_dict[f"{name}_cosine_dist"] = cosine_dist.item()
