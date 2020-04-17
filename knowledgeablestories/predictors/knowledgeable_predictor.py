@@ -223,6 +223,9 @@ class KnowledgeablePredictor(Predictor):
                     x = torch.unsqueeze(x, dim=0)
                     y = torch.unsqueeze(y, dim=0)
 
+                if len(y.size()) < len(x.size()):
+                    y = torch.unsqueeze(y, dim=0).expand_as(x)
+
                 print(name, x.size(), y.size())
                 l1_dist = self._l1_distance(x, y)
                 l2_dist = self._l2_distance(x, y)
