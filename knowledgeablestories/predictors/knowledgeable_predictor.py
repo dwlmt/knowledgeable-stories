@@ -250,12 +250,13 @@ class KnowledgeablePredictor(Predictor):
 
                 res_dict = sentence["prediction_metrics"][f"{i + j}"]
 
-                if "sentences_encoded" in reference_points[i + j]:
-                    dist_dict = distance_metrics("tdvae_rollout_x", x, reference_points[i + j]["sentences_encoded"])
-                    res_dict = {**res_dict, **dist_dict}
-                if "tdvae_z1" in reference_points[i + j]:
-                    dist_dict = distance_metrics("tdvae_rollout_z2", z2, reference_points[i + j]["tdvae_z1"])
-                    res_dict = {**res_dict, **dist_dict}
+                if len(reference_points) > i + j:
+                    if "sentences_encoded" in reference_points[i + j]:
+                        dist_dict = distance_metrics("tdvae_rollout_x", x, reference_points[i + j]["sentences_encoded"])
+                        res_dict = {**res_dict, **dist_dict}
+                    if "tdvae_z1" in reference_points[i + j]:
+                        dist_dict = distance_metrics("tdvae_rollout_z2", z2, reference_points[i + j]["tdvae_z1"])
+                        res_dict = {**res_dict, **dist_dict}
 
                 sentence["prediction_metrics"][f"{i + j}"] = res_dict
 
