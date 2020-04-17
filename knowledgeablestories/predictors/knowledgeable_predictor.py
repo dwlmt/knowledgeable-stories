@@ -220,7 +220,7 @@ class KnowledgeablePredictor(Predictor):
                 print(name, x.size(), y.size())
                 res_dict = {}
 
-                if len(x.size) < 1:
+                if len(x.size()) < 1:
                     x = torch.unsqueeze(x, dim=0)
                     y = torch.unsqueeze(y, dim=0)
 
