@@ -375,12 +375,16 @@ class KnowledgeablePredictor(Predictor):
 
                 # print(context_encoded_representation.size(), final_encoded_representation.size())
 
+                target_representation = existing_sentences_encoded
+                if self._model._passage_dense is not None:
+                    target_representation = self._model._passage_dense(target_representation)
+
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
-                                                      final_encoded_representation,
+                                                      target_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
-                #print(f"Logits {logits}, {logits.size()}")
+                # print(f"Logits {logits}, {logits.size()}")
 
                 probs, log_probs = self._logits_to_probs(logits)
 
