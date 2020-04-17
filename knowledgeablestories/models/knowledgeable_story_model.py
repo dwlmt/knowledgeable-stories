@@ -606,7 +606,7 @@ class KnowledgeableStoriesModel(Model):
 
     def encode_sentences(self, hidden_states, mask):
 
-        boe = BagOfEmbeddingsEncoder()
+        boe = BagOfEmbeddingsEncoder(embedding_dim=hidden_states.size(-1))
         return boe(hidden_states, mask)
         if self._sentence_seq2vec_encoder != None:
             self._sentence_seq2vec_encoder._module.flatten_parameters()
@@ -619,7 +619,7 @@ class KnowledgeableStoriesModel(Model):
         return encoded_sentences
 
     def encode_sentences_2(self, hidden_states, mask):
-        boe = BagOfEmbeddingsEncoder()
+        boe = BagOfEmbeddingsEncoder(embedding_dim=hidden_states.size(-1))
         return boe(hidden_states, mask)
 
         if self._sentence_2_seq2vec_encoder != None:
