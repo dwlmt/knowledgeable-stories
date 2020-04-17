@@ -373,6 +373,7 @@ class KnowledgeablePredictor(Predictor):
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
                     encoded_sentences_tensor = encoded_sentences_tensor.cuda()
+                    existing_sentences_encoded = existing_sentences_encoded.cuda()
 
                 # print(context_encoded_representation.size(), final_encoded_representation.size())
 
