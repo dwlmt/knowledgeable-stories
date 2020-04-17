@@ -224,9 +224,9 @@ class KnowledgeablePredictor(Predictor):
                     y = torch.unsqueeze(y, dim=0)
 
                 print(name, x.size(), y.size())
-                l1_dist = self._l1_distance(x, y).item()
-                l2_dist = self._l2_distance(x, y).item()
-                cosine_dist = 1.0 - self._cosine_similarity(x, y).item()
+                l1_dist = self._l1_distance(x, y)
+                l2_dist = self._l2_distance(x, y)
+                cosine_dist = 1.0 - self._cosine_similarity(x, y)
 
                 if len(l1_dist.size()) < 1:
                     res_dict[f"{name}_l1_dist"] = l1_dist.item()
