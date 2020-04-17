@@ -372,15 +372,16 @@ class KnowledgeablePredictor(Predictor):
                 if torch.cuda.is_available():
                     final_encoded_representation = final_encoded_representation.cuda()
                     context_encoded_representation = context_encoded_representation.cuda()
+                    encoded_sentences_tensor = encoded_sentences_tensor.cuda()
 
                 # print(context_encoded_representation.size(), final_encoded_representation.size())
 
-                target_representation = existing_sentences_encoded
+                target_representation = encoded_sentences_tensor
                 if self._model._passage_dense is not None:
                     target_representation = self._model._passage_dense(target_representation)
                 target_representation = target_representation.to(context_encoded_representation.device)
 
-                print("Logits input size:", context_encoded_representation.size(), final_encoded_representation.size(),
+                print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
                       target_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       final_encoded_representation,
