@@ -246,9 +246,9 @@ class KnowledgeablePredictor(Predictor):
             for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
 
                 if f"{i + j}" not in sentence["prediction_metrics"]:
-                    sentence["prediction_metrics"][f"{i + j}"] = {}
+                    sentence["prediction_metrics"][f"{j}"] = {}
 
-                res_dict = sentence["prediction_metrics"][f"{i + j}"]
+                res_dict = sentence["prediction_metrics"][f"{j}"]
 
                 if len(reference_points) > i + j:
                     if "sentences_encoded" in reference_points[i + j]:
@@ -258,18 +258,18 @@ class KnowledgeablePredictor(Predictor):
                         dist_dict = distance_metrics("tdvae_rollout_z2", z2, reference_points[i + j]["tdvae_z1"])
                         res_dict = {**res_dict, **dist_dict}
 
-                sentence["prediction_metrics"][f"{i + j}"] = res_dict
+                sentence["prediction_metrics"][f"{j}"] = res_dict
 
-            if f"{i}" not in sentence["prediction_metrics"]:
-                sentence["prediction_metrics"][f"{i}"] = {}
+            if f"{1}" not in sentence["prediction_metrics"]:
+                sentence["prediction_metrics"][f"{1}"] = {}
 
-            res_dict = sentence["prediction_metrics"][f"{i}"]
+            res_dict = sentence["prediction_metrics"][f"{1}"]
 
             if len(reference_points) > i + 1 and "passages_encoded" in reference_points[i + 1]:
                 dist_dict = distance_metrics("tdvae_belief", reference_points[i]["passages_encoded"],
                                              reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
-                sentence["prediction_metrics"][f"{i}"] = res_dict
+                sentence["prediction_metrics"][f"{1}"] = res_dict
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
