@@ -109,6 +109,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "type": "pytorch_transformer",
         "input_dim": 1024,
         "num_layers": 1,
+        "positional_encoding": "embedding",
       }
     },
     "sentence_2_seq2vec_encoder": {
@@ -124,6 +125,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "type": "pytorch_transformer",
         "input_dim": 1024,
         "num_layers": 1,
+        "positional_encoding": "embedding",
       }
     },
     "passage_tdvae": {
