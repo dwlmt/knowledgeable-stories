@@ -66,6 +66,7 @@ export EXP_ROOT="${CLUSTER_HOME}/git/knowledgeable-stories"
 export EXP_ID="${EXP_NAME}_${SLURM_JOB_ID}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 export CACHE_DIR="${SCRATCH_HOME}/${EXP_ID}_cache"
+export ALLENNLP_CACHE_ROOT="${SCRATCH_HOME}/allennlp_cache/"
 
 if [ ! -v COPY_DATASET ]; then
   export DATASET_ROOT=${DATASET_SOURCE}

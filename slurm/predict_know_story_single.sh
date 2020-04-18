@@ -55,6 +55,7 @@ echo ${SCRATCH_HOME}
 export EXP_ROOT="${CLUSTER_HOME}/git/knowledgeable-stories"
 
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
+export ALLENNLP_CACHE_ROOT="${SCRATCH_HOME}/allennlp_cache/"
 
 export PREDICTION_STORY_FILE="${CLUSTER_HOME}/${BATCH_FILE_PATH}"
 
