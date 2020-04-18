@@ -17,9 +17,12 @@ class PoolingEncoder(Seq2VecEncoder):
         self._pooler = pooler
 
     @classmethod
-    def from_params(cls, params: Params) -> 'PoolingEncoder':
-        seq2seq_encoder = params.pop('seq2seq_encoder', None)
-        pooler = params.pop('pooler', None)
+    def from_params(cls, params: Params, **extras) -> 'PoolingEncoder':
+        seq2seq_encoder_params = params.pop('seq2seq_encoder', None)
+        seq2seq_encoder = Seq2SeqEncoder.from_params(seq2seq_encoder_params)
+
+        pooler_params = params.pop('pooler', None)
+        pooler = Seq2VecEncoder.from_params(pooler_params)
         return PoolingEncoder(seq2seq_encoder=seq2seq_encoder, pooler=pooler)
 
     @overrides
