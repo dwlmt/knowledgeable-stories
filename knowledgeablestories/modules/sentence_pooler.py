@@ -1,4 +1,5 @@
 import torch
+from allennlp.common import Params
 from allennlp.modules import Seq2SeqEncoder
 from allennlp.modules.seq2vec_encoders.seq2vec_encoder import Seq2VecEncoder
 from overrides import overrides
@@ -14,6 +15,12 @@ class PoolingEncoder(Seq2VecEncoder):
         super().__init__()
         self._seq2seq_encoder = seq2seq_encoder
         self._pooler = pooler
+
+    @classmethod
+    def from_params(cls, params: Params) -> 'PoolingEncoder':
+        seq2seq_encoder = params.pop('seq2seq_encoder', None)
+        pooler = params.pop('pooler', None)
+        return PoolingEncoder(seq2seq_encoder=seq2seq_encoder, pooler=pooler)
 
     @overrides
     def get_input_dim(self) -> int:
