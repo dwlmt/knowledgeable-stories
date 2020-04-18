@@ -111,6 +111,21 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "num_layers": 1,
       }
     },
+    "sentence_2_seq2vec_encoder": {
+      "type": "seq2seq_pooler",
+      "seq2seq_encoder" : {
+      }
+      "pooler": {
+        "type": "bag_of_embeddings",
+        "embedding_dim": 1024,
+        "averaged": true,
+      },
+      "seq2seq_encoder" {
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 1,
+      }
+    },
     "passage_tdvae": {
          "x_size": 1024,
          "input_size": 1024,
