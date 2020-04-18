@@ -155,7 +155,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "summary_interval": 500,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
-    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
+    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else -1,
     "optimizer": {
       "type": "sgd",
       "lr": LR_RATE,
