@@ -104,7 +104,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "embedding_dim": 1024,
             "averaged": true,
           },
-          "seq2seq_encoder" {
+          "seq2seq_encoder": {
             "type": "pytorch_transformer",
             "input_dim": 1024,
             "num_layers": 1,
@@ -120,7 +120,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "embedding_dim": 1024,
             "averaged": true,
           },
-          "seq2seq_encoder" {
+          "seq2seq_encoder": {
             "type": "pytorch_transformer",
             "input_dim": 1024,
             "num_layers": 1,
