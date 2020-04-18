@@ -5,7 +5,7 @@ from overrides import overrides
 
 
 @Seq2VecEncoder.register("seq2seq_pooler")
-class BagOfEmbeddingsEncoder(Seq2VecEncoder):
+class PoolingEncoder(Seq2VecEncoder):
     """
         Simply combine a seq2seq encoder with a boe pooler to average across the underlying seq2seq model.
     """
