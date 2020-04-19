@@ -28,7 +28,7 @@ class PoolingEncoder(Seq2VecEncoder):
         max_len, max_idx = torch.max(lengths, dim=0)
 
         tokens = tokens[:, 0: max_len, :]
-        mask = mask[:, 0: max_len, :]
+        mask = mask[:, 0: max_len]
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
         pooled_output = self._pooler(seq_output, mask=mask)
