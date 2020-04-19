@@ -23,7 +23,7 @@ class PoolingEncoder(Seq2VecEncoder):
     def get_output_dim(self) -> int:
         return self._pooler.get_output_dim()
 
-    def forward(self, tokens: torch.Tensor, mask: torch.BoolTensor = None):
+    def forward(self, tokens: torch.Tensor, mask: torch.Tensor = None):
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
         pooled_output = self._pooler(seq_output, mask=mask)
         return pooled_output
