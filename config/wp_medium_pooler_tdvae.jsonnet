@@ -103,10 +103,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "cls_is_last_token": true,
       },
       "seq2seq_encoder": {
-        "type": "pytorch_transformer",
-        "input_dim": 1024,
-        "num_layers": 1,
-        "positional_encoding": "embedding",
+        "type": "lstm",
+         "input_size": 1024,
+         "hidden_size": 1024,
+         "num_layers": 4,
+         "dropout": 0.0,
       }
     },
     "sentence_2_seq2vec_encoder": {
@@ -116,10 +117,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "cls_is_last_token": true,
       },
       "seq2seq_encoder": {
-        "type": "pytorch_transformer",
-        "input_dim": 1024,
-        "num_layers": 1,
-        "positional_encoding": "embedding",
+        "type": "lstm",
+         "input_size": 1024,
+         "hidden_size": 1024,
+         "num_layers": 4,
+         "dropout": 0.0,
       }
     },
     "passage_tdvae": {
