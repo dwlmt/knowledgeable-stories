@@ -94,6 +94,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "loss_weights" : {
         "lm_loss": 1.0,
         "tdvae_loss": 1.0,
+        "sentence_disc_loss": 1.0,
         "sentence_autoencoder": 1.0,
     },
     "sentence_seq2vec_encoder": {
@@ -103,11 +104,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "embedding_dim": 1024,
       },
       "seq2seq_encoder": {
-        "type": "lstm",
-         "input_size": 1024,
-         "hidden_size": 1024,
-         "num_layers": 4,
-         "dropout": 0.0,
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 1,
+        "positional_encoding": "embedding",
+        "dropout" 0.0,
       }
     },
     "sentence_2_seq2vec_encoder": {
@@ -117,11 +118,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "embedding_dim": 1024,
       },
       "seq2seq_encoder": {
-        "type": "lstm",
-         "input_size": 1024,
-         "hidden_size": 1024,
-         "num_layers": 4,
-         "dropout": 0.0,
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 1,
+        "positional_encoding": "embedding",
+        "dropout": 0.0,
       }
     },
     "passage_tdvae": {
@@ -136,6 +137,12 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "d_block_hidden_size": 128,
          "decoder_hidden_size": 256,
     },
+    "sentence_autoencoder": {
+        "input_dim": 2048,
+        "embedding_dim": 64,
+        "hidden_dims":  [1024, 512, 256, 128],
+        "negative_slope": 0.1
+    }
   },
   "trainer": {
     "num_epochs": EPOCHS,
