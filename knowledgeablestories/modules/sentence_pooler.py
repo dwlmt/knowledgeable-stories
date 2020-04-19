@@ -25,5 +25,5 @@ class PoolingEncoder(Seq2VecEncoder):
 
     def forward(self, tokens: torch.Tensor, mask: torch.Tensor = None):
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
-        pooled_output = seq_output[:, -1, :]  # self._pooler(seq_output, mask=mask)
+        pooled_output = self._pooler(seq_output, mask=mask)
         return pooled_output
