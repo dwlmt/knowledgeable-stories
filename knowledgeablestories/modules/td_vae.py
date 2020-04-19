@@ -289,8 +289,6 @@ class TDVAE(nn.Module, FromParams):
                             gaussian_log_prob(pt_z2_z1_mu, pt_z2_z1_logvar, qb_z2_b2)).mean()
 
         x2 = x2.detach()
-        print(x2)
-        print(x2.size())
         bce = F.binary_cross_entropy(pd_x2_z2, x2, reduction='sum') / batch_size
         bce_optimal = F.binary_cross_entropy(x2, x2, reduction='sum').detach() / batch_size
         bce_diff = bce - bce_optimal
