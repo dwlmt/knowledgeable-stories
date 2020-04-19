@@ -89,14 +89,12 @@ class TDVAE(nn.Module, FromParams):
     def forward(self, x, mask=None):
 
         print("TDVAE forward", x.size(), mask.size())
-        
-        print(mask)
 
-        lengthes = torch.sum(mask.long(), dim=-1)
-        max_length, max_indices = torch.max(lengthes, dim=0)
+        # lengthes = torch.sum(mask.long(), dim=-1)
+        # max_length, max_indices = torch.max(lengthes, dim=0)
 
         t_begin = 0
-        t_end = max_length.item() - self.t_diff_max
+        t_end = x.size(-1)  # max_length.item() - self.t_diff_max
 
         if t_end - self.min_length <= 0:
             return None
