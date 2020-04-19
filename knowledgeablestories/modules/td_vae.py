@@ -163,9 +163,14 @@ class TDVAE(nn.Module, FromParams):
         qs_z1_z2_b1 = torch.cat(qs_z1_z2_b1s, dim=1)
         return qs_z1_z2_b1, qs_z1_z2_b1_logvar, qs_z1_z2_b1_mu, qs_z1_z2_b1s
 
-    def sample_posterior_z(self, b):
+    def sample_posterior_z(self, b, do_sample: bool = True):
         ''' Samples the posterior for a belief.
         '''
+        if self.training or do_sample:
+            do_sample = True
+        else:
+            do_sample = False
+
         z_b_mus, z_b_logvars, b_z_bs = [], [], []
         for layer in range(self.num_layers - 1, -1, -1):
             if layer == self.num_layers - 1:
@@ -176,7 +181,7 @@ class TDVAE(nn.Module, FromParams):
             z_b_mus.insert(0, z_b_mu)
             z_b_logvars.insert(0, z_b_logvar)
 
-            z_b = reparameterize_gaussian(z_b_mu, z_b_logvar, self.training)
+            z_b = reparameterize_gaussian(z_b_mu, z_b_logvar, do_sample)
             b_z_bs.insert(0, z_b)
 
         z_b_mu = torch.cat(z_b_mus, dim=1)
@@ -201,7 +206,7 @@ class TDVAE(nn.Module, FromParams):
             -1, b.size(3), b.size(4))
         return b1, b2
 
-    def rollout_posteriors_sequence(self, x, n=None):
+    def rollout_posteriors_sequence(self, x, n: int = None, samples: int = None):
         ''' Calculate the rollout for all the ns in the sequence.
         '''
         if n == None:
@@ -214,7 +219,7 @@ class TDVAE(nn.Module, FromParams):
 
         batch_size, seq_size, embedding_size = x.size()
         for i in range(seq_size):
-            rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n)
+            rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n, samples=samples)
             rollout_xs.append(rollout_x)
             rollout_z2s.append(rollout_z2)
             z1s.append(z1)
@@ -233,13 +238,24 @@ class TDVAE(nn.Module, FromParams):
 
         return (rollout_xs, rollout_z2s, z1s, bs)
 
-    def rollout_posteriors(self, x, t=None, n=None):
+    def rollout_posteriors(self, x, t=None, n=None, samples: int = None):
+
+        if samples is not None and samples > 0:
+            do_sample = True
+        else:
+            do_sample = False
+
         ''' Follout the posteriors for time t for n into the future.
         '''
         # Run belief network
         # print("X", x.size())
         b = self.b_belief_rnn(x)[:, min(t, x.size(1))]  # size: bs, time, layers, dim
-        #print("Beliefs", x.size())
+
+        # Expand the beliefs to the required number of samples.
+        if do_sample:
+            pass
+
+        # print("Beliefs", x.size())
 
         # Compute posterior, state of the world from belief.
         _, _, z1, _, _, _ = self.sample_posterior_z(b)
@@ -255,7 +271,7 @@ class TDVAE(nn.Module, FromParams):
                     pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](z)
                 else:
                     pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](torch.cat([z, pt_z2_z1], dim=1))
-                pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, True)
+                pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, do_sample)
                 next_z.insert(0, pt_z2_z1)
 
             z = torch.cat(next_z, dim=1)
