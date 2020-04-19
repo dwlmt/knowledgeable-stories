@@ -29,6 +29,6 @@ class FinalPooler(Seq2VecEncoder):
         lengths = torch.sum(mask.long(), dim=1)
         batch_size = len(lengths)
 
-        final_states_list = tokens[[l - 1 for l in lengths], [i for i in range(batch_size)]]
+        final_states = tokens[[i for i in range(batch_size)], [l - 1 for l in lengths]]
 
-        return torch.stack(final_states_list)
+        return final_states
