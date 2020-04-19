@@ -31,6 +31,6 @@ class FinalPooler(Seq2VecEncoder):
 
         final_states = tokens[[i for i in range(batch_size)], [l - 1 for l in lengths]]
 
-        final_states = torch.where(torch.isnan(final_states), torch.zeros_like(final_states), final_states)
+        # final_states = torch.where(torch.isnan(final_states), torch.zeros_like(final_states), final_states)
 
         return final_states
