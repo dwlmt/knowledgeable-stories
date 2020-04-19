@@ -101,6 +101,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "pooler": {
         "type": "cls_pooler",
         "cls_is_last_token": true,
+        "embedding_dim": 1024,
       },
       "seq2seq_encoder": {
         "type": "lstm",
@@ -115,6 +116,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "pooler": {
         "type": "cls_pooler",
         "cls_is_last_token": true,
+        "embedding_dim": 1024,
       },
       "seq2seq_encoder": {
         "type": "lstm",
