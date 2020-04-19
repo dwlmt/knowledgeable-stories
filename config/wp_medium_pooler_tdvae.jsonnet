@@ -86,7 +86,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "embedder_vocab_size": embedder_vocab_size,
-    "tdvae_detach": false,
+    "tdvae_detach": true,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
