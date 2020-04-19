@@ -32,9 +32,9 @@ class PoolingEncoder(Seq2VecEncoder):
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
 
-        print("Transformer Output", torch.isnan(seq_output).size(), torch.isnan(seq_output).size())
+        print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
-        print("Pooled Output", torch.isnan(pooled_output).size(), torch.isnan(pooled_output).size())
+        print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
         # pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
 
