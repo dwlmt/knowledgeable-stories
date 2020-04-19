@@ -88,6 +88,8 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
 
+        print("TDVAE forward", x.size(), mask.size())
+
         lengthes = torch.sum(mask, dim=-1)
         max_length, max_indices = torch.max(lengthes, dim=0)
 
