@@ -576,10 +576,8 @@ class KnowledgeableStoriesModel(Model):
         disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
 
         with torch.no_grad():
-            self._metrics[f"{level_name}_disc_logits_mean"](
-                torch.mean(logits.view(logits.size(0) * logits.size(1)), dim=-1))
-            self._metrics[f"{level_name}_disc_logits_std"](
-                torch.std(logits.view(logits.size(0) * logits.size(1)), dim=-1))
+            self._metrics[f"{level_name}_disc_logits_mean"](torch.mean(torch.mean(logits, dim=-1), dim=-1))
+            self._metrics[f"{level_name}_disc_logits_std"](torch.mean(torch.std(logits, dim=-1), dim=-1))
 
         loss += disc_loss  # Add the loss and scale it.
 
