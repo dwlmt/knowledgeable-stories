@@ -149,6 +149,11 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["tdvae_recon_loss"] = Average()
             self._metrics["tdvae_predict_loss"] = Average()
 
+            self._metrics["passage_disc_logits_mean"] = Average()
+            self._metrics["passage_disc_logits_std"] = Average()
+            self._metrics["sentence_disc_logits_mean"] = Average()
+            self._metrics["sentence_disc_logits_std"] = Average()
+
             if self._sentence_autoencoder:
                 self._metrics["sentence_autoencoder_loss"] = Average()
             if self._passage_autoencoder:
@@ -221,7 +226,9 @@ class KnowledgeableStoriesModel(Model):
                                                                                           level_name="sentence")
 
                     loss += sentence_disc_loss
-                    self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
+
+                    with torch.no_grad:
+                        self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
                     encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
@@ -568,6 +575,12 @@ class KnowledgeableStoriesModel(Model):
 
         # print(logit_scores, target_mask, source_mask, mask_flat)
         disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
+
+        with torch.no_grad:
+            self._metrics[f"{level_name}_disc_logits_mean"](
+                torch.mean(logits.view(logits.size(0) * logits.size(1)), dim=-1))
+            self._metrics[f"{level_name}_disc_logits_std"](
+                torch.mean(logits.view(logits.size(0) * logits.size(1)), dim=-1))
 
         loss += disc_loss  # Add the loss and scale it.
 
