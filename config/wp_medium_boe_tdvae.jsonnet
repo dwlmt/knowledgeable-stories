@@ -128,7 +128,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "summary_interval": 500,
     "model_save_interval": 7200.0,
     "num_serialized_models_to_keep": 2,
-    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else -1,
+    "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
       "type": "sgd",
       "lr": LR_RATE,
