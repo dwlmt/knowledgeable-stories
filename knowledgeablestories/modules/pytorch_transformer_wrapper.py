@@ -45,7 +45,7 @@ class PytorchTransformer(Seq2SeqEncoder):
             positional_encoding: Optional[str] = None,
             positional_embedding_size: int = 512,
             dropout_prob: float = 0.1,
-            activation: str = "relu",
+            activation: str = "leaky_relu",
     ) -> None:
         super().__init__()
 

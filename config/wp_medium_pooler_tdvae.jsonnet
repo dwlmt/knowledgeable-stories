@@ -108,7 +108,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "input_dim": 1024,
         "num_layers": 1,
         "positional_encoding": "embedding",
-        "dropout" 0.0,
+         "dropout_prob": 0.0,
       }
     },
     "sentence_2_seq2vec_encoder": {
@@ -122,7 +122,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "input_dim": 1024,
         "num_layers": 1,
         "positional_encoding": "embedding",
-        "dropout": 0.0,
+        "dropout_prob": 0.0,
       }
     },
     "passage_tdvae": {
