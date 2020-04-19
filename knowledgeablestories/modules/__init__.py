@@ -1,3 +1,3 @@
-from knowledgeablestories.modules.cls_pooler import FinalPooler
+from knowledgeablestories.modules.final_pooler import FinalPooler
 from knowledgeablestories.modules.pytorch_transformer_wrapper import PytorchTransformer
 from knowledgeablestories.modules.sentence_pooler import PoolingEncoder
