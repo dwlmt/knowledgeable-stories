@@ -580,7 +580,7 @@ class KnowledgeableStoriesModel(Model):
             self._metrics[f"{level_name}_disc_logits_mean"](
                 torch.mean(logits.view(logits.size(0) * logits.size(1)), dim=-1))
             self._metrics[f"{level_name}_disc_logits_std"](
-                torch.mean(logits.view(logits.size(0) * logits.size(1)), dim=-1))
+                torch.std(logits.view(logits.size(0) * logits.size(1)), dim=-1))
 
         loss += disc_loss  # Add the loss and scale it.
 
