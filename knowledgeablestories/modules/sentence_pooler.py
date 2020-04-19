@@ -27,6 +27,6 @@ class PoolingEncoder(Seq2VecEncoder):
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
         pooled_output = self._pooler(seq_output, mask=mask)
 
-        pooled_output[torch.isnan(pooled_output)] = 0.0
+        pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
 
         return pooled_output

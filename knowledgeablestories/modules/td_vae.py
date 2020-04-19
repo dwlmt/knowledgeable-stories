@@ -88,7 +88,7 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
 
-        x[torch.isnan(x)] = 0.0
+        x = torch.where(torch.isnan(x), torch.zeros_like(x), x)
 
         lengthes = torch.sum(mask.long(), dim=-1)
         max_length, max_indices = torch.max(lengthes, dim=0)
