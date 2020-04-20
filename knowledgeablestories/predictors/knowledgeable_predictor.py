@@ -672,9 +672,9 @@ class KnowledgeablePredictor(Predictor):
                 existing_sentences_encoded = existing_sentences_encoded.cuda()
                 encoded_sentences_batch = encoded_sentences_batch.cuda()
 
-            # context_sentences_to_encode = torch.cat(
-            #    (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
-            context_sentences_to_encode = torch.unsqueeze(encoded_sentences_batch, dim=1)
+            context_sentences_to_encode = torch.cat(
+                (existing_sentences_expanded, torch.unsqueeze(encoded_sentences_batch, dim=1)), dim=1).contiguous()
+            # context_sentences_to_encode = torch.unsqueeze(encoded_sentences_batch, dim=1)
 
             # print("Context", context_sentences_to_encode.size())
             encoded_passages, _ = self._model.encode_passages(context_sentences_to_encode)
@@ -692,7 +692,7 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences_list.append(encoded_sentences_batch.cpu())
             encoded_passages_list.append(encoded_passages[:, -1, :].cpu())
             if context_tensor is None:
-                context_tensor = torch.rand_like(encoded_passages[0, -1, :])
+                context_tensor = encoded_passages[0, -2, :]
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
         # encoded_sentences_tensor = torch.rand_like(encoded_sentences_tensor).float().to(encoded_sentences_tensor.device)
