@@ -203,7 +203,12 @@ class KnowledgeablePredictor(Predictor):
         curr_passages = cached_dict['passages_encoded']
         curr_sentences = cached_dict["sentences_encoded"]
 
-        print("TDVAE sizes", curr_x.size(), curr_z2.size(), curr_z1.size(), curr_passages.size())
+        curr_sampled_x = cached_dict['tdvae_rollout_sampled_x']
+        curr_sampled_z2 = cached_dict['tdvae_rollout_sampled_z2']
+        curr_sampled_z1 = cached_dict['tdvae_sampled_z1']
+
+        print(
+            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1}, Sampled Z2 - {curr_sampled_z2}")
 
         reference_points = [{} for i in range(len(sentence_batch) + self._num_levels_rollout)]
         for i, sentence in enumerate(sentence_batch):
@@ -780,7 +785,10 @@ class KnowledgeablePredictor(Predictor):
         cached_dict = {}
         print(f"Output Keys: {output_dict.keys()}")
         for field in ["passages_encoded", "passages_mask", "sentences_encoded",
-                      "lm_encoded", "lm_mask", "tokens", "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1"]:
+                      "lm_encoded", "lm_mask", "tokens",
+                      "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1",
+                      "tdvae_rollout_sampled_x", "tdvae_rollout_sampled_z2", "tdvae_sampled_z1"
+                      ]:
             if field in output_dict:
                 if "mask" in field:
                     cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
