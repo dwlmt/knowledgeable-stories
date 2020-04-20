@@ -234,8 +234,8 @@ class KnowledgeableStoriesModel(Model):
                 # Don't back-propogate through the sentences or TD-VAE will force the input to 0.
                 if self._passage_tdvae is not None:
                     encoded_sentences = torch.sigmoid(encoded_sentences).clone()
-                if self._passage_tdvae is not None and self._tdvae_detach:
-                    encoded_sentences = encoded_sentences.detach()
+                # if self._passage_tdvae is not None and self._tdvae_detach:
+                #    encoded_sentences = encoded_sentences.detach()
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
 
@@ -302,6 +302,9 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
                 if self._passage_tdvae is not None:
+
+                    loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, encoded_sentences)
+
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
                     if tdvae_return is not None:
