@@ -660,6 +660,8 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
                 encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
 
+            encoded_sentences_batch = torch.rand_like(encoded_sentences_batch)
+
             existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
                 encoded_sentences_batch.size(0),
                 existing_sentences_encoded.size(0),
