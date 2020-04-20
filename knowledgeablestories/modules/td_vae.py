@@ -1,4 +1,6 @@
 """ Adapted from https://github.com/ankitkv/TD-VAE"""
+import os
+
 import numpy
 import torch
 from allennlp.common import FromParams
@@ -58,9 +60,12 @@ class TDVAE(nn.Module, FromParams):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = samples_per_seq
+        self.samples_per_seq = self._beam_size_gen = int(
+            os.getenv("TDVAE_SAMPLES_PER_SEQ", default=self.samples_per_seq))
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
         self.min_length = min_length
+
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
@@ -163,7 +168,7 @@ class TDVAE(nn.Module, FromParams):
         qs_z1_z2_b1 = torch.cat(qs_z1_z2_b1s, dim=1)
         return qs_z1_z2_b1, qs_z1_z2_b1_logvar, qs_z1_z2_b1_mu, qs_z1_z2_b1s
 
-    def sample_posterior_z(self, b, do_sample: bool = True):
+    def sample_posterior_z(self, b, do_sample: bool = False):
         ''' Samples the posterior for a belief.
         '''
         if self.training or do_sample:
@@ -238,53 +243,60 @@ class TDVAE(nn.Module, FromParams):
 
         return (rollout_xs, rollout_z2s, z1s, bs)
 
-    def rollout_posteriors(self, x, t=None, n=None, samples: int = None):
-
-        if samples is not None and samples > 0:
-            do_sample = True
-        else:
-            do_sample = False
+    def rollout_posteriors(self, x, t=None, n=None, do_sample: bool = False):
 
         ''' Follout the posteriors for time t for n into the future.
         '''
         # Run belief network
         # print("X", x.size())
         b = self.b_belief_rnn(x)[:, min(t, x.size(1))]  # size: bs, time, layers, dim
+        b_orig = b
 
-        # Expand the beliefs to the required number of samples.
+        # Copy the beliefs by expanding to the sample size.
         if do_sample:
-            pass
+            b = b[None, ...].expand(self.samples_per_seq, -1, -1, -1, -1)
 
         # print("Beliefs", x.size())
 
         # Compute posterior, state of the world from belief.
-        _, _, z1, _, _, _ = self.sample_posterior_z(b)
+        _, _, z1, _, _, _ = self.sample_posterior_z(b, do_sample=do_sample)
 
-        # Rollout for n timesteps predicting the future zs at n.
-        rollout_x = []
-        rollout_z2 = []
-        z = z1
-        for _ in range(n):
-            next_z = []
-            for layer in range(self.num_layers - 1, -1, -1):
-                if layer == self.num_layers - 1:
-                    pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](z)
-                else:
-                    pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](torch.cat([z, pt_z2_z1], dim=1))
-                pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, do_sample)
-                next_z.insert(0, pt_z2_z1)
+        outer_rollout_x = []
+        outer_rollout_z2 = []
 
-            z = torch.cat(next_z, dim=1)
-            rollout_z2.append(z)
-            rollout_x.append(self.x_z_decoder(z))
+        if len(z1) == 4:
+            torch.unsqueeze(z1, dim=0)
+        for z in z1:
+            # Rollout for n timesteps predicting the future zs at n.
+            rollout_x = []
+            rollout_z2 = []
+            for _ in range(n):
+                next_z = []
+                for layer in range(self.num_layers - 1, -1, -1):
+                    if layer == self.num_layers - 1:
+                        pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](z)
+                    else:
+                        pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](torch.cat([z, pt_z2_z1], dim=1))
+                    pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, do_sample)
+                    next_z.insert(0, pt_z2_z1)
 
-        rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
-        rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
+                z = torch.cat(next_z, dim=1)
+                rollout_z2.append(z)
+                rollout_x.append(self.x_z_decoder(z))
 
-        b = torch.squeeze(b)
-        z1 = torch.squeeze(z1)
+            rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
+            outer_rollout_x.append(rollout_x)
+            rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
+            outer_rollout_z2.append(rollout_z2)
 
-        return rollout_x, rollout_z2, z1, b
+        outer_rollout_x = torch.squeeze(torch.stack(outer_rollout_x), dim=0)
+        outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
+
+        b = torch.squeeze(b_orig, dim=0)
+
+        z1 = torch.squeeze(z1, dim=0)
+
+        return outer_rollout_x, outer_rollout_z2, z1, b
 
     def loss_function(self, forward_ret, labels=None):
         ''' Takes the output from the main forward.
