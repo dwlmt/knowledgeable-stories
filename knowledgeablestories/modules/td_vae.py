@@ -264,12 +264,13 @@ class TDVAE(nn.Module, FromParams):
         outer_rollout_x = []
         outer_rollout_z2 = []
 
-        if len(z1) == 4:
+        if len(z1) == 3:
             torch.unsqueeze(z1, dim=0)
-        for z in z1:
+        for in_z in z1:
             # Rollout for n timesteps predicting the future zs at n.
             rollout_x = []
             rollout_z2 = []
+            z = in_z
             for _ in range(n):
                 next_z = []
                 for layer in range(self.num_layers - 1, -1, -1):
