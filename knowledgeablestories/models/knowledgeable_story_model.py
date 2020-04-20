@@ -283,7 +283,7 @@ class KnowledgeableStoriesModel(Model):
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                        # loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
+                        loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
