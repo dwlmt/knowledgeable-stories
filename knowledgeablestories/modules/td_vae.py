@@ -265,8 +265,8 @@ class TDVAE(nn.Module, FromParams):
         outer_rollout_z2 = []
 
         if not do_sample:
-            z1 = torch.unsqueeze(z1, dim=0)
-        for in_z in z1:
+            z1_expanded = torch.unsqueeze(z1, dim=0)
+        for in_z in z1_expanded:
             # Rollout for n timesteps predicting the future zs at n.
             rollout_x = []
             rollout_z2 = []
@@ -294,7 +294,6 @@ class TDVAE(nn.Module, FromParams):
         outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
 
         b = torch.squeeze(b_orig, dim=0)
-
         z1 = torch.squeeze(z1, dim=0)
 
         return outer_rollout_x, outer_rollout_z2, z1, b
