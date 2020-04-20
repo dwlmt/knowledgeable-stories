@@ -84,7 +84,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
-    "label_smoothing": 0.0,
+    "label_smoothing": 1.0,
+    "sentence_detach": true,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
@@ -129,13 +130,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "embedding_dim": 64,
         "hidden_dims": [512, 256, 128],
         "negative_slope": 0.1
-    },
-    "fusion_dense": {
-        "input_dim": 1024,
-        "num_layers": 1,
-        "hidden_dims": 1024,
-        "activations": "linear",
-        "dropout": 0.0
     }
   },
   "trainer": {
