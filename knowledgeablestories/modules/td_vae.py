@@ -238,7 +238,7 @@ class TDVAE(nn.Module, FromParams):
                                            int(rollout_z2s.size(2) / self.num_layers))
 
             rollout_z1s = torch.squeeze(rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
-                                                         int(rollout_z1s.size(3) / self.num_layers)))
+                                                         int(rollout_z1s.size(2) / self.num_layers)))
         else:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), rollout_z2s.size(2),
                                            self.num_layers,
@@ -284,7 +284,7 @@ class TDVAE(nn.Module, FromParams):
             #print(f"Z1 Initial size: {z1.size()}")
 
             outer_rollout_z1.append(z1)
-            
+
             z = z1
             for _ in range(n):
                 next_z = []
