@@ -208,7 +208,7 @@ class KnowledgeablePredictor(Predictor):
         curr_sampled_z1 = cached_dict['tdvae_sampled_z1']
 
         print(
-            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1}, Sampled Z2 - {curr_sampled_z2}")
+            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
 
         reference_points = [{} for i in range(len(sentence_batch) + self._num_levels_rollout)]
         for i, sentence in enumerate(sentence_batch):
