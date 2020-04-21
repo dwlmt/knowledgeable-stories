@@ -258,9 +258,9 @@ class TDVAE(nn.Module, FromParams):
 
         # Copy the beliefs by expanding to the sample size.
         if do_sample:
-            b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, b.size(0), b.size(1), b.size(2))
+            b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, b.size(0), b.size(1), b.size(2), b.size(3))
 
-        print("Beliefs TDVAE", x.size())
+        print("Beliefs TDVAE", b.size())
 
         # Compute posterior, state of the world from belief.
         _, _, z1, _, _, _ = self.sample_posterior_z(b, do_sample=do_sample)
