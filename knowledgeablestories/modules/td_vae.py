@@ -257,8 +257,8 @@ class TDVAE(nn.Module, FromParams):
         b_orig = b
 
         # Copy the beliefs by expanding to the sample size.
-        if do_sample:
-            b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, b.size(0), b.size(1), b.size(2), b.size(3))
+        if do_sample == True:
+            b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, b.size(0), b.size(1), b.size(2))
 
         print("Beliefs TDVAE", b.size())
 
