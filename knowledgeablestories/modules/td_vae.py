@@ -233,14 +233,12 @@ class TDVAE(nn.Module, FromParams):
         rollout_z1s = torch.stack(rollout_z1s)
         bs = torch.stack(bs)
 
-        print("Z1s size", rollout_z1s.size())
-
         if not do_sample:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
                                            int(rollout_z2s.size(2) / self.num_layers))
 
-            rollout_z1s = rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
-                                           int(rollout_z1s.size(3) / self.num_layers))
+            rollout_z1s = torch.squeeze(rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
+                                                         int(rollout_z1s.size(3) / self.num_layers)))
         else:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), rollout_z2s.size(2),
                                            self.num_layers,
@@ -283,6 +281,7 @@ class TDVAE(nn.Module, FromParams):
 
             # Compute posterior, state of the world from belief.
             _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
+            print(f"Z1 Initial size: {z1}")
 
             outer_rollout_z1.append(z1)
             z = z1
