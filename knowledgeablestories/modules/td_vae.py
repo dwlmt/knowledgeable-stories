@@ -59,9 +59,7 @@ class TDVAE(nn.Module, FromParams):
                  min_length: int = 3):
         super().__init__()
         self.num_layers = num_layers
-        self.samples_per_seq = samples_per_seq
-        self.samples_per_seq = self._beam_size_gen = int(
-            os.getenv("TDVAE_SAMPLES_PER_SEQ", default=self.samples_per_seq))
+        self.samples_per_seq = int(os.getenv("TDVAE_SAMPLES_PER_SEQ", default=samples_per_seq))
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
         self.min_length = min_length
