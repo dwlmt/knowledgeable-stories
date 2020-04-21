@@ -296,8 +296,8 @@ class TDVAE(nn.Module, FromParams):
             outer_rollout_x.append(rollout_x)
             rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
             outer_rollout_z2.append(rollout_z2)
-            rollout_z1 = torch.squeeze(torch.stack(rollout_z1, dim=1), dim=0)
-            outer_rollout_z1.append(rollout_z1)
+            z1 = torch.squeeze(torch.stack(z1, dim=1), dim=0)
+            outer_rollout_z1.append(z1)
 
         outer_rollout_x = torch.squeeze(torch.stack(outer_rollout_x), dim=0)
         outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
