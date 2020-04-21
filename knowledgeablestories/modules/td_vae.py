@@ -262,21 +262,22 @@ class TDVAE(nn.Module, FromParams):
 
         print("Beliefs TDVAE", b.size())
 
-        # Compute posterior, state of the world from belief.
-        _, _, z1, _, _, _ = self.sample_posterior_z(b, do_sample=do_sample)
-
-        print("Z1 TDVAE", z1.size())
-
         outer_rollout_x = []
         outer_rollout_z2 = []
+        outer_rollout_z1 = []
 
         if not do_sample:
-            z1_expanded = torch.unsqueeze(z1, dim=0)
-        for in_z in z1_expanded:
+            b_expanded = torch.unsqueeze(b, dim=0)
+        for in_b in b_expanded:
             # Rollout for n timesteps predicting the future zs at n.
             rollout_x = []
             rollout_z2 = []
-            z = in_z
+
+            # Compute posterior, state of the world from belief.
+            _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
+
+            outer_rollout_z1.append(z1)
+            z = z1
             for _ in range(n):
                 next_z = []
                 for layer in range(self.num_layers - 1, -1, -1):
@@ -295,14 +296,16 @@ class TDVAE(nn.Module, FromParams):
             outer_rollout_x.append(rollout_x)
             rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
             outer_rollout_z2.append(rollout_z2)
+            rollout_z1 = torch.squeeze(torch.stack(rollout_z1, dim=1), dim=0)
+            outer_rollout_z1.append(rollout_z1)
 
         outer_rollout_x = torch.squeeze(torch.stack(outer_rollout_x), dim=0)
         outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
+        outer_rollout_z1 = torch.squeeze(torch.stack(outer_rollout_z1), dim=0)
 
         b = torch.squeeze(b_orig, dim=0)
-        z1 = torch.squeeze(z1, dim=0)
 
-        return outer_rollout_x, outer_rollout_z2, z1, b
+        return outer_rollout_x, outer_rollout_z2, outer_rollout_z1, b
 
     def loss_function(self, forward_ret, labels=None):
         ''' Takes the output from the main forward.
