@@ -217,7 +217,7 @@ class TDVAE(nn.Module, FromParams):
 
         rollout_xs = []
         rollout_z2s = []
-        z1s = []
+        rollout_z1s = []
         bs = []
 
         batch_size, seq_size, embedding_size = x.size()
@@ -225,30 +225,33 @@ class TDVAE(nn.Module, FromParams):
             rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n, do_sample=do_sample)
             rollout_xs.append(rollout_x)
             rollout_z2s.append(rollout_z2)
-            z1s.append(z1)
+            rollout_z1s.append(z1)
             bs.append(b)
 
         rollout_xs = torch.stack(rollout_xs)
         rollout_z2s = torch.stack(rollout_z2s)
-        z1s = torch.stack(z1s)
+        rollout_z1s = torch.stack(rollout_z1s)
         bs = torch.stack(bs)
+
+        print("Z1s size", rollout_z1s.size())
 
         if not do_sample:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
                                            int(rollout_z2s.size(2) / self.num_layers))
-            rollout_z1s = z1s.view(z1s.size(0), z1s.size(1), self.num_layers,
-                                   int(z1s.size(2) / self.num_layers))
+
+            rollout_z1s = rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
+                                           int(rollout_z1s.size(2) / self.num_layers))
         else:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), rollout_z2s.size(2),
                                            self.num_layers,
                                            int(rollout_z2s.size(3) / self.num_layers))
-            z1s = z1s.view(z1s.size(0), z1s.size(1), z1s.size(2),
-                           self.num_layers,
-                           int(z1s.size(3) / self.num_layers))
+            rollout_z1s = rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), rollout_z1s.size(2),
+                                           self.num_layers,
+                                           int(rollout_z1s.size(3) / self.num_layers))
 
-        print("TD-VAE Rollout return vectors", rollout_xs.size(), rollout_z2s.size(), z1s.size(), bs.size())
+        print("TD-VAE Rollout return vectors", rollout_xs.size(), rollout_z2s.size(), rollout_z1s.size(), bs.size())
 
-        return (rollout_xs, rollout_z2s, z1s, bs)
+        return (rollout_xs, rollout_z2s, rollout_z1s, bs)
 
     def rollout_posteriors(self, x, t=None, n=None, do_sample: bool = False):
 
