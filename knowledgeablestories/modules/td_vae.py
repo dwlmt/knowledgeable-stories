@@ -274,6 +274,8 @@ class TDVAE(nn.Module, FromParams):
 
         if not do_sample:
             b_expanded = torch.unsqueeze(b, dim=0)
+        else:
+            b_expanded = b
         for in_b in b_expanded:
             # Rollout for n timesteps predicting the future zs at n.
             rollout_x = []
