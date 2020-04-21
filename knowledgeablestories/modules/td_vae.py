@@ -281,7 +281,7 @@ class TDVAE(nn.Module, FromParams):
 
             # Compute posterior, state of the world from belief.
             _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
-            print(f"Z1 Initial size: {z1}")
+            print(f"Z1 Initial size: {z1.size()}")
 
             outer_rollout_z1.append(z1)
             z = z1
