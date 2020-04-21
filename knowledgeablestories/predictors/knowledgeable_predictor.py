@@ -216,10 +216,10 @@ class KnowledgeablePredictor(Predictor):
             reference_points[i]["passages_encoded"] = curr_passages[i]
             reference_points[i]["sentences_encoded"] = curr_sentences[i]
 
-        for i, sentence in enumerate(sentence_batch):
+        for s in sentence_batch:
+            s["prediction_metrics"] = {}
 
-            if not "prediction_metrics" in sentence:
-                sentence["prediction_metrics"] = {}
+        for i, sentence in enumerate(sentence_batch):
 
             def distance_metrics(name, x, y):
                 res_dict = {}
