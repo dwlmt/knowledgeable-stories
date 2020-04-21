@@ -331,7 +331,7 @@ class KnowledgeableStoriesModel(Model):
                             print(f"TDVAE Keys: {tdvae_output.keys()}")
 
                             rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                                encoded_sentences, True)
+                                encoded_sentences, do_sample=True)
                             tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
                             tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
                             tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
