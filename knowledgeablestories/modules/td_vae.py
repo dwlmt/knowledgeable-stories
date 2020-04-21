@@ -264,7 +264,7 @@ class TDVAE(nn.Module, FromParams):
         if do_sample == True:
             b = torch.unsqueeze(b, dim=0).expand(self.samples_per_seq, b.size(0), b.size(1), b.size(2))
 
-        print("Beliefs TDVAE", b.size())
+        # print("Beliefs TDVAE", b.size())
 
         outer_rollout_x = []
         outer_rollout_z2 = []
@@ -281,9 +281,10 @@ class TDVAE(nn.Module, FromParams):
 
             # Compute posterior, state of the world from belief.
             _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
-            print(f"Z1 Initial size: {z1.size()}")
+            #print(f"Z1 Initial size: {z1.size()}")
 
             outer_rollout_z1.append(z1)
+            
             z = z1
             for _ in range(n):
                 next_z = []
@@ -303,8 +304,6 @@ class TDVAE(nn.Module, FromParams):
             outer_rollout_x.append(rollout_x)
             rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
             outer_rollout_z2.append(rollout_z2)
-            z1 = torch.squeeze(torch.stack([z1], dim=1), dim=0)
-            outer_rollout_z1.append(z1)
 
         outer_rollout_x = torch.squeeze(torch.stack(outer_rollout_x), dim=0)
         outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
