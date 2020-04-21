@@ -262,10 +262,12 @@ class TDVAE(nn.Module, FromParams):
         if do_sample:
             b = b[None, ...].expand(self.samples_per_seq, -1, -1, -1, -1)
 
-        # print("Beliefs", x.size())
+        print("Beliefs TDVAE", x.size())
 
         # Compute posterior, state of the world from belief.
         _, _, z1, _, _, _ = self.sample_posterior_z(b, do_sample=do_sample)
+
+        print("Z1 TDVAE", z1.size())
 
         outer_rollout_x = []
         outer_rollout_z2 = []
