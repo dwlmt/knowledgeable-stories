@@ -250,12 +250,13 @@ class KnowledgeablePredictor(Predictor):
 
             for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
 
-                if f"{i + j}" not in sentence_batch[i + j]["prediction_metrics"]:
-                    sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = {}
-
-                res_dict = sentence["prediction_metrics"][f"-{j}"]
-
                 if len(reference_points) > i + j:
+
+                    if f"{i + j}" not in sentence_batch[i + j]["prediction_metrics"]:
+                        sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = {}
+
+                    res_dict = sentence[i + j]["prediction_metrics"][f"-{j}"]
+
                     if "sentences_encoded" in reference_points[i + j]:
                         dist_dict = distance_metrics("tdvae_surprise_rollout_x", x,
                                                      reference_points[i + j]["sentences_encoded"])
