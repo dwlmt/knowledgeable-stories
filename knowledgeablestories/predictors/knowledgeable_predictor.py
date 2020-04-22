@@ -248,7 +248,7 @@ class KnowledgeablePredictor(Predictor):
 
                 return res_dict
 
-            for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i])):
+            for j, (x, z2) in enumerate(zip(curr_x[i], curr_z2[i]), start=1):
 
                 if len(reference_points) > i + j:
 
