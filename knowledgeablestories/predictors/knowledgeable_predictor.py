@@ -255,7 +255,7 @@ class KnowledgeablePredictor(Predictor):
                     if f"-{j}" not in sentence_batch[i + j]["prediction_metrics"]:
                         sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = {}
 
-                    res_dict = sentence[i + j]["prediction_metrics"][f"-{j}"]
+                    res_dict = sentence_batch[i + j]["prediction_metrics"][f"-{j}"]
 
                     if "sentences_encoded" in reference_points[i + j]:
                         dist_dict = distance_metrics("tdvae_surprise_rollout_x", x,
@@ -269,8 +269,8 @@ class KnowledgeablePredictor(Predictor):
                 if i + j < len(sentence_batch):
                     sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = res_dict
 
-            if f"-{1}" not in sentence["prediction_metrics"]:
-                sentence["prediction_metrics"][f"-{1}"] = {}
+            if f"-1" not in sentence["prediction_metrics"]:
+                sentence["prediction_metrics"][f"-1"] = {}
 
             res_dict = sentence["prediction_metrics"][f"-{1}"]
 
@@ -278,7 +278,7 @@ class KnowledgeablePredictor(Predictor):
                 dist_dict = distance_metrics("tdvae_surprise_belief", reference_points[i]["passages_encoded"],
                                              reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
-                sentence["prediction_metrics"][f"-{1}"] = res_dict
+                sentence["prediction_metrics"][f"-1"] = res_dict
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
