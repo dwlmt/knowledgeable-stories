@@ -252,7 +252,7 @@ class KnowledgeablePredictor(Predictor):
 
                 if len(reference_points) > i + j:
 
-                    if f"{i + j}" not in sentence_batch[i + j]["prediction_metrics"]:
+                    if f"-{j}" not in sentence_batch[i + j]["prediction_metrics"]:
                         sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = {}
 
                     res_dict = sentence[i + j]["prediction_metrics"][f"-{j}"]
