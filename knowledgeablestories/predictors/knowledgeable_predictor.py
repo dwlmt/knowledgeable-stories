@@ -210,7 +210,7 @@ class KnowledgeablePredictor(Predictor):
         print(
             f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
 
-        reference_points = [{} for i in range(len(sentence_batch) + self._num_levels_rollout)]
+        reference_points = [{} for i in range(len(sentence_batch))]
         for i, sentence in enumerate(sentence_batch):
             reference_points[i]["tdvae_z1"] = curr_z1[i][0]
             reference_points[i]["passages_encoded"] = curr_passages[i]
