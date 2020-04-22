@@ -119,7 +119,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "hidden_dims": 1024,
         "activations": "linear",
         "dropout": 0.0
-    }
+    },
     "sentence_autoencoder": {
         "input_dim": 1024,
         "embedding_dim": 64,
