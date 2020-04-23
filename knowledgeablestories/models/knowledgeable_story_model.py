@@ -27,6 +27,7 @@ class KnowledgeableStoriesModel(Model):
                  vocab: Vocabulary,
                  embedder_vocab_size: int = None,
                  lm_name: str = "gpt2",
+                 lm_device: int = None,
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
@@ -113,7 +114,10 @@ class KnowledgeableStoriesModel(Model):
 
         self._lm_name = lm_name
         self._lm_model = None
+        self._lm_device = lm_device
         self.init_lm_model_if_required(lm_name, embedder_vocab_size)
+        if lm_device is not None:
+            self._lm_model = self._lm_model.to(torch.device(f'cuda:{lm_device}'))
 
         self._cosine_similarity = nn.CosineSimilarity(dim=-1)
         self._l2_distance = nn.PairwiseDistance(p=2)
@@ -166,8 +170,8 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_model is None:
             self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
 
-            for param in self._lm_model.transformer.parameters():
-                param.requires_grad = False
+            # for param in self._lm_model.transformer.parameters():
+            #    param.requires_grad = False
 
             # If additional characters have been added then the model needs updated for the additional tokens.
             self._embedder_vocab_size = embedder_vocab_size
