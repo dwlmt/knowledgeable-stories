@@ -307,9 +307,6 @@ class KnowledgeablePredictor(Predictor):
                     with torch.no_grad():
                         z1_layer = torch.sigmoid(z1_layer)
                         z2_layer = torch.sigmoid(z2_layer)
-                        print(z1_layer)
-                        print(z2_layer)
-                        print(f"Layer sizes: {z1_layer.size()}, {z2_layer.size()}")
                         kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
                         kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
 
