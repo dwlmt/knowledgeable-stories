@@ -151,7 +151,8 @@ class KnowledgeablePredictor(Predictor):
                 if not self._tdvae:
                     self._add_distance_metrics(passages_encoded_tensor, sentence_batch)
                 else:
-                    self._tdvae_metrics(sentence_batch, cached_dict)
+                    self._surprise_tdvae_metrics(sentence_batch, cached_dict)
+                    self._suspense_tdvae_metrics(sentence_batch, cached_dict)
 
                 if not self._tdvae:
                     for s_upper_bound, sentence in enumerate(sentence_batch, start=1):
@@ -195,20 +196,13 @@ class KnowledgeablePredictor(Predictor):
 
             return inputs
 
-    def _tdvae_metrics(self, sentence_batch, cached_dict):
+    def _surprise_tdvae_metrics(self, sentence_batch, cached_dict):
 
         curr_x = cached_dict['tdvae_rollout_x']
         curr_z2 = cached_dict['tdvae_rollout_z2']
         curr_z1 = cached_dict['tdvae_z1']
         curr_passages = cached_dict['passages_encoded']
         curr_sentences = cached_dict["sentences_encoded"]
-
-        curr_sampled_x = cached_dict['tdvae_rollout_sampled_x']
-        curr_sampled_z2 = cached_dict['tdvae_rollout_sampled_z2']
-        curr_sampled_z1 = cached_dict['tdvae_sampled_z1']
-
-        print(
-            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
 
         reference_points = [{} for i in range(len(sentence_batch))]
         for i, sentence in enumerate(sentence_batch):
@@ -221,7 +215,7 @@ class KnowledgeablePredictor(Predictor):
 
         for i, sentence in enumerate(sentence_batch):
 
-            def distance_metrics(name, x, y):
+            def surprise_distance_metrics(name, x, y):
                 res_dict = {}
 
                 if len(x.size()) < 2:
@@ -258,12 +252,12 @@ class KnowledgeablePredictor(Predictor):
                     res_dict = sentence_batch[i + j]["prediction_metrics"][f"-{j}"]
 
                     if "sentences_encoded" in reference_points[i + j]:
-                        dist_dict = distance_metrics("tdvae_surprise_rollout_x", x,
-                                                     reference_points[i + j]["sentences_encoded"])
+                        dist_dict = surprise_distance_metrics("tdvae_surprise_rollout_x", x,
+                                                              reference_points[i + j]["sentences_encoded"])
                         res_dict = {**res_dict, **dist_dict}
                     if "tdvae_z1" in reference_points[i + j]:
-                        dist_dict = distance_metrics("tdvae_surprise_rollout_z2", z2,
-                                                     reference_points[i + j]["tdvae_z1"])
+                        dist_dict = surprise_distance_metrics("tdvae_surprise_rollout_z2", z2,
+                                                              reference_points[i + j]["tdvae_z1"])
                         res_dict = {**res_dict, **dist_dict}
 
                 if i + j < len(sentence_batch):
@@ -275,10 +269,51 @@ class KnowledgeablePredictor(Predictor):
             res_dict = sentence["prediction_metrics"][f"-{1}"]
 
             if len(reference_points) > i + 1 and "passages_encoded" in reference_points[i + 1]:
-                dist_dict = distance_metrics("tdvae_surprise_belief", reference_points[i]["passages_encoded"],
-                                             reference_points[i + 1]["passages_encoded"])
+                dist_dict = surprise_distance_metrics("tdvae_surprise_belief", reference_points[i]["passages_encoded"],
+                                                      reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
                 sentence["prediction_metrics"][f"-1"] = res_dict
+
+    def _suspense_tdvae_metrics(self, sentence_batch, cached_dict):
+
+        curr_sampled_x = cached_dict['tdvae_rollout_sampled_x']
+        curr_sampled_z2 = cached_dict['tdvae_rollout_sampled_z2']
+        curr_sampled_z1 = cached_dict['tdvae_sampled_z1']
+
+        print(
+            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
+
+        for s in sentence_batch:
+            if "prediction_metrics" not in s:
+                s["prediction_metrics"] = {}
+
+        for i, sentence in enumerate(sentence_batch):
+
+            for j, (z2) in enumerate(curr_sampled_z2[i], start=1):
+
+                if f"{j}" not in sentence_batch[i]["prediction_metrics"]:
+                    sentence_batch[i]["prediction_metrics"][f"{j}"] = {}
+
+                res_dict = sentence_batch[i]["prediction_metrics"][f"{j}"]
+
+                z1 = curr_sampled_z1[i][0]
+
+                for k, z1_layer, z2_layer in enumerate(zip(z1, z2)):
+                    print(k, z1_layer.size(), z2_layer.size())
+                    l1 = torch.mean(self._l1_distance(z1_layer, z2_layer), dim=-1)
+                    l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
+                    cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
+                    kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1), z2)
+                    kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2), z1)
+
+                    res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
+                    res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
+                    res_dict[f"tdvae_suspense_{k}_cosine_dist"] = cosine.item()
+                    res_dict[f"tdvae_suspense_{k}_kl_z2_from_z1"] = kl_z2_from_z1.item()
+                    res_dict[f"tdvae_suspense_{k}_kl_z1_from_z2"] = kl_z1_from_z2.item()
+
+                if i < len(sentence_batch):
+                    sentence_batch[j]["prediction_metrics"][f"{j}"] = res_dict
 
     def _calculate_autoregressive_metrics(self, parent, previous_prediction_metrics):
         # Retrieve all the sentence
