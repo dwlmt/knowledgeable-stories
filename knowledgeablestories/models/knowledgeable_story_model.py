@@ -590,9 +590,7 @@ class KnowledgeableStoriesModel(Model):
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
 
         # print(logit_scores, target_mask, source_mask, mask_flat)
-        # disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
-        disc_loss = torch.mean(torch.sum(-target_dist * logits_softmax, dim=-1)) * self._loss_weights[
-            f"{level_name}_disc_loss"]
+        disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
 
         with torch.no_grad():
             self._metrics[f"{level_name}_disc_logits_mean"](torch.mean(torch.mean(logits, dim=-1), dim=-1))
