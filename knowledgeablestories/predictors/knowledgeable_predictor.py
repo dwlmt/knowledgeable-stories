@@ -304,7 +304,7 @@ class KnowledgeablePredictor(Predictor):
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
-                    with torch.no_grad:
+                    with torch.no_grad():
                         print(z1_layer)
                         print(z2_layer)
                         print(f"Layer sizes: {z1_layer.size()}, {z2_layer.size()}")
