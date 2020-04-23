@@ -28,6 +28,7 @@ class KnowledgeableStoriesModel(Model):
                  embedder_vocab_size: int = None,
                  lm_name: str = "gpt2",
                  lm_device: int = None,
+                 lm_finetune_final_layer_only: bool = False,
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
@@ -115,6 +116,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_name = lm_name
         self._lm_model = None
         self._lm_device = lm_device
+        self._lm_finetune_final_layer_only = lm_finetune_final_layer_only
         self.init_lm_model_if_required(lm_name, embedder_vocab_size)
         if lm_device is not None:
             self._lm_model = self._lm_model.to(torch.device(f'cuda:{lm_device}'))
@@ -125,7 +127,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._dropout = torch.nn.Dropout(dropout)
 
-        self._kl_loss = nn.KLDivLoss(reduction='batchmean')
+        self._nll_loss = nn.NLLLoss()
 
         self._metrics = {}
         for dataset_name, values in self._dataset_config.items():
@@ -170,8 +172,9 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_model is None:
             self._lm_model = AutoModelWithLMHead.from_pretrained(lm_name)
 
-            # for param in self._lm_model.transformer.parameters():
-            #    param.requires_grad = False
+            if self._lm_finetune_final_layer_only:
+                for param in self._lm_model.transformer.parameters():
+                    param.requires_grad = False
 
             # If additional characters have been added then the model needs updated for the additional tokens.
             self._embedder_vocab_size = embedder_vocab_size
@@ -587,7 +590,7 @@ class KnowledgeableStoriesModel(Model):
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
 
         # print(logit_scores, target_mask, source_mask, mask_flat)
-        disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
+        disc_loss = self._nll_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
 
         with torch.no_grad():
             self._metrics[f"{level_name}_disc_logits_mean"](torch.mean(torch.mean(logits, dim=-1), dim=-1))
