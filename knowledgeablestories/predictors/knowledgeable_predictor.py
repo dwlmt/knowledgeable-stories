@@ -298,7 +298,7 @@ class KnowledgeablePredictor(Predictor):
 
                 z1 = curr_sampled_z1[i][0]
 
-                for k, z1_layer, z2_layer in enumerate(zip(z1, z2)):
+                for k, (z1_layer, z2_layer) in enumerate(zip(z1, z2)):
                     print(k, z1_layer.size(), z2_layer.size())
                     l1 = torch.mean(self._l1_distance(z1_layer, z2_layer), dim=-1)
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
