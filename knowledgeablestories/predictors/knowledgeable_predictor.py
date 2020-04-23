@@ -303,8 +303,13 @@ class KnowledgeablePredictor(Predictor):
                     l1 = torch.mean(self._l1_distance(z1_layer, z2_layer), dim=-1)
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
-                    kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
-                    kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
+
+                    with torch.no_grad:
+                        print(z1_layer)
+                        print(z2_layer)
+                        print(f"Layer sizes: {z1_layer.size()}, {z2_layer.size()}")
+                        kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
+                        kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
 
                     res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                     res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
