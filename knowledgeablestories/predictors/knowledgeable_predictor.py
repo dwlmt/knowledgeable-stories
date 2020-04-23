@@ -305,6 +305,8 @@ class KnowledgeablePredictor(Predictor):
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
                     with torch.no_grad():
+                        z1_layer = torch.sigmoid(z1_layer)
+                        z2_layer = torch.sigmoid(z2_layer)
                         print(z1_layer)
                         print(z2_layer)
                         print(f"Layer sizes: {z1_layer.size()}, {z2_layer.size()}")
