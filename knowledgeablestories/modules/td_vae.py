@@ -248,8 +248,8 @@ class TDVAE(nn.Module, FromParams):
                                            int(rollout_z1s.size(3) / self.num_layers))
 
             # Permute order to put the samples dim after the t rollout dim.
-            rollout_z1s = rollout_z1s.permute(0, 2, 1, 3, 4)
-            rollout_z2s = rollout_z2s.permute(0, 2, 1, 3, 4)
+            rollout_z1s = rollout_z1s.permute(0, 2, 3, 1, 4)
+            rollout_z2s = rollout_z2s.permute(0, 2, 3, 1, 4)
             rollout_xs = rollout_xs.permute(0, 2, 1, 3)
 
         print("TD-VAE Rollout return vectors", rollout_xs.size(), rollout_z2s.size(), rollout_z1s.size(), bs.size())
