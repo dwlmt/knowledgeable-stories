@@ -28,7 +28,7 @@ class KnowledgeableStoriesModel(Model):
                  embedder_vocab_size: int = None,
                  lm_name: str = "gpt2",
                  lm_device: int = None,
-                 lm_finetune_final_layer_only: bool = False,
+                 lm_finetune_final_layer_only: bool = True,
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_seq2seq_encoder: Seq2VecEncoder = None,
