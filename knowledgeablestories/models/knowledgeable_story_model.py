@@ -116,12 +116,13 @@ class KnowledgeableStoriesModel(Model):
         self._lm_name = lm_name
         self._lm_model = None
         self._lm_finetune_final_layer_only = lm_finetune_final_layer_only
-        self.init_lm_model_if_required(lm_name, embedder_vocab_size)
 
         self._lm_device = None
         if lm_device is not None:
             self._lm_device = torch.device(f'cuda:{lm_device}')
             self._lm_model = self._lm_model.to(self._lm_device)
+
+        self.init_lm_model_if_required(lm_name, embedder_vocab_size)
 
         self._cosine_similarity = nn.CosineSimilarity(dim=-1)
         self._l2_distance = nn.PairwiseDistance(p=2)
@@ -182,6 +183,9 @@ class KnowledgeableStoriesModel(Model):
             self._embedder_vocab_size = embedder_vocab_size
             if self._embedder_vocab_size:
                 self._lm_model.resize_token_embeddings(self._embedder_vocab_size)
+
+            if self._lm_device is not None:
+                self._lm_model = self._lm_model.to(self._lm_device)
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
@@ -356,6 +360,7 @@ class KnowledgeableStoriesModel(Model):
             if self._lm_device is not None:
                 orig_device = argument_tokens.device
                 argument_tokens = argument_tokens.to(self._lm_device)
+                self._lm_model = self._lm_model.to(self._lm_device)
             else:
                 self._lm_model = self._lm_model.to(argument_tokens.device)
 
@@ -541,6 +546,7 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_device is not None:
             orig_device = text_tokens.device
             text_tokens = text_tokens.to(self._lm_device)
+            self._lm_model = self._lm_model.to(self._lm_device)
         else:
             self._lm_model = self._lm_model.to(text_tokens.device)
 
@@ -700,6 +706,7 @@ class KnowledgeableStoriesModel(Model):
                     orig_device = arguments.device
                     arguments = arguments.to(self._lm_device)
                     neg_argument = neg_argument.to(self._lm_device)
+                    self._lm_model = self._lm_model.to(self._lm_device)
                 else:
                     self._lm_model = self._lm_model.to(arguments.device)
 
@@ -719,6 +726,7 @@ class KnowledgeableStoriesModel(Model):
         if self._lm_device is not None:
             orig_device = existing_tokens.device
             existing_tokens = existing_tokens.to(self._lm_model)
+            self._lm_model = self._lm_model.to(self._lm_device)
         else:
             self._lm_model = self._lm_model.to(existing_tokens.device)
 
