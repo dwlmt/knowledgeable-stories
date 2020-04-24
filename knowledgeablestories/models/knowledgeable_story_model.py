@@ -552,13 +552,13 @@ class KnowledgeableStoriesModel(Model):
 
         lm_output = self._lm_model.transformer(text_tokens)
 
-        if orig_device is not None:
-            lm_output = lm_output.to(orig_device)
-
         if last_hidden_state_only:
             lm_output = lm_output[0]
         else:
             lm_output = torch.stack(lm_output)
+
+        if orig_device is not None:
+            lm_output = lm_output.to(orig_device)
 
         return lm_output, text_mask
 
