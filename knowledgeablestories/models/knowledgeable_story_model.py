@@ -120,7 +120,6 @@ class KnowledgeableStoriesModel(Model):
         self._lm_device = None
         if lm_device is not None:
             self._lm_device = torch.device(f'cuda:{lm_device}')
-            self._lm_model = self._lm_model.to(self._lm_device)
 
         self.init_lm_model_if_required(lm_name, embedder_vocab_size)
 
