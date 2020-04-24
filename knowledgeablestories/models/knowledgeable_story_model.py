@@ -365,11 +365,12 @@ class KnowledgeableStoriesModel(Model):
 
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
-            self._metrics["lm_loss"](lm_loss.item())
-            loss += lm_loss * self._loss_weights["lm_loss"]
-
             if orig_device is not None:
                 lm_logits = lm_logits.to(orig_device)
+                lm_loss = lm_loss.to(orig_device)
+
+            self._metrics["lm_loss"](lm_loss.item())
+            loss += lm_loss * self._loss_weights["lm_loss"]
 
             if not self.training or self._metric_config["training_metrics"]:
 
@@ -710,6 +711,11 @@ class KnowledgeableStoriesModel(Model):
                     self._lm_model = self._lm_model.to(arguments.device)
 
                 arg_lm_loss, arg_lm_logits, _ = self._lm_model(argument, labels=argument)
+
+                if orig_device is not None:
+                    arg_lm_loss = arg_lm_logits.to(orig_device)
+                    arg_lm_logits = arg_lm_logits.to(orig_device)
+
                 corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
 
                 neg_lm_loss, neg_lm_logits, _ = self._lm_model(neg_argument, labels=neg_argument)
