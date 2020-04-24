@@ -115,11 +115,13 @@ class KnowledgeableStoriesModel(Model):
 
         self._lm_name = lm_name
         self._lm_model = None
-        self._lm_device = lm_device
         self._lm_finetune_final_layer_only = lm_finetune_final_layer_only
         self.init_lm_model_if_required(lm_name, embedder_vocab_size)
+
+        self._lm_device = None
         if lm_device is not None:
-            self._lm_model = self._lm_model.to(torch.device(f'cuda:{lm_device}'))
+            self._lm_device = torch.device(f'cuda:{lm_device}')
+            self._lm_model = self._lm_model.to(self._lm_device)
 
         self._cosine_similarity = nn.CosineSimilarity(dim=-1)
         self._l2_distance = nn.PairwiseDistance(p=2)
@@ -350,13 +352,20 @@ class KnowledgeableStoriesModel(Model):
 
             argument_tokens = arguments["tokens"]
 
-            self._lm_model = self._lm_model.to(argument_tokens.device)
+            orig_device = None
+            if self._lm_device is not None:
+                orig_device = argument_tokens.device
+                argument_tokens = argument_tokens.to(self._lm_device)
+            else:
+                self._lm_model = self._lm_model.to(argument_tokens.device)
 
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
 
             self._metrics["lm_loss"](lm_loss.item())
-
             loss += lm_loss * self._loss_weights["lm_loss"]
+
+            if orig_device is not None:
+                lm_logits = lm_logits.to(orig_device)
 
             if not self.training or self._metric_config["training_metrics"]:
 
@@ -528,8 +537,17 @@ class KnowledgeableStoriesModel(Model):
                 text_mask += (text_tokens == id)
             text_mask = (text_mask < 1).bool()
 
-        self._lm_model = self._lm_model.to(text_tokens.device)
+        orig_device = None
+        if self._lm_device is not None:
+            orig_device = text_tokens.device
+            text_tokens = text_tokens.to(self._lm_device)
+        else:
+            self._lm_model = self._lm_model.to(text_tokens.device)
+
         lm_output = self._lm_model.transformer(text_tokens)
+
+        if orig_device is not None:
+            lm_output = lm_output.to(orig_device)
 
         if last_hidden_state_only:
             lm_output = lm_output[0]
@@ -676,6 +694,15 @@ class KnowledgeableStoriesModel(Model):
 
             # Assumes equal number of negative examples. Will need to expand when incorporate multiple negative answer datasets.
             for argument, neg_argument in zip(arguments_token, negative_arguments_tokens):
+
+                orig_device = None
+                if self._lm_device is not None:
+                    orig_device = arguments.device
+                    arguments = arguments.to(self._lm_device)
+                    neg_argument = neg_argument.to(self._lm_device)
+                else:
+                    self._lm_model = self._lm_model.to(arguments.device)
+
                 arg_lm_loss, arg_lm_logits, _ = self._lm_model(argument, labels=argument)
                 corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
 
@@ -688,7 +715,12 @@ class KnowledgeableStoriesModel(Model):
 
     def generate_text(self, existing_tokens, num_of_sequences=10, override_gen_config=None):
 
-        self._lm_model = self._lm_model.to(existing_tokens.device)
+        orig_device = None
+        if self._lm_device is not None:
+            orig_device = existing_tokens.device
+            existing_tokens = existing_tokens.to(self._lm_model)
+        else:
+            self._lm_model = self._lm_model.to(existing_tokens.device)
 
         gen_config = self._generation_config
         if override_gen_config:
@@ -707,6 +739,9 @@ class KnowledgeableStoriesModel(Model):
             length_penalty=gen_config["length_penalty"],
             num_return_sequences=num_of_sequences,
         )
+
+        if orig_device is not None:
+            output_sequences = output_sequences.to(orig_device)
 
         return output_sequences
 
