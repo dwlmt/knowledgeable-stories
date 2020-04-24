@@ -92,18 +92,34 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "writing_prompts_hierarchy": {},
     },
     "sentence_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+        "type": "boe",
+        "embedding_dim": 1024,
+        "averaged" true
+      },
+      "seq2seq_encoder": {
+        "type": "lstm",
+        "input_size": 1024,
+        "hidden_size": 1024,
+        "num_layers": 4,
+        "dropout": 0.0,
+      }
     },
     "sentence_2_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+        "type": "boe",
+        "embedding_dim": 1024,
+        "averaged" true
+      },
+      "seq2seq_encoder": {
+        "type": "lstm",
+        "input_size": 1024,
+        "hidden_size": 1024,
+        "num_layers": 4,
+        "dropout": 0.0,
+      }
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
