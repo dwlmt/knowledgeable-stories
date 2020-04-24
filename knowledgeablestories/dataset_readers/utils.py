@@ -34,10 +34,10 @@ def cleanup_text(text, ascii=True):
 
     return " ".join([t for t in mod_text.split() if len(t) < 25])
 
-def convert_to_textfield(tokens, tokenizer, max_token_len, token_indexers):
+def convert_to_textfield(text_batch, tokenizer, max_token_len, token_indexers):
     text_field_list = []
-    for tokens in tokens:
-        tokens = tokenizer.tokenize(tokens)
+    for text in text_batch:
+        tokens = tokenizer.tokenize(text + "<|endoftext|>")
         if len(tokens) > max_token_len:
             tokens = tokens[0: max_token_len]
         text_field_list.append(
