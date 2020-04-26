@@ -407,6 +407,7 @@ class KnowledgeableStoriesModel(Model):
             orig_device = None
             if self._lm_device is not None:
                 passages_expanded = passages_expanded.to(self._lm_device)
+                lm_output = lm_output.to(self._lm_device)
 
             hidden_states = torch.cat((lm_output, passages_expanded), dim=-1)
             hidden_states = self._fusion_dense(hidden_states)
