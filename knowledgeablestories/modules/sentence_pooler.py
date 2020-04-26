@@ -15,7 +15,7 @@ class PoolingEncoder(Seq2VecEncoder):
         super().__init__()
         self._seq2seq_encoder = seq2seq_encoder
         self._pooler = pooler
-        self._seq_batch_norm = nn.BatchNorm1d(self._pooler_encoder.get_output_dim())
+        self._seq_batch_norm = nn.BatchNorm1d(self._pooler.get_output_dim())
         self._pooler_batch_norm = nn.BatchNorm1d(self._pooler.get_output_dim())
 
     @overrides
