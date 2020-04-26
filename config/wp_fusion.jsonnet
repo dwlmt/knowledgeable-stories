@@ -116,7 +116,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     },
     "fusion_dense": {
         "input_dim": 768,
-        "num_layers": 1,
+        "num_layers": 2,
         "hidden_dims": 768,
         "activations": "elu",
         "dropout": 0.0
