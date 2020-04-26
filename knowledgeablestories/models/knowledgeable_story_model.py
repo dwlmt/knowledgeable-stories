@@ -9,7 +9,7 @@ from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
-from torch.nn.functional import mse_loss
+from torch.nn import CrossEntropyLoss
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -243,7 +243,7 @@ class KnowledgeableStoriesModel(Model):
 
                     encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
-                loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, encoded_sentences)
+                # loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, encoded_sentences)
 
                 # Don't back-propogate through the sentences or TD-VAE will force the input to 0.
                 if self._passage_tdvae is not None:
@@ -298,7 +298,8 @@ class KnowledgeableStoriesModel(Model):
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                        # loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, passages_encoded)
+                        loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                            passages_encoded)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
@@ -395,7 +396,7 @@ class KnowledgeableStoriesModel(Model):
 
         return output
 
-    def fusion_loss_if_required(self, lm_mask, lm_output, loss, passages_encoded):
+    def fusion_loss_if_required(self, lm_mask, lm_output, labels, loss, passages_encoded):
         if "fusion_lm_loss" in self._loss_weights and self._fusion_dense is not None:
             lm_mask_expanded = torch.unsqueeze(lm_mask, dim=-1).expand_as(lm_output)
 
@@ -406,11 +407,20 @@ class KnowledgeableStoriesModel(Model):
                                                 dim=2).expand(
                 passages_encoded.size(0), passages_encoded.size(1), lm_output.size(2),
                 passages_encoded.size(2))
-            passages_expanded = self._fusion_dense(passages_expanded)
+
             passages_expanded *= lm_mask_expanded
 
-            lm_loss = mse_loss(passages_expanded, lm_output)
+            hidden_states = torch.cat((lm_output, passages_expanded), dim=-1)
+            hidden_states = self._fusion_dense(hidden_states)
 
+            lm_logits = self.lm_head(hidden_states)
+
+            shift_logits = lm_logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
             lm_loss *= self._loss_weights["fusion_lm_loss"]
             loss += lm_loss
             self._metrics["fusion_lm_loss"](lm_loss.item())

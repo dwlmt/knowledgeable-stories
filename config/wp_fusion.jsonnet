@@ -118,7 +118,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "input_dim": 768,
         "num_layers": 1,
         "hidden_dims": 768,
-        "activations": "linear",
+        "activations": "elu",
         "dropout": 0.0
     }
   },
