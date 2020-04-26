@@ -14,8 +14,9 @@ class PoolingEncoder(Seq2VecEncoder):
     def __init__(self, seq2seq_encoder: Seq2SeqEncoder, pooler: Seq2VecEncoder) -> None:
         super().__init__()
         self._seq2seq_encoder = seq2seq_encoder
-        self._batch_norm = nn.BatchNorm1d(self._seq2seq_encoder.get_output_dim())
+        self._seq_batch_norm = nn.BatchNorm1d(self._seq2seq_encoder.get_output_dim())
         self._pooler = pooler
+        self._pooler_batch_norm = nn.BatchNorm1d(self._pooler.get_output_dim())
 
     @overrides
     def get_input_dim(self) -> int:
@@ -34,12 +35,12 @@ class PoolingEncoder(Seq2VecEncoder):
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
 
-        seq_output = self._batch_norm(seq_output)
+        seq_output = self._seq_batch_norm(seq_output)
 
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
 
-        pooled_output = self._batch_norm(pooled_output)
+        pooled_output = self._pooler_batch_norm(pooled_output)
         # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
         # pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
