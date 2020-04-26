@@ -410,6 +410,8 @@ class KnowledgeableStoriesModel(Model):
                 lm_output = lm_output.to(self._lm_device)
 
             hidden_states = torch.cat((lm_output, passages_expanded), dim=-1)
+
+            self._fusion_dense = self._fusion_dense.to(hidden_states.device)
             hidden_states = self._fusion_dense(hidden_states)
 
             lm_logits = self._lm_model.lm_head(hidden_states)
