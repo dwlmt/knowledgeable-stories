@@ -21,12 +21,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-             "writing_prompts_lm": {
-                "type": "writing_prompts_hierarchy",
-                "lazy": true,
-                "batch_size" : 50,
-                "fusion": true,
-            },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
@@ -36,16 +30,11 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": TRAINING_ITERATION_SIZE,
-   "sampling_rates": [0.5, 0.5],
+   "sampling_rates": [1.0],
    "iterators": {
-       "writing_prompts_lm": {
-            "type": "basic",
-            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
-            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
-       },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
@@ -55,16 +44,11 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_hierarchy"],
    "iterate_forever": false,
    "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-   "sampling_rates": [0.5, 0.5],
+   "sampling_rates": [1.0],
    "iterators": {
-       "writing_prompts_lm": {
-            "type": "basic",
-            "batch_size": LM_BASE_BATCH_SIZE * NUM_GPUS,
-            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
-       },
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
@@ -73,17 +57,16 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     },
   },
   "train_data_path": {
-        "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
   },
   "validation_data_path": {
-        "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
   },
   "model": {
     "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
     "lm_gradients_for_hierarchy": true,
+    "lm_device": 1,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
