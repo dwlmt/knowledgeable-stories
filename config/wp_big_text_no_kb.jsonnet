@@ -67,9 +67,9 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 10,
-           "max_sentence_grouping": 10,
-           "max_token_len": 256,
+           "batch_size" : 2,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",

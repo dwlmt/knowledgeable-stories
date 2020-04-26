@@ -76,9 +76,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 10,
-           "max_sentence_grouping": 10,
-           "max_token_len": 256,
+           "batch_size" : 2,
+                "max_sentence_grouping": 10,
+                "max_token_len": 256,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
@@ -382,6 +382,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
+"lm_device": 1,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
