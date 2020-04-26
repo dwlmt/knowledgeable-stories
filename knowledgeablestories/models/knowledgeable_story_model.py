@@ -408,6 +408,7 @@ class KnowledgeableStoriesModel(Model):
             if self._lm_device is not None:
                 passages_expanded = passages_expanded.to(self._lm_device)
                 lm_output = lm_output.to(self._lm_device)
+                labels = labels.to(self._lm_device)
 
             hidden_states = torch.cat((lm_output, passages_expanded), dim=-1)
 
@@ -425,6 +426,7 @@ class KnowledgeableStoriesModel(Model):
 
             if orig_device is not None:
                 lm_loss = lm_loss.to(orig_device)
+                labels = labels.to(orig_device)
 
             lm_loss *= self._loss_weights["fusion_lm_loss"]
             loss += lm_loss
