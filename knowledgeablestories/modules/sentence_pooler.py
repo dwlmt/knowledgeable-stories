@@ -2,6 +2,7 @@ import torch
 from allennlp.modules import Seq2SeqEncoder
 from allennlp.modules.seq2vec_encoders.seq2vec_encoder import Seq2VecEncoder
 from overrides import overrides
+from torch import nn
 
 
 @Seq2VecEncoder.register("seq2seq_pooler")
@@ -13,6 +14,7 @@ class PoolingEncoder(Seq2VecEncoder):
     def __init__(self, seq2seq_encoder: Seq2SeqEncoder, pooler: Seq2VecEncoder) -> None:
         super().__init__()
         self._seq2seq_encoder = seq2seq_encoder
+        self._batch_norm = nn.BatchNorm1d(self._seq2seq_encoder.get_output_dim())
         self._pooler = pooler
 
     @overrides
@@ -32,9 +34,13 @@ class PoolingEncoder(Seq2VecEncoder):
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
 
+        seq_output = self._batch_norm(seq_output)
+
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
-        #print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
+
+        pooled_output = self._batch_norm(pooled_output)
+        # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
         # pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
 
