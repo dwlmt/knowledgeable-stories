@@ -405,17 +405,20 @@ class KnowledgeableStoriesModel(Model):
                 passages_encoded.size(2))
 
             orig_device = None
+            '''
             if self._lm_device is not None:
                 orig_device = passages_expanded.device
                 passages_expanded = passages_expanded.to(self._lm_device)
                 lm_output = lm_output.to(self._lm_device)
                 labels = labels.to(self._lm_device)
+            '''
 
-            hidden_states = torch.cat((lm_output, passages_expanded), dim=-1)
+            hidden_states = torch.cat((lm_output.to(passages_expanded.device), passages_expanded), dim=-1)
 
             self._fusion_dense = self._fusion_dense.to(hidden_states.device)
             hidden_states = self._fusion_dense(hidden_states)
 
+            self._lm_model.lm_head = self._lm_model.lm_head.to(hidden_states.device)
             lm_logits = self._lm_model.lm_head(hidden_states)
 
             shift_logits = lm_logits[..., :-1, :].contiguous()
@@ -425,9 +428,6 @@ class KnowledgeableStoriesModel(Model):
             loss_fct = CrossEntropyLoss()
             lm_loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
-            if orig_device is not None:
-                lm_loss = lm_loss.to(orig_device)
-                labels = labels.to(orig_device)
 
             lm_loss *= self._loss_weights["fusion_lm_loss"]
             loss += lm_loss
