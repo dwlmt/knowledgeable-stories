@@ -406,6 +406,7 @@ class KnowledgeableStoriesModel(Model):
 
             orig_device = None
             if self._lm_device is not None:
+                orig_device = passages_expanded.device
                 passages_expanded = passages_expanded.to(self._lm_device)
                 lm_output = lm_output.to(self._lm_device)
                 labels = labels.to(self._lm_device)
