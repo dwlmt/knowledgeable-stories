@@ -34,9 +34,9 @@ class PoolingEncoder(Seq2VecEncoder):
         non_empty_mask = mask[non_empty_sentences]
 
         seq_output = self._seq2seq_encoder(non_empty_tokens, mask=non_empty_mask)
-        seq_output = seq_output.permute(0, 2, 1)
+        # seq_output = seq_output.permute(0, 2, 1)
         seq_output = self._seq_batch_norm(seq_output)
-        seq_output = seq_output.permute(0, 2, 1)
+        #seq_output = seq_output.permute(0, 2, 1)
 
         orig_tokens_zeros[non_empty_sentences] = seq_output
         seq_output = orig_tokens_zeros
@@ -44,7 +44,7 @@ class PoolingEncoder(Seq2VecEncoder):
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
 
-        pooled_output = self._pooler_batch_norm(pooled_output)
+        #pooled_output = self._pooler_batch_norm(pooled_output)
 
         # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
