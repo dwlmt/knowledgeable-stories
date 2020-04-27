@@ -38,8 +38,7 @@ class PoolingEncoder(Seq2VecEncoder):
         seq_output = self._seq2seq_encoder(non_empty_tokens, mask=non_empty_mask)
         if self._batch_norm:
             seq_output = seq_output.permute(0, 2, 1)
-
-        seq_output = self._seq_batch_norm(seq_output)
+            seq_output = self._seq_batch_norm(seq_output)
 
         if self._batch_norm:
             seq_output = seq_output.permute(0, 2, 1)
