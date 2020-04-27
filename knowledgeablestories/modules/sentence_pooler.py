@@ -38,17 +38,13 @@ class PoolingEncoder(Seq2VecEncoder):
         seq_output = self._seq_batch_norm(seq_output)
         seq_output = seq_output.permute(0, 2, 1)
 
-        print("Seq Output Size", seq_output.size())
-
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
-        print("Pooled Output Size", pooled_output.size())
 
-        # pooled_output = pooled_output.permute(0, 2, 1)
         pooled_output = self._pooler_batch_norm(pooled_output)
-        # pooled_output = pooled_output.permute(0, 2, 1)
+
         # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
-        # pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
+        pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
 
         return pooled_output
