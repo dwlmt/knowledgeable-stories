@@ -2,6 +2,7 @@ import torch
 from allennlp.modules import Seq2SeqEncoder
 from allennlp.modules.seq2vec_encoders.seq2vec_encoder import Seq2VecEncoder
 from overrides import overrides
+from torch import nn
 
 
 @Seq2VecEncoder.register("seq2seq_pooler")
@@ -10,12 +11,14 @@ class PoolingEncoder(Seq2VecEncoder):
         Simply combine a seq2seq encoder with a boe pooler to average across the underlying seq2seq model.
     """
 
-    def __init__(self, seq2seq_encoder: Seq2SeqEncoder, pooler: Seq2VecEncoder) -> None:
+    def __init__(self, seq2seq_encoder: Seq2SeqEncoder, pooler: Seq2VecEncoder, batch_norm: bool = False) -> None:
         super().__init__()
         self._seq2seq_encoder = seq2seq_encoder
         self._pooler = pooler
-        # self._seq_batch_norm = nn.BatchNorm1d(self._seq2seq_encoder.get_output_dim())
-        # self._pooler_batch_norm = nn.BatchNorm1d(self._pooler.get_output_dim())
+        self._batch_norm = batch_norm
+        if batch_norm:
+            self._seq_batch_norm = nn.BatchNorm1d(self._seq2seq_encoder.get_output_dim())
+            self._pooler_batch_norm = nn.BatchNorm1d(self._pooler.get_output_dim())
 
     @overrides
     def get_input_dim(self) -> int:
@@ -33,9 +36,13 @@ class PoolingEncoder(Seq2VecEncoder):
         non_empty_mask = mask[non_empty_sentences]
 
         seq_output = self._seq2seq_encoder(non_empty_tokens, mask=non_empty_mask)
-        # seq_output = seq_output.permute(0, 2, 1)
+        if self._batch_norm:
+            seq_output = seq_output.permute(0, 2, 1)
+
         seq_output = self._seq_batch_norm(seq_output)
-        #seq_output = seq_output.permute(0, 2, 1)
+
+        if self._batch_norm:
+            seq_output = seq_output.permute(0, 2, 1)
 
         orig_tokens_zeros[non_empty_sentences] = seq_output
         seq_output = orig_tokens_zeros
@@ -43,7 +50,8 @@ class PoolingEncoder(Seq2VecEncoder):
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
 
-        #pooled_output = self._pooler_batch_norm(pooled_output)
+        if self._batch_norm:
+            pooled_output = self._pooler_batch_norm(pooled_output)
 
         # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
