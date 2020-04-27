@@ -222,12 +222,15 @@ class KnowledgeableStoriesModel(Model):
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
+                if self._passage_tdvae is not None:
+                    encoded_sentences = torch.sigmoid(encoded_sentences)
+
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    # if self._passage_tdvae is not None:
-                    #    encoded_sentences_2 = torch.sigmoid(encoded_sentences_2).clone()
+                    if self._passage_tdvae is not None:
+                        encoded_sentences_2 = torch.sigmoid(encoded_sentences)
 
                     sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                           encoded_sentences_2,
@@ -315,8 +318,6 @@ class KnowledgeableStoriesModel(Model):
                     '''
 
                 if self._passage_tdvae is not None:
-
-                    encoded_sentences = torch.sigmoid(encoded_sentences).clone()
 
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
