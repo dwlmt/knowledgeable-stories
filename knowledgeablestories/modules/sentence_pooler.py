@@ -28,10 +28,10 @@ class PoolingEncoder(Seq2VecEncoder):
 
     def forward(self, tokens: torch.Tensor, mask: torch.Tensor = None):
         lengths = torch.sum(mask.long(), dim=-1)
-        max_len, max_idx = torch.max(lengths, dim=0)
+        min_len, min_idx = torch.min(lengths, dim=0)
 
-        tokens = tokens[:, 0: max_len, :]
-        mask = mask[:, 0: max_len]
+        tokens = tokens[:, 0: min_len, :]
+        mask = mask[:, 0: min_len]
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
         seq_output = seq_output.permute(0, 2, 1)
@@ -45,6 +45,6 @@ class PoolingEncoder(Seq2VecEncoder):
 
         # print("Pooled Output", pooled_output[torch.isnan(pooled_output)].size())
 
-        pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
+        # pooled_output = torch.where(torch.isnan(pooled_output), torch.zeros_like(pooled_output), pooled_output)
 
         return pooled_output
