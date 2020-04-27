@@ -107,6 +107,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "type": "pytorch_transformer",
         "input_dim": 1024,
         "num_layers": 2,
+        "num_attention_heads": 8,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
       }
@@ -116,7 +117,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "pooler": {
         "type": "final_pooler",
         "embedding_dim": 1024,
-        "num_attention_heads": 8,
       },
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
