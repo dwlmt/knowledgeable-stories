@@ -117,7 +117,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     },
     "sentence_2_seq2vec_encoder": {
       "type": "seq2seq_pooler",
-      "batch_norm": false,
+      "batch_norm": true,
       "pooler": {
         "type": "bag_of_embeddings",
         "embedding_dim": 1024,
