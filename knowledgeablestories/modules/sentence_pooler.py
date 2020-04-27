@@ -27,7 +27,7 @@ class PoolingEncoder(Seq2VecEncoder):
         return self._pooler.get_output_dim()
 
     def forward(self, tokens: torch.Tensor, mask: torch.Tensor = None):
-        orig_tokens_zeros = torch.zeros(tokens.size(0), tokens.size(1), tokens.size(2))
+        orig_tokens_zeros = torch.zeros(tokens.size(0), tokens.size(1), tokens.size(2)).to(tokens.device)
         non_empty_sentences = mask.sum(dim=-1) != 0
 
         non_empty_tokens = tokens[non_empty_sentences]
