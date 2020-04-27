@@ -52,8 +52,8 @@ class TDVAE(nn.Module, FromParams):
                  z_posterior_size: int = 1024,
                  num_layers: int = 2,
                  samples_per_seq: int = 200,
-                 decoder_hidden_size: int = 256,
-                 d_block_hidden_size: int = 128,
+                 decoder_hidden_size: int = 512,
+                 d_block_hidden_size: int = 256,
                  t_diff_min: int = 1,
                  t_diff_max: int = 6,
                  min_length: int = 3):
