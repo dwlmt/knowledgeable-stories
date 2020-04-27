@@ -27,14 +27,19 @@ class PoolingEncoder(Seq2VecEncoder):
         return self._pooler.get_output_dim()
 
     def forward(self, tokens: torch.Tensor, mask: torch.Tensor = None):
+        zeros = torch.zeros_like(tokens)
+        non_empty_mask = mask.sum(dim=-1) != 0
 
-        tokens = tokens[mask.sum(dim=-1) != 0]
-        mask = mask[mask.sum(dim=-1) != 0]
+        tokens = tokens[non_empty_mask]
+        mask = mask[non_empty_mask]
 
         seq_output = self._seq2seq_encoder(tokens, mask=mask)
         seq_output = seq_output.permute(0, 2, 1)
         seq_output = self._seq_batch_norm(seq_output)
         seq_output = seq_output.permute(0, 2, 1)
+
+        zeros[non_empty_mask] = seq_output
+        seq_output = zeros
 
         # print("Transformer Output", seq_output[torch.isnan(seq_output)].size())
         pooled_output = self._pooler(seq_output, mask=mask)
