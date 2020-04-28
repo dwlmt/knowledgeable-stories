@@ -12,7 +12,6 @@ from torch import nn
 from torch.nn import CrossEntropyLoss
 from transformers.modeling_auto import AutoModelWithLMHead
 
-from knowledgeablestories.modules.min_max_scaler import MinMaxScalerPytorch
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
@@ -314,8 +313,9 @@ class KnowledgeableStoriesModel(Model):
 
                 if self._passage_tdvae is not None:
 
-                    scaler = MinMaxScalerPytorch()
-                    encoded_sentences = scaler(encoded_sentences)
+                    # scaler = MinMaxScalerPytorch()
+                    # encoded_sentences = scaler(encoded_sentences)
+                    encoded_sentences = torch.sigmoid(encoded_sentences)
 
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
