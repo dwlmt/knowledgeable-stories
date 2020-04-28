@@ -83,6 +83,9 @@ class KnowledgeablePredictor(Predictor):
         self._eos_token_ids = [0, 764]
         for t in eos_tokens.split():
             self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        for t in token_tags:
+            self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+
         self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[-1]}
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
