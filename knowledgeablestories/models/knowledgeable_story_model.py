@@ -745,7 +745,7 @@ class KnowledgeableStoriesModel(Model):
         orig_device = None
         if self._lm_device is not None:
             orig_device = existing_tokens.device
-            existing_tokens = existing_tokens.to(self._lm_model.device)
+            existing_tokens = existing_tokens.to(self._lm_device)
             self._lm_model = self._lm_model.to(self._lm_device)
         else:
             self._lm_model = self._lm_model.to(existing_tokens.device)
