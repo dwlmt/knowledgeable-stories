@@ -393,7 +393,10 @@ class KnowledgeablePredictor(Predictor):
             if "sentences" not in parent:
                 parent["sentences"] = []
 
-            generated_sequences = self.generate_sentences(input_tokens)
+            if self._model._fusion_dense is None:
+                generated_sequences = self.generate_sentences(input_tokens)
+            else:
+                generated_sequences = self.generate_sentences_fused(input_tokens)
 
             # print(parent, input_tokens, generated_sequences)
 
@@ -821,8 +824,46 @@ class KnowledgeablePredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-        #print(f"Generated: {generated_sequences}")
+        # print(f"Generated: {generated_sequences}")
         return generated_sequences
+
+    def generate_sentences_fused(self, input_tokens):
+
+        print("Input tokens ", input_tokens.size())
+
+        lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": input_tokens})
+
+        print("LM states ", lm_hidden_state.size(), lm_mask.size())
+
+        encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
+
+        if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
+            encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
+            encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+
+        print("Encoded sentences", encoded_sentences_batch.size())
+
+        passages_encoded, _ = self._model.encode_passages(encoded_sentences_batch)
+
+        print("Passages Encoded", passages_encoded.size())
+
+        passages_expanded = torch.unsqueeze(passages_encoded,
+                                            dim=2).expand(
+            passages_encoded.size(0), passages_encoded.size(1), lm_hidden_state.size(2),
+            passages_encoded.size(2))
+
+        print("Passages Expanded", passages_expanded.size())
+
+        hidden_states = torch.cat((input_tokens.to(passages_expanded.device), passages_expanded), dim=-1)
+
+        print("Hidden States", hidden_states.size())
+
+        self._fusion_dense = self._fusion_dense.to(hidden_states.device)
+        hidden_states = self._fusion_dense(hidden_states)
+
+        print("Hidden States Fused", hidden_states.size())
+
+        exit()
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
