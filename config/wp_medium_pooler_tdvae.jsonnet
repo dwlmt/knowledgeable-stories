@@ -104,9 +104,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
       "pooler": {
-        "type": "bag_of_embeddings",
-        "embedding_dim": 1024,
-        "averaged": true
+        "type": "final_pooler",
+        "embedding_dim": 1024
       },
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
@@ -120,9 +119,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "sentence_2_seq2vec_encoder": {
       "type": "seq2seq_pooler",
       "pooler": {
-       "type": "bag_of_embeddings",
+       "type": "final_pooler",
        "embedding_dim": 1024,
-       "averaged": true
       },
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
