@@ -105,7 +105,7 @@ class KnowledgeablePredictor(Predictor):
         self._override_lm = parse_bool(os.getenv("PREDICTOR_OVERRIDE_LM", default="False"))
 
         if self._override_lm:
-            self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size)
+            self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
         return self.rollout_prediction(inputs)
