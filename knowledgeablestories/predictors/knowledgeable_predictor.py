@@ -398,10 +398,10 @@ class KnowledgeablePredictor(Predictor):
             if "sentences" not in parent:
                 parent["sentences"] = []
 
-            if self._model._fusion_dense is None:
-                generated_sequences = self.generate_sentences(input_tokens)
-            else:
-                generated_sequences = self.generate_sentences_fused(input_tokens)
+            # if self._model._fusion_dense is None:
+            generated_sequences = self.generate_sentences(input_tokens)
+            # else:
+            #    generated_sequences = self.generate_sentences_fused(input_tokens)
 
             # print(parent, input_tokens, generated_sequences)
 
