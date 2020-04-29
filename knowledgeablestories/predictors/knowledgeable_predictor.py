@@ -79,15 +79,14 @@ class KnowledgeablePredictor(Predictor):
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
-        eos_token_ids = [0, 764]
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> . .. ..."))
+        eos_token_ids = [0, 764, 50256]
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". .. ..."))
 
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.append(self._tokenizer._tokenizer.encode(t))
 
-        eos_tokens_combined = eos_token_ids + eos_text_token_ids
-        self._eos_token_ids = eos_tokens_combined
+        self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[3]}
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
@@ -96,7 +95,7 @@ class KnowledgeablePredictor(Predictor):
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[3],
-                                   "bad_words_ids": token_tags + []}
+                                   "bad_words_ids": token_tags + eos_token_ids}
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
