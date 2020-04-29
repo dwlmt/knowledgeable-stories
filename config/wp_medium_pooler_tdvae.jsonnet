@@ -89,7 +89,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_finetune_final_layer_only": false,
     "sent_offsets": [-3, -2, -1, 1, 2, 3],
     "sent_scales": [1.0, 1.0, 10.0, 10.0, 1.0, 1.0],
-    "label_smoothing": 1.0,
+    "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
@@ -134,14 +134,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "passage_tdvae": {
          "x_size": 2048,
          "input_size": 2048,
-         "belief_size": 1024,
-         "z_posterior_size": 1024,
+         "belief_size": 2048,
+         "z_posterior_size": 2048,
          "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
          "t_diff_max": 6,
-         "d_block_hidden_size": 128,
-         "decoder_hidden_size": 256,
+         "d_block_hidden_size": 512,
+         "decoder_hidden_size": 1024,
     },
     "sentence_autoencoder": {
         "input_dim": 2048,
