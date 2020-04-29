@@ -65,8 +65,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   "model": {
     "type": "know_stories",
     "embedder_vocab_size": embedder_vocab_size,
-    "lm_gradients_for_hierarchy": true,
     "lm_device": 1,
+    "lm_finetune_final_layer_only": true,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
