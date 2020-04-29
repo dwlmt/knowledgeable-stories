@@ -100,6 +100,8 @@ class KnowledgeablePredictor(Predictor):
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": token_tags_ids + dont_generate_token_ids}
 
+        print("Generation config", self._generation_config)
+
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
         self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
