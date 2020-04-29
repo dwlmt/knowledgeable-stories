@@ -92,7 +92,7 @@ class KnowledgeablePredictor(Predictor):
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids,
-                                   "bad_word_ids": token_tags}
+                                   "bad_words_ids": token_tags}
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
