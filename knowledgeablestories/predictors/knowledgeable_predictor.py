@@ -831,7 +831,8 @@ class KnowledgeablePredictor(Predictor):
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
-                                                                           clean_up_tokenization_spaces=True)
+                                                                           clean_up_tokenization_spaces=True,
+                                                                           skip_special_tokens=True)
 
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
