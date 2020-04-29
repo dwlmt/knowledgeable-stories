@@ -20,6 +20,7 @@ class MultifileAbstractReader(DatasetReader):
     Initially for Schmoop and the BooksCorpus.
 
     """
+
     def __init__(self,
                  lazy: bool = False,
                  tokenizer: Tokenizer = None,
@@ -29,10 +30,10 @@ class MultifileAbstractReader(DatasetReader):
                  max_token_len: int = 384,
                  max_sentence_grouping: int = 14,
                  slide: float = 0.5,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._tokenizer._tokenizer.pad_id = 0
         self._batch_size = batch_size
         self._max_token_len = max_token_len
@@ -49,10 +50,8 @@ class MultifileAbstractReader(DatasetReader):
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
-
-        self._start_and_end_tokens = start_and_end_tokens
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -75,9 +74,10 @@ class MultifileAbstractReader(DatasetReader):
             yield from self._chunk_instances(text_sentences)
 
     def _chunk_instances(self, text_sentences):
-        for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
-                                                           step=int(round(max(self._batch_size * self._slide, 1))),
-                                                           fillvalue="<|endoftext|>")):
+        for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
+                                                                        step=int(round(
+                                                                            max(self._batch_size * self._slide, 1))),
+                                                                        fillvalue="<|endoftext|>"))):
             row = {}
             row["story_text"] = sentence_batch
 
@@ -87,6 +87,7 @@ class MultifileAbstractReader(DatasetReader):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
         return split_sentences
+
 
 @DatasetReader.register("multifile_lm")
 class MultifileLMReader(MultifileAbstractReader):
@@ -99,7 +100,7 @@ class MultifileLMReader(MultifileAbstractReader):
                  max_sentence_grouping: int = 10,
                  max_token_len: int = 256,
                  slide: float = 0.5,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
@@ -114,12 +115,14 @@ class MultifileLMReader(MultifileAbstractReader):
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
-        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
+        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len,
+                                               self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)
+
 
 @DatasetReader.register("multifile_hierarchy")
 class MultifileHierarchyReader(MultifileAbstractReader):
@@ -131,11 +134,11 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  batch_size: int = 100,
                  max_token_len: int = 64,
                  slide: float = 1.0,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
-                         slide = slide,
+                         slide=slide,
                          start_and_end_tokens=start_and_end_tokens)
 
     def text_to_instance(self, text_dict) -> Instance:

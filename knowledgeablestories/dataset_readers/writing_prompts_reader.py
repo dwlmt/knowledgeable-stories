@@ -24,7 +24,6 @@ class WritingPromptsAbstractReader(DatasetReader):
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
                  slide: float = 0.5,
-                 start_and_end_tokens=False,
                  fusion=False) -> None:
         super().__init__(lazy=lazy)
 
@@ -47,8 +46,6 @@ class WritingPromptsAbstractReader(DatasetReader):
             "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
-
-        self._start_and_end_tokens = start_and_end_tokens
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
@@ -73,12 +70,18 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["batch_row_num"] = batch_row_num
 
                     text_sentences = self.convert_text_to_sentences(line)
+                    abs_positions = [(r + 1) for r in range(len(text_sentences))]
+                    relative_positions = [p / float(len(text_sentences)) for p in abs_positions]
 
-                    for sentence_batch in list(more_itertools.windowed(text_sentences, self._batch_size,
-                                                                       step=int(round(
-                                                                           max(self._batch_size * self._slide, 1))),
-                                                                       fillvalue="<|endoftext|>")):
+                    for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
+                                                                                    step=int(round(
+                                                                                        max(
+                                                                                            self._batch_size * self._slide,
+                                                                                            1))),
+                                                                                    fillvalue="<|endoftext|>"))):
                         row["story_text"] = sentence_batch
+                        row["abs_positions"] = abs_positions[i: i + len(sentence_batch)]
+                        row["rel_positions"] = relative_positions[i: i + len(sentence_batch)]
 
                         yield self.text_to_instance(row)
                         batch_row_num += 1
@@ -103,7 +106,7 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
                  slide: float = 0.5,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
@@ -164,6 +167,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
+
         fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)

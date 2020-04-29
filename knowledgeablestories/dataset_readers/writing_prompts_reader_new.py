@@ -1,20 +1,18 @@
-from itertools import groupby
-from string import punctuation
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 import more_itertools
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.fields import MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
+# Categories for relations in the commonsense reasoning dataset.
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
     cleanup_text, strip_repeating_punctuation
-# Categories for relations in the commonsense reasoning dataset.
-from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,
@@ -25,7 +23,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  batch_size: int = 50,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy)
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", max_length=max_token_len)
@@ -42,11 +40,9 @@ class WritingPromptsAbstractReader(DatasetReader):
         vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2",max_length=max_token_len)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=max_token_len)}
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
-
-        self._start_and_end_tokens = start_and_end_tokens
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
@@ -85,6 +81,7 @@ class WritingPromptsAbstractReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         raise NotImplementedError
 
+
 @DatasetReader.register("writing_prompts_lm_new")
 class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
 
@@ -96,11 +93,11 @@ class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
                  batch_size: int = 6,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
-                         sentence_splitter= sentence_splitter, batch_size=batch_size, max_sentence_grouping=max_sentence_grouping,
+                         sentence_splitter=sentence_splitter, batch_size=batch_size,
+                         max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
-
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
@@ -113,7 +110,8 @@ class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
-        text_field_list =  convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len, self._token_indexers)
+        text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len,
+                                               self._token_indexers)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -132,7 +130,7 @@ class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
                  batch_size: int = 50,
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 64,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,

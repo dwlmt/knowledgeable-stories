@@ -1,6 +1,5 @@
-import ast
 import csv
-from typing import Dict, Iterator, Optional
+from typing import Dict, Iterator
 
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
 from allennlp.data.fields import TextField, MetadataField, ListField
@@ -23,22 +22,20 @@ class SwagKnowDatasetReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
-                 start_and_end_tokens=False) -> None:
+                 ) -> None:
         super().__init__(lazy=lazy)
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase = False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase = False)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._categories = categories or atomic_categories
-
-        self._start_and_end_tokens = start_and_end_tokens
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -51,8 +48,7 @@ class SwagKnowDatasetReader(DatasetReader):
 
         negative_conclusions = []
         negative_arguments = []
-        for t in ["distractor-0","distractor-1","distractor-2","distractor-3"]:
-
+        for t in ["distractor-0", "distractor-1", "distractor-2", "distractor-3"]:
             negative_conclusion_tokens = self._tokenizer.tokenize(text_dict[t])
             negative_conclusions.append(TextField(negative_conclusion_tokens, token_indexers=self._token_indexers))
 
@@ -62,14 +58,14 @@ class SwagKnowDatasetReader(DatasetReader):
                           token_indexers=self._token_indexers))
 
         fields["premises"] = TextField(self._tokenizer.tokenize(premise),
-                                                  token_indexers=self._token_indexers)
+                                       token_indexers=self._token_indexers)
 
         fields["conclusions"] = TextField(self._tokenizer.tokenize(conclusion),
-                                                  token_indexers=self._token_indexers)
+                                          token_indexers=self._token_indexers)
 
         # Wrap arguments in a list so that the dims line up with the negative arguments.
         fields["arguments"] = ListField([TextField(self._tokenizer.tokenize(arguments),
-                                                  token_indexers=self._token_indexers)])
+                                                   token_indexers=self._token_indexers)])
 
         fields["negative_conclusions"] = ListField(negative_conclusions)
         fields["negative_arguments"] = ListField(negative_arguments)
@@ -85,7 +81,6 @@ class SwagKnowDatasetReader(DatasetReader):
 
             orig_row_num = 0
             for row in csv_reader:
-
                 row["orig_row_num"] = orig_row_num
                 yield self.text_to_instance(row)
 
