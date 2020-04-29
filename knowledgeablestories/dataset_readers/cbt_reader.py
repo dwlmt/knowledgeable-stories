@@ -126,8 +126,7 @@ class CbtLMReader(CbtAbstractReader):
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
-                         slide=slide,
-                         start_and_end_tokens=start_and_end_tokens)
+                         slide=slide)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -162,8 +161,7 @@ class CbtHierarchyReader(CbtAbstractReader):
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
-                         slide=slide,
-                         start_and_end_tokens=start_and_end_tokens)
+                         slide=slide)
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}

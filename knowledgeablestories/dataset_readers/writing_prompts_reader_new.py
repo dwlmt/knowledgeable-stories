@@ -97,7 +97,7 @@ class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+                         max_token_len=max_token_len)
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
@@ -134,7 +134,7 @@ class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
-                         max_token_len=max_token_len, start_and_end_tokens=start_and_end_tokens)
+                         max_token_len=max_token_len)
 
     """
     Short stories from the WritingPrompts dataset. Available from https://github.com/pytorch/fairseq/tree/master/examples/stories
