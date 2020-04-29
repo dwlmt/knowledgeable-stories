@@ -9,7 +9,6 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSpl
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers import special_tokens
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
     cleanup_text, strip_repeating_punctuation
@@ -40,7 +39,6 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._fusion = fusion
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
 
         vocab_size = len(self._tokenizer._tokenizer)

@@ -31,7 +31,7 @@ export STUDENT_ID=${USER}
 # General training parameters
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
-export EMBEDDER_VOCAB_SIZE=50270
+export EMBEDDER_VOCAB_SIZE=50269
 export NUM_GPUS=1
 export NUM_CPUS=8
 
