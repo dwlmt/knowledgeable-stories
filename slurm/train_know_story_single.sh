@@ -3,7 +3,7 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 #SBATCH --mem=16g  # Memory
 #SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
 #SBATCH --mail-type=all          # send email on job start, end and fail
@@ -31,7 +31,7 @@ export STUDENT_ID=${USER}
 # General training parameters
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
-export EMBEDDER_VOCAB_SIZE=50268
+export EMBEDDER_VOCAB_SIZE=50270
 export NUM_GPUS=1
 export NUM_CPUS=8
 
