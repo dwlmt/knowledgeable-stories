@@ -1,6 +1,7 @@
 # These are the special token ids for relationships and that have semantic meaning.
 
-token_tags = ["<|endofsentence|>"]
+token_tags = []
+token_tags += ["<|endofsentence|>"]
 
 # Special character to model blank knowledgebase tokens.
 token_tags += ["zBlank"]
