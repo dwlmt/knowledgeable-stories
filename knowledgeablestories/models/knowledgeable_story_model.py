@@ -354,6 +354,7 @@ class KnowledgeableStoriesModel(Model):
         if arguments != None and "lm_loss" in self._loss_weights:
 
             argument_tokens = arguments["tokens"]
+            lm_mask = self.create_lm_mask(argument_tokens)
 
             orig_device = None
             if self._lm_device is not None:
@@ -552,12 +553,7 @@ class KnowledgeableStoriesModel(Model):
     def lm_mask_and_hidden_states(self, text, last_hidden_state_only=True):
 
         text_tokens = text["tokens"]
-
-        with torch.no_grad():
-            text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
-            for id in END_OF_TEXT_TOKEN_IDS:
-                text_mask += (text_tokens == id)
-            text_mask = self.create_lm_mask(text_mask)
+        text_mask = self.create_lm_mask(text_tokens)
 
         orig_device = None
         if self._lm_device is not None:
@@ -579,9 +575,14 @@ class KnowledgeableStoriesModel(Model):
 
         return lm_output, text_mask
 
-    def create_lm_mask(self, text_mask):
-        text_mask = (text_mask < 1).bool()
-        return text_mask
+    def create_lm_mask(self, text_tokens):
+        with torch.no_grad():
+            text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
+            for id in END_OF_TEXT_TOKEN_IDS:
+                text_mask += (text_tokens == id)
+            text_mask = (text_mask < 1).bool()
+            text_mask = text_mask.to(text_tokens.device)
+            return text_mask
 
     def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, blank_mask=None):
         with torch.no_grad():
