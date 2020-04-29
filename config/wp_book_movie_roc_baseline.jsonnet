@@ -25,7 +25,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "lazy": true,
                 "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
@@ -45,7 +45,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "lazy": true,
                 "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
             },
             "cmu_movie_hierarchy": {
                 "type": "cmu_movie_hierarchy",
@@ -57,7 +57,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "lazy": true,
                 "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
             },
             "cmu_book_hierarchy": {
                 "type": "cmu_book_hierarchy",

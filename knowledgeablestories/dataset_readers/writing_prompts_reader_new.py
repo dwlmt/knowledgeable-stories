@@ -48,6 +48,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if
                            not s.isspace() and len(s) > 5]
+        split_sentences = [s + "<|endofsentence|>" for s in split_sentences]
         return split_sentences
 
     def _read(self, file_path: str) -> Iterator[Instance]:
@@ -129,7 +130,7 @@ class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
                  max_sentence_grouping: int = 5,
-                 max_token_len: int = 64,
+                 max_token_len: int = 70,
                  ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,

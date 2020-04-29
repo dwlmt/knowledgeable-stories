@@ -25,7 +25,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
           "lazy": true,
           "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
         },
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
@@ -45,7 +45,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "lazy": true,
             "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
         },
         "cmu_movie_hierarchy": {
             "type": "cmu_movie_hierarchy",
@@ -57,7 +57,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "lazy": true,
             "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
         },
         "cmu_book_hierarchy": {
             "type": "cmu_book_hierarchy",
@@ -69,7 +69,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
            "lazy": true,
            "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",

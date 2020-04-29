@@ -10,7 +10,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSpl
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags, special_tokens
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
@@ -40,6 +40,7 @@ class CmuAbstractBookReader(DatasetReader):
         self._slide = slide
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
@@ -87,6 +88,7 @@ class CmuAbstractBookReader(DatasetReader):
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
+        split_sentences = [s + "<|endofsentence|>" for s in split_sentences]
         return split_sentences
 
 

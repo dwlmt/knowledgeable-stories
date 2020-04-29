@@ -9,6 +9,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSpl
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
 
+from knowledgeablestories.dataset_readers import special_tokens
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
@@ -40,6 +41,7 @@ class CbtAbstractReader(DatasetReader):
         self._slide = slide
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
@@ -102,6 +104,7 @@ class CbtAbstractReader(DatasetReader):
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
+        split_sentences = [s + "<|endofsentence|>" for s in split_sentences]
         return split_sentences
 
 
@@ -120,7 +123,7 @@ class CbtLMReader(CbtAbstractReader):
                  batch_size: int = 6,
                  max_sentence_grouping: int = 5,
                  slide: float = 0.5,
-                 max_token_len: int = 64,
+                 max_token_len: int = 70,
                  ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
@@ -155,7 +158,7 @@ class CbtHierarchyReader(CbtAbstractReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
                  batch_size: int = 50,
-                 max_token_len: int = 64,
+                 max_token_len: int = 70,
                  slide: float = 1.0,
                  ) -> None:
         super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,

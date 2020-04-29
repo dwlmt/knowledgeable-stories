@@ -26,7 +26,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "lazy": true,
                 "batch_size" : 2,
             "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "max_token_len": 420,
 
             },
             "writing_prompts_hierarchy": {

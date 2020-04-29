@@ -8,7 +8,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags, special_tokens
 
 
 def process_roc_row(orig_row_num, row):
@@ -67,6 +67,7 @@ class RocLMReader(DatasetReader):
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
@@ -121,6 +122,7 @@ class RocHierarchyReader(DatasetReader):
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")

@@ -8,7 +8,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags, special_tokens
 
 
 @DatasetReader.register("swag_know_lm")
@@ -28,6 +28,7 @@ class SwagKnowDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
@@ -42,9 +43,9 @@ class SwagKnowDatasetReader(DatasetReader):
 
         text_dict["dataset"] = "atomic_lm"
 
-        premise = f"{text_dict['startphrase']} oxNext"
+        premise = f"{text_dict['startphrase']}"
         conclusion = f"{text_dict['gold-ending']}"
-        arguments = f"f {premise} {conclusion}"
+        arguments = f"f<|startofsentence|> {premise} oxNext {conclusion} <|endofsentence|><|endoftext|>"
 
         negative_conclusions = []
         negative_arguments = []
@@ -52,7 +53,8 @@ class SwagKnowDatasetReader(DatasetReader):
             negative_conclusion_tokens = self._tokenizer.tokenize(text_dict[t])
             negative_conclusions.append(TextField(negative_conclusion_tokens, token_indexers=self._token_indexers))
 
-            negative_arguments_tokens = self._tokenizer.tokenize(premise + " " + text_dict[t])
+            negative_arguments_tokens = self._tokenizer.tokenize(
+                f"<|startofsentence|> {premise} oxNext  {text_dict[t]} <|endofsentence|> <|endoftext|>")
             negative_arguments.append(
                 TextField(tokens=negative_arguments_tokens,
                           token_indexers=self._token_indexers))

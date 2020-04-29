@@ -9,7 +9,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags, special_tokens
 
 
 @DatasetReader.register("atomic")
@@ -28,6 +28,7 @@ class AtomicDatasetReader(DatasetReader):
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_special_tokens(special_tokens)
         self._tokenizer._tokenizer.add_tokens(token_tags)
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
@@ -49,7 +50,8 @@ class AtomicDatasetReader(DatasetReader):
             conclusion_tokens = self._tokenizer.tokenize(t)
             conclusions.append(TextField(conclusion_tokens, token_indexers=self._token_indexers))
 
-            argument_tokens = self._tokenizer.tokenize(text_dict["event"] + " " + text_dict["relation"] + " " + t)
+            argument_tokens = self._tokenizer.tokenize("<|startofsentence|>" + text_dict["event"] + " " + text_dict[
+                "relation"] + " " + t + "<|endofsentence|><|endoftext|>")
             arguments.append(
                 TextField(tokens=argument_tokens,
                           token_indexers=self._token_indexers))
