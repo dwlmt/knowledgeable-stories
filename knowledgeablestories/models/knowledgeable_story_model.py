@@ -73,7 +73,7 @@ class KnowledgeableStoriesModel(Model):
         if generation_config is None:
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.90, "max_length": 100, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS),
-                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_word_ids": []}
+                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_word_ids": None}
 
         if dataset_config is None:
             dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
