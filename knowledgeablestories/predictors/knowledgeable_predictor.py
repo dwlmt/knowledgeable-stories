@@ -79,20 +79,24 @@ class KnowledgeablePredictor(Predictor):
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> ."))
-        self._eos_token_ids = [0, 764]
-        for t in eos_tokens.split():
-            self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        eos_token_ids = [0, 764]
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endoftext|> . .. ..."))
 
-        self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[-1]}
+        eos_text_token_ids = []
+        for t in eos_tokens.split():
+            eos_text_token_ids.append(self._tokenizer._tokenizer.encode(t))
+
+        eos_tokens_combined = eos_token_ids + eos_text_token_ids
+        self._eos_token_ids = eos_tokens_combined
+        self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[3]}
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
-                                   "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[-1],
-                                   "bad_words_ids": token_tags}
+                                   "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[3],
+                                   "bad_words_ids": token_tags + []}
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
