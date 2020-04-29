@@ -415,7 +415,7 @@ class KnowledgeableStoriesModel(Model):
                 hidden_states = hidden_states.to(self._lm_device)
 
             # self._lm_model.lm_head = self._lm_model.lm_head.to(hidden_states.device)
-            lm_logits = self._lm_model.lm_head(hidden_states, attention_mask=lm_mask)
+            lm_logits = self._lm_model.lm_head(hidden_states)
 
             if orig_device is not None:
                 lm_logits = lm_logits.to(orig_device)
