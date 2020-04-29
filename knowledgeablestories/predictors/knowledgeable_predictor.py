@@ -84,13 +84,13 @@ class KnowledgeablePredictor(Predictor):
 
         eos_text_token_ids = []
         for t in eos_tokens.split():
-            eos_text_token_ids.append(self._tokenizer._tokenizer.encode(t))
+            eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
         eos_text_token_ids.append(764)
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
 
-        token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
+        token_tags_ids = [self._tokenizer._tokenizer.encode(t)[0] for t in token_tags]
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
