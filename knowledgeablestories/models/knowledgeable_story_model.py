@@ -15,7 +15,7 @@ from transformers.modeling_auto import AutoModelWithLMHead
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
-END_OF_TEXT_TOKEN_IDS = (50256)
+END_OF_TEXT_TOKEN_IDS = (50256, 0)
 
 torch.autograd.set_detect_anomaly(True)
 
