@@ -764,7 +764,7 @@ class KnowledgeableStoriesModel(Model):
             top_p=gen_config["top_p"],
             do_sample=gen_config["do_sample"],
             num_beams=gen_config["num_beams"],
-            eos_token_ids=gen_config["eos_token_ids"],
+            eos_token_id=gen_config["eos_token_ids"],
             repetition_penalty=gen_config["repetition_penalty"],
             length_penalty=gen_config["length_penalty"],
             num_return_sequences=num_of_sequences,
