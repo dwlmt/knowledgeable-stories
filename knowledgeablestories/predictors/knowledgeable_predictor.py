@@ -83,8 +83,6 @@ class KnowledgeablePredictor(Predictor):
         self._eos_token_ids = [0, 764]
         for t in eos_tokens.split():
             self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        for t in token_tags:
-            self._eos_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
         self._keep_eos_ids = {self._eos_token_ids[1], self._eos_token_ids[-1]}
 
@@ -93,7 +91,8 @@ class KnowledgeablePredictor(Predictor):
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
-                                   "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids}
+                                   "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids,
+                                   "bad_word_ids": token_tags}
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 

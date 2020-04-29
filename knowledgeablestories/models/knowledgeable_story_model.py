@@ -73,7 +73,7 @@ class KnowledgeableStoriesModel(Model):
         if generation_config is None:
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.90, "max_length": 100, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": list(END_OF_TEXT_TOKEN_IDS),
-                                 "repetition_penalty": 1.2, "length_penalty": 1.0}
+                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_word_ids": []}
 
         if dataset_config is None:
             dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
@@ -768,6 +768,7 @@ class KnowledgeableStoriesModel(Model):
             repetition_penalty=gen_config["repetition_penalty"],
             length_penalty=gen_config["length_penalty"],
             num_return_sequences=num_of_sequences,
+            bad_word_ids=gen_config["bad_word_ids"]
         )
 
         if orig_device is not None:
