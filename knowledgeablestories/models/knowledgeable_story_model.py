@@ -415,7 +415,7 @@ class KnowledgeableStoriesModel(Model):
                 hidden_states = hidden_states.to(self._lm_device)
 
             # self._lm_model.lm_head = self._lm_model.lm_head.to(hidden_states.device)
-            lm_logits = self._lm_model.lm_head(hidden_states)
+            lm_logits = self._lm_model.lm_head(hidden_states, attention_mask=lm_mask)
 
             if orig_device is not None:
                 lm_logits = lm_logits.to(orig_device)
@@ -557,7 +557,7 @@ class KnowledgeableStoriesModel(Model):
             text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
             for id in END_OF_TEXT_TOKEN_IDS:
                 text_mask += (text_tokens == id)
-            text_mask = (text_mask < 1).bool()
+            text_mask = self.create_lm_mask(text_mask)
 
         orig_device = None
         if self._lm_device is not None:
@@ -567,7 +567,7 @@ class KnowledgeableStoriesModel(Model):
         else:
             self._lm_model = self._lm_model.to(text_tokens.device)
 
-        lm_output = self._lm_model.transformer(text_tokens)
+        lm_output = self._lm_model.transformer(text_tokens, attention_mask=text_mask)
 
         if last_hidden_state_only:
             lm_output = lm_output[0]
@@ -578,6 +578,10 @@ class KnowledgeableStoriesModel(Model):
             lm_output = lm_output.to(orig_device)
 
         return lm_output, text_mask
+
+    def create_lm_mask(self, text_mask):
+        text_mask = (text_mask < 1).bool()
+        return text_mask
 
     def _generate_smoothed_targets(self, batch_size, offsets, scales, label_smoothing, blank_mask=None):
         with torch.no_grad():
@@ -727,15 +731,17 @@ class KnowledgeableStoriesModel(Model):
                 else:
                     self._lm_model = self._lm_model.to(arguments.device)
 
-                arg_lm_loss, arg_lm_logits, _ = self._lm_model(argument, labels=argument)
+                lm_mask = self.create_lm_mask(argument)
+                arg_lm_loss, arg_lm_logits, _ = self._lm_model(argument, attention_mask=lm_mask, labels=argument)
 
                 if orig_device is not None:
                     arg_lm_loss = arg_lm_logits.to(orig_device)
-                    arg_lm_logits = arg_lm_logits.to(orig_device)
 
                 corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
 
-                neg_lm_loss, neg_lm_logits, _ = self._lm_model(neg_argument, labels=neg_argument)
+                lm_mask = self.create_lm_mask(neg_argument)
+                neg_lm_loss, neg_lm_logits, _ = self._lm_model(neg_argument, attention_mask=lm_mask,
+                                                               labels=neg_argument)
                 neg_lm_loss_perplexity = float(torch.exp(neg_lm_loss))
 
                 is_correct = float((corr_lm_loss_perplexity < neg_lm_loss_perplexity))
