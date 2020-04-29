@@ -254,7 +254,6 @@ class KnowledgeableStoriesModel(Model):
                 output["lm_mask"] = lm_mask
                 output["tokens"] = passages["tokens"]
 
-
                 if self._passage_seq2seq_encoder != None:
 
                     passages_encoded, passages_mask = \
@@ -264,7 +263,6 @@ class KnowledgeableStoriesModel(Model):
                         encoded_sentences = self._passage_dense(encoded_sentences)
 
                     if "passage_disc_loss" in self._loss_weights:
-
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         encoded_sentences,
                                                                                         mask=passage_mask,
@@ -365,7 +363,8 @@ class KnowledgeableStoriesModel(Model):
             else:
                 self._lm_model = self._lm_model.to(argument_tokens.device)
 
-            lm_loss, lm_logits, _ = self._lm_model(argument_tokens, labels=argument_tokens)
+            lm_loss, lm_logits, _ = self._lm_model(argument_tokens, attention_mask=lm_mask.to(argument_tokens.device),
+                                                   labels=argument_tokens.to(argument_tokens.device))
 
             if orig_device is not None:
                 lm_logits = lm_logits.to(orig_device)
@@ -686,7 +685,7 @@ class KnowledgeableStoriesModel(Model):
             self._sentence_seq2vec_encoder = self._sentence_seq2vec_encoder.to(hidden_states.device)
             encoded_sentences = self._sentence_seq2vec_encoder(hidden_states, mask)
         elif self._sentence_seq2seq_encoder != None:
-            #self._sentence_seq2seq_encoder._module.flatten_parameters()
+            # self._sentence_seq2seq_encoder._module.flatten_parameters()
             self._sentence_seq2seq_encoder = self._sentence_seq2seq_encoder.to(hidden_states.device)
             encoded_sentences = get_final_encoder_states(self._sentence_seq2seq_encoder(hidden_states, mask), mask)
         return encoded_sentences
