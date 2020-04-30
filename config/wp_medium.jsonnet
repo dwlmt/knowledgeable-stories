@@ -21,12 +21,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
              "writing_prompts_lm": {
-                "type": "writing_prompts_lm",
-                "lazy": true,
-                "batch_size" : 2,
-            "max_sentence_grouping": 14,
-            "max_token_len": 420,
-
+             "type": "writing_prompts_lm",
+             "lazy": true,
+             "batch_size" : 2,
+             "max_sentence_grouping": 14,
+             "max_token_len": 384,
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
