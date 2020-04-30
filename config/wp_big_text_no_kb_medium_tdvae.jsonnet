@@ -3,7 +3,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local PASSAGE_BASE_BATCH_SIZE = 2;
+local PASSAGE_BASE_BATCH_SIZE = 1;
 local LM_BASE_BATCH_SIZE = 1;
 local KB_BASE_BATCH_SIZE = 4;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
@@ -23,14 +23,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "writing_prompts_lm": {
           "type": "writing_prompts_lm",
           "lazy": true,
-          "batch_size" : 28,
-            "max_sentence_grouping": 14,
-            "max_token_len": 384,
+          "batch_size" : 36,
+            "max_sentence_grouping": 36,
+            "max_token_len": 768,
         },
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+            "batch_size" : 200,
         },
         "roc_lm": {
             "type": "roc_lm",
@@ -43,38 +43,38 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "cmu_movie_lm": {
             "type": "cmu_movie_lm",
             "lazy": true,
-            "batch_size" : 28,
-            "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "batch_size" : 36,
+            "max_sentence_grouping": 36,
+            "max_token_len": 768,
         },
         "cmu_movie_hierarchy": {
             "type": "cmu_movie_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+            "batch_size" : 200,
         },
          "cmu_book_lm": {
             "type": "cmu_book_lm",
             "lazy": true,
-            "batch_size" : 28,
-            "max_sentence_grouping": 14,
-            "max_token_len": 384,
+            "batch_size" : 36,
+            "max_sentence_grouping": 36,
+            "max_token_len": 768,
         },
         "cmu_book_hierarchy": {
             "type": "cmu_book_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+            "batch_size" : 200,
         },
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 28,
-            "max_sentence_grouping": 14,
-            "max_token_len": 384,
+           "batch_size" : 36,
+            "max_sentence_grouping": 36,
+            "max_token_len": 768,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+            "batch_size" : 200,
         },
         "schmoop_lm": {
             "type": "sharded_simple",
@@ -350,36 +350,50 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "lm_device": 1,
+    "lm_finetune_final_layer_only": false,
+    "sent_offsets": [-1, 1],
+    "sent_scales": [10.0, 10.0],
+    "label_smoothing": 0.0,
+    "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
-        "roc_lm": {},
-        "roc_hierarchy": {},
-        "cmu_book_lm": {},
-        "cmu_book_hierarchy": {},
-        "cmu_movie_lm": {},
-        "cmu_movie_hierarchy": {},
-        "atomic_lm": {},
-        "swag_know_lm": {},
-        "cbt_lm": {},
-        "cbt_hierarchy": {},
-        "multifile_lm": {},
-        "multifile_hierarchy": {},
     },
-    "embedder_vocab_size": embedder_vocab_size,
+    "loss_weights" : {
+        "lm_loss": 1.0,
+        "tdvae_loss": 1.0,
+        "sentence_disc_loss": 1.0,
+        "sentence_autoencoder": 1.0,
+    },
     "sentence_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+        "type": "final_pooler",
+        "embedding_dim": 1024
+      },
+      "seq2seq_encoder": {
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 2,
+        "num_attention_heads": 8,
+        "positional_encoding": "embedding",
+        "dropout_prob": 0.0,
+      }
     },
     "sentence_2_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+       "type": "final_pooler",
+       "embedding_dim": 1024,
+      },
+      "seq2seq_encoder": {
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 2,
+        "positional_encoding": "embedding",
+        "num_attention_heads": 8,
+        "dropout_prob": 0.0,
+      }
     },
     "passage_tdvae": {
          "x_size": 2048,
@@ -389,14 +403,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
-         "t_diff_max": 6,
-         "d_block_hidden_size": 128,
-         "decoder_hidden_size": 256,
+         "t_diff_max": 8,
+         "d_block_hidden_size": 320,
+         "decoder_hidden_size": 1024,
     },
     "sentence_autoencoder": {
         "input_dim": 2048,
         "embedding_dim": 64,
-        "hidden_dims":  [512, 256, 128],
+        "hidden_dims":  [1024, 512, 256, 128],
         "negative_slope": 0.1
     }
   },
