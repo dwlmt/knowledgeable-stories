@@ -24,9 +24,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "writing_prompts_lm": {
           "type": "writing_prompts_lm",
           "lazy": true,
-          "batch_size" : 2,
+          "batch_size" : 28,
             "max_sentence_grouping": 14,
-            "max_token_len": 420,
+            "max_token_len": 384,
         },
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
@@ -44,9 +44,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "cmu_movie_lm": {
             "type": "cmu_movie_lm",
             "lazy": true,
-            "batch_size" : 2,
+            "batch_size" : 28,
             "max_sentence_grouping": 14,
-            "max_token_len": 420,
+            "max_token_len": 384,
         },
         "cmu_movie_hierarchy": {
             "type": "cmu_movie_hierarchy",
@@ -56,9 +56,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "cmu_book_lm": {
             "type": "cmu_book_lm",
             "lazy": true,
-            "batch_size" : 2,
+            "batch_size" : 28,
             "max_sentence_grouping": 14,
-            "max_token_len": 420,
+            "max_token_len": 384,
         },
         "cmu_book_hierarchy": {
             "type": "cmu_book_hierarchy",
@@ -76,9 +76,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 2,
+           "batch_size" : 28,
             "max_sentence_grouping": 14,
-            "max_token_len": 420,
+            "max_token_len": 384,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
