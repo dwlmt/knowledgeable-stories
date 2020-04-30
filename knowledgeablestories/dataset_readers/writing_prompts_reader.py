@@ -167,7 +167,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
-        print(story_text, text_field_list)
+        # print(story_text, text_field_list)
 
         fields["passages"] = text_field_list
 
