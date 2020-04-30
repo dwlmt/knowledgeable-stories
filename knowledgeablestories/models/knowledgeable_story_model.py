@@ -366,8 +366,8 @@ class KnowledgeableStoriesModel(Model):
 
             # position_ids = torch.arange(argument_tokens.size(0), argument_tokens.size(1), dtype=torch.long,
             #                            device=argument_tokens.device)
-            print(argument_tokens)
-            print("Argument tokens size", argument_tokens.size())
+            # print(argument_tokens)
+            # print("Argument tokens size", argument_tokens.size())
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, attention_mask=lm_mask.to(argument_tokens.device),
                                                    labels=argument_tokens.to(argument_tokens.device))
 

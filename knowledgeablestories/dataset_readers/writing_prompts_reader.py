@@ -52,7 +52,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if
                            not s.isspace() and sum([c.isalnum() for c in s]) > 5]
-        split_sentences = ["<|endofsentence|>" + s + "<|endofsentence|>" for s in split_sentences]
+        split_sentences = [f"{s} <|endofsentence|>" for s in split_sentences]
         return split_sentences
 
     def _read(self, file_path: str) -> Iterator[Instance]:
