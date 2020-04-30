@@ -24,9 +24,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "type": "writing_prompts_lm",
                 "lazy": true,
                 "batch_size" : 2,
-            "max_sentence_grouping": 14,
-            "max_token_len": 420,
-
+                "max_sentence_grouping": 14,
+                "max_token_len": 384,
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
@@ -133,14 +132,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     },
     "passage_tdvae": {
          "x_size": 2048,
-         "input_size": 2048,
-         "belief_size": 2048,
-         "z_posterior_size": 2048,
+         "input_size": 1024,
+         "belief_size": 1024,
+         "z_posterior_size": 1024,
          "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
          "t_diff_max": 6,
-         "d_block_hidden_size": 512,
+         "d_block_hidden_size": 256,
          "decoder_hidden_size": 1024,
     },
     "sentence_autoencoder": {

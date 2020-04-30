@@ -127,6 +127,7 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
         text_field_list = convert_to_textfield(group_sentences, self._tokenizer, self._max_token_len,
                                                self._token_indexers)
+        print(group_sentences, text_field_list)
 
         fields["arguments"] = text_field_list
         fields["metadata"] = MetadataField(text_dict)
@@ -166,6 +167,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
+        print(story_text, text_field_list)
 
         fields["passages"] = text_field_list
 
