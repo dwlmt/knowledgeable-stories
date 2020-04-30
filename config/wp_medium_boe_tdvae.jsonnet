@@ -3,7 +3,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local PASSAGE_BASE_BATCH_SIZE = 2;
+local PASSAGE_BASE_BATCH_SIZE = 1;
 local LM_BASE_BATCH_SIZE = 1;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
 local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
@@ -23,15 +23,15 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
              "writing_prompts_lm": {
                 "type": "writing_prompts_lm",
                 "lazy": true,
-                "batch_size" : 28,
-            "max_sentence_grouping": 14,
-            "max_token_len": 384,
+                "batch_size" : 36,
+            "max_sentence_grouping": 36,
+            "max_token_len": 768,
 
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-                "batch_size" : 100,
+            "batch_size" : 200,
                 "slide" : 1.0,
             }
         },
@@ -109,7 +109,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
-         "t_diff_max": 6,
+         "t_diff_max": 8,
          "d_block_hidden_size": 128,
          "decoder_hidden_size": 256,
     },

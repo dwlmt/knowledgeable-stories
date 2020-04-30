@@ -25,7 +25,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "lazy": true,
                 "batch_size" : 36,
                 "max_sentence_grouping": 36,
-                "max_token_len": 1024,
+                "max_token_len": 768,
             },
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
