@@ -375,7 +375,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "type": "pytorch_transformer",
         "input_dim": 1024,
         "num_layers": 2,
-        "num_attention_heads": 8,
+        "num_attention_heads": 16,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
       }
@@ -391,7 +391,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "input_dim": 1024,
         "num_layers": 2,
         "positional_encoding": "embedding",
-        "num_attention_heads": 8,
+        "num_attention_heads": 16,
         "dropout_prob": 0.0,
       }
     },
