@@ -67,6 +67,7 @@ export EXP_ID="${EXP_NAME}_${SLURM_JOB_ID}_${CURRENT_TIME}"
 export SERIAL_DIR="${SCRATCH_HOME}/${EXP_ID}"
 export CACHE_DIR="${SCRATCH_HOME}/${EXP_ID}_cache"
 export ALLENNLP_CACHE_ROOT="${SCRATCH_HOME}/allennlp_cache/"
+export MODEL_ZIP=${CLUSTER_HOME}/${MODEL_PATH}
 
 if [ ! -v COPY_DATASET ]; then
   export DATASET_ROOT=${DATASET_SOURCE}
@@ -93,10 +94,10 @@ mkdir -p ${CACHE_DIR}
 echo "============"
 echo "ALLENNLP Task========"
 
-allennlp train --file-friendly-logging --include-package knowledgeablestories \
+allennlp fine-tune --file-friendly-logging --include-package knowledgeablestories \
   --serialization-dir ${SERIAL_DIR}/ \
-  --cache-directory ${CACHE_DIR} \
-  ${EXP_CONFIG}
+  --model-archive ${MODEL_ZIP}
+--config-file ${EXP_CONFIG}
 
 echo "============"
 echo "ALLENNLP Task finished"
