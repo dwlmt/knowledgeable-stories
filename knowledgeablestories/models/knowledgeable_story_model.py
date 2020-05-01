@@ -95,7 +95,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._passage_tdvae = passage_tdvae
 
-        self._tdvae_device = None
+        self._tdvae_device = tdvae_device
         if self._tdvae_device is not None:
             self._tdvae_device = torch.device(f'cuda:{lm_device}')
         if self._tdvae_device is not None:
