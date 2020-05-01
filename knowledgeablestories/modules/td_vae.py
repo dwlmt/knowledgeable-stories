@@ -430,7 +430,7 @@ class MultilayerLSTM(nn.Module, FromParams):
         super().__init__()
         self.cell = MultilayerLSTMCell(input_size, hidden_size, bias=bias, layers=layers,
                                        every_layer_input=every_layer_input, use_previous_higher=use_previous_higher)
-        self.add_module("lstmcell", MultilayerLSTMCell)
+        self.add_module("lstmcell", self.MultilayerLSTMCell)
 
     def forward(self, input_, reset=None):
         '''If reset is 1.0, the RNN state is reset AFTER that timestep's output is produced, otherwise if reset is 0.0,
