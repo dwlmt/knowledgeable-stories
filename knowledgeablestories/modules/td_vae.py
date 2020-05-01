@@ -66,7 +66,6 @@ class TDVAE(nn.Module, FromParams):
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
-        self.add_module("b_belief_rnn", self.b_belief_rnn)
 
         # Multilayer state model is used. Sampling is done by sampling higher layers first.
         self.z_posterior_belief = nn.ModuleList(
@@ -91,7 +90,7 @@ class TDVAE(nn.Module, FromParams):
 
     def forward(self, x, mask=None):
 
-        # x = torch.where(torch.isnan(x), torch.zeros_like(x), x)
+        self.move_to_device(x)
 
         lengthes = torch.sum(mask.long(), dim=-1)
         max_length, max_indices = torch.max(lengthes, dim=0)
@@ -125,6 +124,13 @@ class TDVAE(nn.Module, FromParams):
 
         return (x, t2, qs_z1_z2_b1_mu, qs_z1_z2_b1_logvar, pb_z1_b1_mu, pb_z1_b1_logvar, qb_z2_b2_mu, qb_z2_b2_logvar,
                 qb_z2_b2, pt_z2_z1_mu, pt_z2_z1_logvar, pd_x2_z2)
+
+    def move_to_device(self, x):
+        self.b_belief_rnn = self.b_belief_rnn
+        self.z_posterior_belief = self.z_posterior_belief.to(x.device)
+        self.z1_z2_b1_inference = self.z1_z2_b1_inference.to(x.device)
+        self.z2_z1_prediction = self.z2_z1_prediction.to(x.device)
+        self.x_z_decoder = self.x_z_decoder.to(x.device)
 
     def _z_prediction(self, qb_z2_b2s, qs_z1_z2_b1):
         ''' Predicts forwards to z2 from z1.
@@ -212,6 +218,8 @@ class TDVAE(nn.Module, FromParams):
     def rollout_posteriors_sequence(self, x, n: int = None, do_sample: bool = False):
         ''' Calculate the rollout for all the ns in the sequence.
         '''
+        self.move_to_device(x)
+
         if n == None:
             n = self.t_diff_max
 
@@ -398,18 +406,20 @@ class MultilayerLSTMCell(nn.Module):
                 input_sizes[i] += hidden_size
         self.lstm_cells = nn.ModuleList([nn.LSTMCell(input_sizes[i], hidden_size, bias=bias) for i in range(layers)])
 
-    def forward(self, input_, hx=None):
+    def forward(self, x, hx=None):
         '''
         Input: input, [(h_0, c_0), ..., (h_L, c_L)]
         Output: [(h_0, c_0), ..., (h_L, c_L)]
         '''
+        self.lstm_cells = self.lstm_cells.to(x.device)
+
         if hx is None:
             hx = [None] * self.layers
         outputs = []
-        recent = input_
+        recent = x
         for layer in range(self.layers):
             if layer > 0 and self.every_layer_input:
-                recent = torch.cat([recent, input_], dim=1)
+                recent = torch.cat([recent, x], dim=1)
             if layer < self.layers - 1 and self.use_previous_higher:
                 if hx[layer + 1] is None:
                     prev = recent.new_zeros([recent.size(0), self.hidden_size])
@@ -430,7 +440,6 @@ class MultilayerLSTM(nn.Module, FromParams):
         super().__init__()
         self.cell = MultilayerLSTMCell(input_size, hidden_size, bias=bias, layers=layers,
                                        every_layer_input=every_layer_input, use_previous_higher=use_previous_higher)
-        self.add_module("cell", self.cell)
 
     def forward(self, input_, reset=None):
         '''If reset is 1.0, the RNN state is reset AFTER that timestep's output is produced, otherwise if reset is 0.0,
