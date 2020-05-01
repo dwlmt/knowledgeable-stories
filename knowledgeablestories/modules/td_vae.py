@@ -67,6 +67,7 @@ class TDVAE(nn.Module, FromParams):
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
+        self.register_parameter("belief", self.b_belief_rnn)
 
         # Multilayer state model is used. Sampling is done by sampling higher layers first.
         self.z_posterior_belief = nn.ModuleList(

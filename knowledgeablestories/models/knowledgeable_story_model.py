@@ -181,15 +181,6 @@ class KnowledgeableStoriesModel(Model):
     def move_tdvae_to_gpu_if_required(self):
         if self._tdvae_device is not None:
             self._passage_tdvae = self._passage_tdvae.to(self._tdvae_device)
-            self._passage_tdvae.b_belief_rnn = self._passage_tdvae.b_belief_rnn.to(self._tdvae_device)
-            self._passage_tdvae.b_belief_rnn.cell = self._passage_tdvae.b_belief_rnn.cell.to(
-                self._tdvae_device)
-            self._passage_tdvae.b_belief_rnn.cell.lstm_cells = self._passage_tdvae.b_belief_rnn.cell.lstm_cells.to(
-                self._tdvae_device)
-            self._passage_tdvae.z_posterior_belief = self._passage_tdvae.z_posterior_belief.to(self._tdvae_device)
-            self._passage_tdvae.z1_z2_b1_inference = self._passage_tdvae.z1_z2_b1_inference.to(self._tdvae_device)
-            self._passage_tdvae.z2_z1_prediction = self._passage_tdvae.z2_z1_prediction.to(self._tdvae_device)
-            self._passage_tdvae.x_z_decoder = self._passage_tdvae.x_z_decoder.to(self._tdvae_device)
 
     def init_lm_model(self, lm_name: str, embedder_vocab_size: int, override: bool = False):
 
