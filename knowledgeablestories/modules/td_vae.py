@@ -64,10 +64,9 @@ class TDVAE(nn.Module, FromParams):
         self.t_diff_max = t_diff_max
         self.min_length = min_length
 
-
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
-        self.register_parameter("belief", self.b_belief_rnn)
+        self.register_module("belief", self.b_belief_rnn)
 
         # Multilayer state model is used. Sampling is done by sampling higher layers first.
         self.z_posterior_belief = nn.ModuleList(
@@ -431,6 +430,7 @@ class MultilayerLSTM(nn.Module, FromParams):
         super().__init__()
         self.cell = MultilayerLSTMCell(input_size, hidden_size, bias=bias, layers=layers,
                                        every_layer_input=every_layer_input, use_previous_higher=use_previous_higher)
+        self.add_module("lstmcell", MultilayerLSTMCell)
 
     def forward(self, input_, reset=None):
         '''If reset is 1.0, the RNN state is reset AFTER that timestep's output is produced, otherwise if reset is 0.0,
