@@ -101,6 +101,8 @@ class KnowledgeableStoriesModel(Model):
         if self._tdvae_device is not None:
             self._passage_tdvae = self._passage_tdvae.to(self._tdvae_device)
             self._passage_tdvae.b_belief_rnn = self._passage_tdvae.b_belief_rnn.to(self._tdvae_device)
+            self._passage_tdvae.b_belief_rnn.lstm_cells = self._passage_tdvae.b_belief_rnn.lstm_cells.to(
+                self._tdvae_device)
             self._passage_tdvae.z_posterior_belief = self._passage_tdvae.z_posterior_belief.to(self._tdvae_device)
             self._passage_tdvae.z1_z2_b1_inference = self._passage_tdvae.z1_z2_b1_inference.to(self._tdvae_device)
             self._passage_tdvae.z2_z1_prediction = self._passage_tdvae.z2_z1_prediction.to(self._tdvae_device)
