@@ -39,6 +39,7 @@ class KnowledgeableStoriesModel(Model):
                  fusion_dense: FeedForward = None,
                  passage_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
+                 tdvae_device: int = None,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.0,
                  sent_offsets: List[int] = [-1, 1],
@@ -93,6 +94,13 @@ class KnowledgeableStoriesModel(Model):
         self._passage_dense = passage_dense
 
         self._passage_tdvae = passage_tdvae
+
+        self._tdvae_device = None
+        if self._tdvae_device is not None:
+            self._tdvae_device = torch.device(f'cuda:{lm_device}')
+        if self._tdvae_device is not None:
+            self._passage_tdvae = self._passage_tdvae.device
+
         self._sentence_detach = sentence_detach
 
         self._sentence_autoencoder = sentence_autoencoder
@@ -318,12 +326,26 @@ class KnowledgeableStoriesModel(Model):
                     # encoded_sentences = scaler(encoded_sentences)
                     encoded_sentences = torch.sigmoid(encoded_sentences)
 
+                    orig_device = None
+
+                    if self._tdvae_device:
+                        encoded_sentences = encoded_sentences.to(self._tdvae_device)
+                        passage_mask = passage_mask.to(self._tdvae_device)
+
                     tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
 
                     if tdvae_return is not None:
 
                         total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
                             tdvae_return)
+
+                        if orig_device:
+                            encoded_sentences = encoded_sentences.to(orig_device)
+                            passage_mask = passage_mask.to(orig_device)
+                            total_loss = total_loss.to(orig_device)
+                            kl_div_qs_pb = kl_div_qs_pb.to(orig_device)
+                            bce_diff = bce_diff.to(orig_device)
+                            kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
 
                         loss += total_loss * self._loss_weights["tdvae_loss"]
 
