@@ -325,13 +325,11 @@ class KnowledgeableStoriesModel(Model):
 
                 if self._passage_tdvae is not None:
 
-                    # scaler = MinMaxScalerPytorch()
-                    # encoded_sentences = scaler(encoded_sentences)
                     encoded_sentences = torch.sigmoid(encoded_sentences)
 
                     orig_device = None
-
                     if self._tdvae_device:
+                        orig_device = encoded_sentences.device
                         encoded_sentences = encoded_sentences.to(self._tdvae_device)
                         passage_mask = passage_mask.to(self._tdvae_device)
 
