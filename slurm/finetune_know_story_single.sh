@@ -96,8 +96,8 @@ echo "ALLENNLP Task========"
 
 allennlp fine-tune --file-friendly-logging --include-package knowledgeablestories \
   --serialization-dir ${SERIAL_DIR}/ \
-  --model-archive ${MODEL_ZIP}
---config-file ${EXP_CONFIG}
+  --model-archive ${MODEL_ZIP} \
+  --config-file ${EXP_CONFIG}
 
 echo "============"
 echo "ALLENNLP Task finished"
