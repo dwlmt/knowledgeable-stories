@@ -391,6 +391,18 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+        "roc_lm": {},
+        "roc_hierarchy": {},
+        "cmu_book_lm": {},
+        "cmu_book_hierarchy": {},
+        "cmu_movie_lm": {},
+        "cmu_movie_hierarchy": {},
+        "atomic_lm": {},
+        "swag_know_lm": {},
+        "cbt_lm": {},
+        "cbt_hierarchy": {},
+        "multifile_lm": {},
+        "multifile_hierarchy": {},
     },
     "loss_weights" : {
         "lm_loss": 1.0,

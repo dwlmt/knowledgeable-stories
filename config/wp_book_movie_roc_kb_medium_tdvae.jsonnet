@@ -231,6 +231,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+        "roc_lm": {},
+        "roc_hierarchy": {},
+        "cmu_book_lm": {},
+        "cmu_book_hierarchy": {},
+        "cmu_movie_lm": {},
+        "cmu_movie_hierarchy": {},
+        "atomic": {},
+        "swag_know_lm": {},
     },
     "loss_weights" : {
         "lm_loss": 1.0,
@@ -247,7 +255,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 2,
+        "num_layers": 3,
         "num_attention_heads": 16,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
@@ -262,7 +270,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 2,
+        "num_layers": 3,
         "positional_encoding": "embedding",
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
