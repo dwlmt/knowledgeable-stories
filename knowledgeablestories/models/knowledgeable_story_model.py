@@ -213,7 +213,9 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        # logger.info(metadata)
+        print("Passages Output", passages_relative_positions, passages_sentiment)
+        print("Passages Output", passages["tokens"].size(), passages_relative_positions.size(),
+              passages_sentiment.size())
 
         output = {}
         dataset_name = metadata[0]["dataset"]
