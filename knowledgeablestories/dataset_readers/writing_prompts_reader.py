@@ -89,7 +89,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                         row["story_text"] = sentence_batch
                         row["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
                         row["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
-                        row["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)) for t in
+                        row["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)["compound"]) for t in
                                             sentence_batch]
 
                         yield self.text_to_instance(row)
