@@ -83,9 +83,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
-"lm_device": 1,
+    "lm_device": 1,
     "label_smoothing": 0.0,
-    "sentence_detach": true,
+    "lm_finetune_final_layer_only": true,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
@@ -98,31 +98,24 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "num_layers": 4,
       "dropout": 0.0,
     },
-    "sentence_2_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
-    },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 2048,
+      "input_size": 1024,
       "hidden_size": 1024,
       "num_layers": 5,
       "dropout": 0.0,
     },
     "passage_dense": {
-        "input_dim": 2048,
+        "input_dim": 1024,
         "num_layers": 1,
         "hidden_dims": 1024,
         "activations": "linear",
         "dropout": 0.0
     },
     "sentence_autoencoder": {
-        "input_dim": 2048,
+        "input_dim": 1048,
         "embedding_dim": 64,
-        "hidden_dims":  [1024, 512, 256, 128],
+        "hidden_dims":  [ 512, 256, 128],
         "negative_slope": 0.1
     },
     "passage_autoencoder": {
@@ -132,7 +125,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "negative_slope": 0.1
     },
     "fusion_dense": {
-        "input_dim": 2048,
+        "input_dim": 1024,
         "num_layers": 1,
         "hidden_dims": 1024,
         "activations": "linear",
