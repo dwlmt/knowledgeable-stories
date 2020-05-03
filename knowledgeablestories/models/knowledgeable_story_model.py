@@ -10,6 +10,7 @@ from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from torch.nn import CrossEntropyLoss
+from torch.nn.functional import l1_loss
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -67,7 +68,10 @@ class KnowledgeableStoriesModel(Model):
                             "fusion_lm_loss": 1.0,
                             "tdvae_loss": 1.0,
                             "sentence_autoencoder": 1.0,
-                            "passage_autoencoder": 1.0}
+                            "passage_autoencoder": 1.0,
+                            "sentiment_loss": 1.0,
+                            "position_loss": 1.0,
+                            }
 
         if metric_config is None:
             metric_config = {"training_metrics": False, "lm_accuracy_top_k": [1, 5, 20],
@@ -169,6 +173,8 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["tdvae_kl_loss"] = Average()
             self._metrics["tdvae_recon_loss"] = Average()
             self._metrics["tdvae_predict_loss"] = Average()
+            self._metrics["sentiment_loss"] = Average()
+            self._metrics["position_loss"] = Average()
 
             self._metrics["passage_disc_logits_mean"] = Average()
             self._metrics["passage_disc_logits_std"] = Average()
@@ -217,11 +223,6 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        if passages is not None:
-            print("Passages Output", passages_relative_positions, passages_sentiment)
-            print("Passages Output", passages["tokens"].size(), passages_relative_positions.size(),
-                  passages_sentiment.size())
-
         output = {}
         dataset_name = metadata[0]["dataset"]
 
@@ -263,7 +264,17 @@ class KnowledgeableStoriesModel(Model):
 
                     encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
-                # loss = self.fusion_loss_if_required(lm_mask, lm_output, loss, encoded_sentences)
+                if self._position_dense is not None and "position_loss" in self._loss_weights:
+                    position_pred = self._position_dense(encoded_sentences)
+                    pos_loss = l1_loss(position_pred, passages_relative_positions, reduction="mean")
+                    loss += pos_loss
+                    self._metrics["position_loss"](pos_loss)
+
+                if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
+                    sentiment_pred = self._sentiment_dense(encoded_sentences)
+                    sent_loss = l1_loss(sentiment_pred, passages_sentiment, reduction="mean")
+                    loss += sent_loss
+                    self._metrics["sentiment_loss"](sent_loss)
 
                 if self._sentence_detach:
                     encoded_sentences = encoded_sentences.detach()
