@@ -12,6 +12,7 @@ from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.models import Model
 from allennlp.predictors.predictor import Predictor
 from overrides import overrides
+from scipy.stats import wasserstein_distance
 from torch import nn
 from torch.distributions import Categorical
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
@@ -325,13 +326,16 @@ class KnowledgeablePredictor(Predictor):
                         kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
                         kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
 
+                    wasserstein = wasserstein_distance(z1_layer.numpy(), z2_layer.numpy())
+
                     res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                     res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
                     res_dict[f"tdvae_suspense_{k}_cosine_dist"] = cosine.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z2_from_z1"] = kl_z2_from_z1.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z1_from_z2"] = kl_z1_from_z2.item()
                     res_dict[f"tdvae_suspense_{k}_js_z"] = ((kl_z2_from_z1.item() + kl_z1_from_z2.item() / 2.0)) ** (
-                                1 / 2)
+                            1 / 2)
+                    res_dict[f"tdvae_suspense_{k}_wass_z"] = wasserstein
 
                 if i < len(sentence_batch):
                     sentence_batch[j]["prediction_metrics"][f"{j}"] = res_dict
