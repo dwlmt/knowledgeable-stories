@@ -752,15 +752,16 @@ class KnowledgeableStoriesModel(Model):
 
                 orig_device = None
                 if self._lm_device is not None:
-                    orig_device = arguments.device
-                    arguments = arguments.to(self._lm_device)
-                    neg_argument = neg_argument.to(self._lm_device)
+                    orig_device = arguments_token.device
+                    arguments_token = arguments_token.to(self._lm_device)
+                    negative_arguments_tokens = negative_arguments_tokens.to(self._lm_device)
                     self._lm_model = self._lm_model.to(self._lm_device)
                 else:
-                    self._lm_model = self._lm_model.to(arguments.device)
+                    self._lm_model = self._lm_model.to(arguments_token.device)
 
                 lm_mask = self.create_lm_mask(argument)
-                arg_lm_loss, arg_lm_logits, _ = self._lm_model(argument, attention_mask=lm_mask.to(argument.device),
+                arg_lm_loss, arg_lm_logits, _ = self._lm_model(arguments_token,
+                                                               attention_mask=lm_mask.to(argument.device),
                                                                labels=argument)
 
                 if orig_device is not None:
@@ -769,7 +770,7 @@ class KnowledgeableStoriesModel(Model):
                 corr_lm_loss_perplexity = float(torch.exp(arg_lm_loss))
 
                 lm_mask = self.create_lm_mask(neg_argument)
-                neg_lm_loss, neg_lm_logits, _ = self._lm_model(neg_argument,
+                neg_lm_loss, neg_lm_logits, _ = self._lm_model(negative_arguments_tokens,
                                                                attention_mask=lm_mask.to(neg_argument.device),
                                                                labels=neg_argument)
                 neg_lm_loss_perplexity = float(torch.exp(neg_lm_loss))
