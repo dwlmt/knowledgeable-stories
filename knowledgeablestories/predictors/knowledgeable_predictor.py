@@ -330,6 +330,8 @@ class KnowledgeablePredictor(Predictor):
                     res_dict[f"tdvae_suspense_{k}_cosine_dist"] = cosine.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z2_from_z1"] = kl_z2_from_z1.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z1_from_z2"] = kl_z1_from_z2.item()
+                    res_dict[f"tdvae_suspense_{k}_js_z"] = ((kl_z2_from_z1.item() + kl_z1_from_z2.item() / 2.0)) ** (
+                                1 / 2)
 
                 if i < len(sentence_batch):
                     sentence_batch[j]["prediction_metrics"][f"{j}"] = res_dict
