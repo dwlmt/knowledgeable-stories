@@ -176,7 +176,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         # print(story_text, text_field_list)
 
         fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
-        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["passages_sentiment"]))
+        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["sentiment"]))
 
         fields["passages"] = text_field_list
 
