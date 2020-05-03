@@ -427,7 +427,7 @@ class KnowledgeableStoriesModel(Model):
 
                 with torch.no_grad():
 
-                    self._negative_arguments_evaluation_if_required(dataset_name, arguments, negative_arguments)
+                    # self._negative_arguments_evaluation_if_required(dataset_name, arguments, negative_arguments)
 
                     for k in self._metric_config["lm_accuracy_top_k"]:
                         self._metrics[f"{dataset_name}_accuracy_{k}"](lm_logits, argument_tokens)
