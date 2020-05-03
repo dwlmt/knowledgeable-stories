@@ -39,6 +39,7 @@ class KnowledgeableStoriesModel(Model):
                  fusion_dense: FeedForward = None,
                  passage_dense: FeedForward = None,
                  sentiment_dense: FeedForward = None,
+                 position_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
                  dropout: float = 0.0,
@@ -102,6 +103,9 @@ class KnowledgeableStoriesModel(Model):
         self.move_tdvae_to_gpu_if_required()
 
         self._sentence_detach = sentence_detach
+
+        self._sentiment_dense = sentiment_dense
+        self._position_dense = position_dense
 
         self._sentence_autoencoder = sentence_autoencoder
         self._passage_autoencoder = passage_autoencoder
@@ -213,9 +217,10 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        print("Passages Output", passages_relative_positions, passages_sentiment)
-        print("Passages Output", passages["tokens"].size(), passages_relative_positions.size(),
-              passages_sentiment.size())
+        if passages is not None:
+            print("Passages Output", passages_relative_positions, passages_sentiment)
+            print("Passages Output", passages["tokens"].size(), passages_relative_positions.size(),
+                  passages_sentiment.size())
 
         output = {}
         dataset_name = metadata[0]["dataset"]
