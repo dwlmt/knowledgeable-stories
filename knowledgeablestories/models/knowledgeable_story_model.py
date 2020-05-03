@@ -774,9 +774,9 @@ class KnowledgeableStoriesModel(Model):
 
                 orig_device = None
                 if self._lm_device is not None:
-                    orig_device = arguments_token.device
-                    arguments_token = arguments_token.to(self._lm_device)
-                    negative_arguments_tokens = negative_arguments_tokens.to(self._lm_device)
+                    orig_device = argument.device
+                    argument = argument.to(self._lm_device)
+                    neg_argument = neg_argument.to(self._lm_device)
                     self._lm_model = self._lm_model.to(self._lm_device)
                 else:
                     self._lm_model = self._lm_model.to(arguments_token.device)
