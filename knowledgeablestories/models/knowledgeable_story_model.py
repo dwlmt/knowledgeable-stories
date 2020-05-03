@@ -38,6 +38,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_autoencoder: DenseVAE = None,
                  fusion_dense: FeedForward = None,
                  passage_dense: FeedForward = None,
+                 sentiment_dense: FeedForward = None,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
                  dropout: float = 0.0,
@@ -201,6 +202,8 @@ class KnowledgeableStoriesModel(Model):
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
+                passages_relative_positions: torch.Tensor = None,
+                passages_sentiment: torch.Tensor = None,
                 premises: Dict[str, torch.Tensor] = None,
                 conclusions: Dict[str, torch.Tensor] = None,
                 negative_conclusions: Dict[str, torch.Tensor] = None,
@@ -303,10 +306,10 @@ class KnowledgeableStoriesModel(Model):
                         loss += passage_disc_loss
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                        '''
 
                         loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
                                                             passages_encoded)
-                        '''
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
