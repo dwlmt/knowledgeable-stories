@@ -85,6 +85,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_name": "gpt2-medium",
     "lm_device": 1,
     "lm_finetune_final_layer_only": false,
+    "sentence_detach": true
     "sent_offsets": [-1, 1],
     "sent_scales": [10.0, 10.0],
     "label_smoothing": 0.0,
