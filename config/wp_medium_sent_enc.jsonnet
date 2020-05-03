@@ -83,8 +83,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
-"lm_device": 1,
-    "sentence_detach": true,
+    "lm_device": 1,
+    "lm_finetune_final_layer_only": false,
+    "sent_offsets": [-1, 1],
+    "sent_scales": [10.0, 10.0],
     "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
@@ -92,18 +94,34 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "writing_prompts_hierarchy": {},
     },
     "sentence_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+        "type": "final_pooler",
+        "embedding_dim": 1024
+      },
+      "seq2seq_encoder": {
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 3,
+        "num_attention_heads": 16,
+        "positional_encoding": "embedding",
+        "dropout_prob": 0.0,
+      }
     },
     "sentence_2_seq2vec_encoder": {
-      "type": "lstm",
-      "input_size": 1024,
-      "hidden_size": 1024,
-      "num_layers": 4,
-      "dropout": 0.0,
+      "type": "seq2seq_pooler",
+      "pooler": {
+       "type": "final_pooler",
+       "embedding_dim": 1024,
+      },
+      "seq2seq_encoder": {
+        "type": "pytorch_transformer",
+        "input_dim": 1024,
+        "num_layers": 3,
+        "positional_encoding": "embedding",
+        "num_attention_heads": 16,
+        "dropout_prob": 0.0,
+      }
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
