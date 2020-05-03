@@ -1,13 +1,15 @@
 from typing import Dict, Iterator
 
 import more_itertools
+import numpy
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import MetadataField
+from allennlp.data.fields import MetadataField, ArrayField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, is_english, \
@@ -34,6 +36,8 @@ class WritingPromptsAbstractReader(DatasetReader):
 
         self._sentence_splitter = sentence_splitter
 
+        self._vader_analyzer = SentimentIntensityAnalyzer()
+
         self._batch_size = batch_size
         self._slide = slide
         self._fusion = fusion
@@ -55,6 +59,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         split_sentences = [f"{s} <|endofsentence|>" for s in split_sentences]
         return split_sentences
 
+
     def _read(self, file_path: str) -> Iterator[Instance]:
 
         with open(file_path, mode='r', encoding='utf-8', errors='ignore') as text_file:
@@ -72,8 +77,8 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["batch_row_num"] = batch_row_num
 
                     text_sentences = self.convert_text_to_sentences(line)
-                    abs_positions = [(r + 1) for r in range(len(text_sentences))]
-                    relative_positions = [p / float(len(text_sentences)) for p in abs_positions]
+                    absolute_positions = [(r + 1) for r in range(len(text_sentences))]
+                    relative_positions = [p / float(len(text_sentences)) for p in absolute_positions]
 
                     for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
                                                                                     step=int(round(
@@ -82,8 +87,10 @@ class WritingPromptsAbstractReader(DatasetReader):
                                                                                             1))),
                                                                                     fillvalue="<|endoftext|>"))):
                         row["story_text"] = sentence_batch
-                        row["abs_positions"] = abs_positions[i: i + len(sentence_batch)]
-                        row["rel_positions"] = relative_positions[i: i + len(sentence_batch)]
+                        row["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
+                        row["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
+                        row["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)) for t in
+                                            sentence_batch]
 
                         yield self.text_to_instance(row)
                         batch_row_num += 1
@@ -167,6 +174,9 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
         # print(story_text, text_field_list)
+
+        fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
+        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["passages_sentiment"]))
 
         fields["passages"] = text_field_list
 
