@@ -3,7 +3,7 @@ from typing import Dict, Iterator
 import more_itertools
 import numpy
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import MetadataField, ArrayField, ListField
+from allennlp.data.fields import MetadataField, ArrayField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
@@ -176,9 +176,9 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         fields["passages"] = text_field_list
         # print(story_text, text_field_list)
 
-        fields["passages_relative_positions"] = ListField([ArrayField(numpy.array(text_dict["relative_positions"]))])
+        fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
 
-        fields["passages_sentiment"] = ListField([ArrayField(numpy.array(text_dict["sentiment"]))])
+        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["sentiment"]))
 
         fields["metadata"] = MetadataField(text_dict)
 

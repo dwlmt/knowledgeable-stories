@@ -269,17 +269,10 @@ class KnowledgeableStoriesModel(Model):
 
                     encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
 
-                if self._position_dense is not None and "position_loss" in self._loss_weights:
-                    position_pred = self._position_dense(encoded_sentences)
-                    pos_loss = l1_loss(position_pred, passages_relative_positions, reduction="mean")
-                    loss += pos_loss
-                    self._metrics["position_loss"](pos_loss)
+                loss = self.position_prediction_if_required(encoded_sentences, passage_mask,
+                                                            passages_relative_positions, loss)
 
-                if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
-                    sentiment_pred = self._sentiment_dense(encoded_sentences)
-                    sent_loss = l1_loss(sentiment_pred, passages_sentiment, reduction="mean")
-                    loss += sent_loss
-                    self._metrics["sentiment_loss"](sent_loss)
+                loss = self.sentiment_prediction_if_required(encoded_sentences, passage_mask, passages_sentiment, loss)
 
                 if self._sentence_detach:
                     encoded_sentences = encoded_sentences.detach()
@@ -300,7 +293,6 @@ class KnowledgeableStoriesModel(Model):
                         encoded_sentences = self._passage_dense(encoded_sentences)
 
                     if "passage_disc_loss" in self._loss_weights:
-
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         encoded_sentences,
                                                                                         mask=passage_mask,
@@ -450,6 +442,26 @@ class KnowledgeableStoriesModel(Model):
         output["loss"] = loss
 
         return output
+
+    def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
+        if self._position_dense is not None and "position_loss" in self._loss_weights:
+            masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
+            masked_predictions = passages_relative_positions[passage_mask.byte()]
+            position_pred = self._position_dense(masked_encoded_sentences)
+            pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
+            loss += pos_loss
+            self._metrics["position_loss"](pos_loss)
+        return loss
+
+    def sentiment_prediction_if_required(self, encoded_sentences, passage_mask, passages_sentiment, loss):
+        if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
+            masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
+            masked_predictions = passages_sentiment[passage_mask.byte()]
+            sentiment_pred = self._sentiment_dense(masked_encoded_sentences)
+            sent_loss = l1_loss(sentiment_pred, masked_predictions, reduction="mean")
+            loss += sent_loss
+            self._metrics["sentiment_loss"](sent_loss)
+        return loss
 
     def fusion_loss_if_required(self, lm_mask, lm_output, labels, loss, passages_encoded):
         if "fusion_lm_loss" in self._loss_weights and self._fusion_dense is not None:
