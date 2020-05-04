@@ -6,7 +6,7 @@ from allennlp.data import Vocabulary
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
+from allennlp.nn.util import get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from torch.nn import CrossEntropyLoss
@@ -223,7 +223,7 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
-        print(metadata)
+        logger.info(metadata)
 
         output = {}
         dataset_name = metadata[0]["dataset"]

@@ -182,6 +182,6 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
 
         fields["metadata"] = MetadataField(text_dict)
 
-        print(fields)
+        logger.info(fields)
 
         return Instance(fields)
