@@ -101,6 +101,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "tdvae_loss": 1.0,
         "sentence_disc_loss": 1.0,
         "sentence_autoencoder": 1.0,
+        "position_loss": 1.0,
+        "sentiment_loss": 1.0,
     },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
