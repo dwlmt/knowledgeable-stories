@@ -225,7 +225,8 @@ class KnowledgeableStoriesModel(Model):
 
         logger.info(metadata)
         if passages is not None:
-            logger.info("Passages ", passages.size(), passages_sentiment.size(), passages_relative_positions.size())
+            logger.info("Passages ", passages["tokens"].size(), passages_sentiment.size(),
+                        passages_relative_positions.size())
 
         output = {}
         dataset_name = metadata[0]["dataset"]
