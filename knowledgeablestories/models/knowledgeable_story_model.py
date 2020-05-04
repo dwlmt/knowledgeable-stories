@@ -223,6 +223,8 @@ class KnowledgeableStoriesModel(Model):
                 dataset_index: int = None,
                 ) -> Dict[str, torch.Tensor]:
 
+        print(metadata)
+
         output = {}
         dataset_name = metadata[0]["dataset"]
 
