@@ -448,7 +448,7 @@ class KnowledgeableStoriesModel(Model):
             masked_encoded_sentences = encoded_sentences[passage_mask.byte()[:, : passages_relative_positions.size(-1)]]
             masked_predictions = passages_relative_positions[
                 passage_mask.byte()[:, : passages_relative_positions.size(-1)]]
-            position_pred = self._position_dense(masked_encoded_sentences)
+            position_pred = torch.sigmoid(self._position_dense(masked_encoded_sentences))
             pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
@@ -458,7 +458,7 @@ class KnowledgeableStoriesModel(Model):
         if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
             masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
             masked_predictions = passages_sentiment[passage_mask.byte()]
-            sentiment_pred = self._sentiment_dense(masked_encoded_sentences)
+            sentiment_pred = torch.tanh(self._sentiment_dense(masked_encoded_sentences))
             sent_loss = l1_loss(sentiment_pred, masked_predictions, reduction="mean")
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
