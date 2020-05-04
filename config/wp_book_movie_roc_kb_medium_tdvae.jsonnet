@@ -237,7 +237,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "cmu_book_hierarchy": {},
         "cmu_movie_lm": {},
         "cmu_movie_hierarchy": {},
-        "atomic": {},
+        "atomic_lm": {},
         "swag_know_lm": {},
     },
     "loss_weights" : {
