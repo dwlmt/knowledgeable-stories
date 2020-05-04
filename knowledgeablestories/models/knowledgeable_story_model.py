@@ -440,9 +440,9 @@ class KnowledgeableStoriesModel(Model):
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights:
-            masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
+            masked_encoded_sentences = encoded_sentences[passage_mask.bool()()]
             masked_predictions = passages_relative_positions[
-                passage_mask.byte()[:, : passages_relative_positions.size(-1)]]
+                passage_mask.bool()()[:, : passages_relative_positions.size(-1)]]
             position_pred = torch.sigmoid(self._position_dense(masked_encoded_sentences))
             pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
@@ -451,8 +451,8 @@ class KnowledgeableStoriesModel(Model):
 
     def sentiment_prediction_if_required(self, encoded_sentences, passage_mask, passages_sentiment, loss):
         if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
-            masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
-            masked_predictions = passages_sentiment[passage_mask.byte()]
+            masked_encoded_sentences = encoded_sentences[passage_mask.bool()()]
+            masked_predictions = passages_sentiment[passage_mask.bool()()]
             sentiment_pred = torch.tanh(self._sentiment_dense(masked_encoded_sentences))
             sent_loss = l1_loss(sentiment_pred, masked_predictions, reduction="mean")
             loss += sent_loss
