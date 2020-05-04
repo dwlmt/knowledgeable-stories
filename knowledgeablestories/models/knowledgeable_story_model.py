@@ -445,8 +445,9 @@ class KnowledgeableStoriesModel(Model):
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights:
-            masked_encoded_sentences = encoded_sentences[passage_mask.byte()]
-            masked_predictions = passages_relative_positions[passage_mask.byte()]
+            masked_encoded_sentences = encoded_sentences[passage_mask.byte()[:, : passages_relative_positions.size(-1)]]
+            masked_predictions = passages_relative_positions[
+                passage_mask.byte()[:, : passages_relative_positions.size(-1)]]
             position_pred = self._position_dense(masked_encoded_sentences)
             pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
