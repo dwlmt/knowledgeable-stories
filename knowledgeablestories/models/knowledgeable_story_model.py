@@ -440,9 +440,9 @@ class KnowledgeableStoriesModel(Model):
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights:
-            masked_encoded_sentences = encoded_sentences[passage_mask.bool()()]
+            masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
-                passage_mask.bool()()[:, : passages_relative_positions.size(-1)]]
+                passage_mask.bool()[:, : passages_relative_positions.size(-1)]]
             position_pred = torch.sigmoid(self._position_dense(masked_encoded_sentences))
             pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
@@ -451,8 +451,8 @@ class KnowledgeableStoriesModel(Model):
 
     def sentiment_prediction_if_required(self, encoded_sentences, passage_mask, passages_sentiment, loss):
         if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
-            masked_encoded_sentences = encoded_sentences[passage_mask.bool()()]
-            masked_predictions = passages_sentiment[passage_mask.bool()()]
+            masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
+            masked_predictions = passages_sentiment[passage_mask.bool()]
             sentiment_pred = torch.tanh(self._sentiment_dense(masked_encoded_sentences))
             sent_loss = l1_loss(sentiment_pred, masked_predictions, reduction="mean")
             loss += sent_loss
@@ -642,7 +642,7 @@ class KnowledgeableStoriesModel(Model):
             text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
             for id in END_OF_TEXT_TOKEN_IDS:
                 text_mask += (text_tokens == id)
-            text_mask = (text_mask < 1).bool()
+            text_mask = (text_mask < 1).bool()()()
             text_mask = text_mask.to(text_tokens.device)
             return text_mask
 
@@ -680,16 +680,16 @@ class KnowledgeableStoriesModel(Model):
         zero_mask = logits == 0.0
 
         # Mask out the same sentence.
-        source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
+        source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool()(),
                                  device=source_encoded.device)
         # Zero out the vector diagonal as this will always be the highest dot product.
         if exclude_self:
-            eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
+            eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool()(), device=source_encoded.device)
             source_mask.masked_fill_(eye, 0)
             source_mask.masked_fill_(zero_mask, 0)
         source_mask *= zero_mask
 
-        source_mask = source_mask.bool()
+        source_mask = source_mask.bool()()()
 
         target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
                                                       label_smoothing=label_smoothing, blank_mask=zero_mask).to(
