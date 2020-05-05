@@ -2,13 +2,15 @@ import csv
 from typing import Dict, Iterator
 
 import more_itertools
+import numpy
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import MetadataField
+from allennlp.data.fields import MetadataField, ArrayField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
@@ -27,6 +29,8 @@ class CmuAbstractBookReader(DatasetReader):
                  slide: float = 0.5,
                  ) -> None:
         super().__init__(lazy=lazy)
+
+        self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._tokenizer._tokenizer.pad_id = 0
@@ -69,6 +73,9 @@ class CmuAbstractBookReader(DatasetReader):
 
                 text_sentences = self.convert_text_to_sentences(line["story_text"])
 
+                absolute_positions = [(r + 1) for r in range(len(text_sentences))]
+                relative_positions = [p / float(len(text_sentences)) for p in absolute_positions]
+
                 for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
                                                                                 step=int(
                                                                                     round(max(
@@ -76,6 +83,11 @@ class CmuAbstractBookReader(DatasetReader):
                                                                                         1))),
                                                                                 fillvalue="<|endoftext|>"))):
                     line["story_text"] = sentence_batch
+
+                    line["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
+                    line["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
+                    line["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)["compound"]) for t in
+                                         sentence_batch]
 
                     yield self.text_to_instance(line)
                     batch_row_num += 1
@@ -160,6 +172,10 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
+
+        fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
+        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["sentiment"]))
+
         fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)

@@ -1,8 +1,9 @@
 from typing import Dict, Iterator
 
 import more_itertools
+import numpy
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import MetadataField
+from allennlp.data.fields import MetadataField, ArrayField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
@@ -74,12 +75,20 @@ class MultifileAbstractReader(DatasetReader):
             yield from self._chunk_instances(text_sentences)
 
     def _chunk_instances(self, text_sentences):
+        absolute_positions = [(r + 1) for r in range(len(text_sentences))]
+        relative_positions = [p / float(len(text_sentences)) for p in absolute_positions]
+
         for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
                                                                         step=int(round(
                                                                             max(self._batch_size * self._slide, 1))),
                                                                         fillvalue="<|endoftext|>"))):
             row = {}
             row["story_text"] = sentence_batch
+
+            row["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
+            row["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
+            row["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)["compound"]) for t in
+                                sentence_batch]
 
             yield self.text_to_instance(row)
 
@@ -149,6 +158,10 @@ class MultifileHierarchyReader(MultifileAbstractReader):
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)
 
         fields["passages"] = text_field_list
+
+        fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
+        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["sentiment"]))
+
         fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)
