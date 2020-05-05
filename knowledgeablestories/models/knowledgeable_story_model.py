@@ -439,7 +439,7 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
-        if self._position_dense is not None and "position_loss" in self._loss_weights:
+        if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]]
@@ -450,7 +450,7 @@ class KnowledgeableStoriesModel(Model):
         return loss
 
     def sentiment_prediction_if_required(self, encoded_sentences, passage_mask, passages_sentiment, loss):
-        if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights:
+        if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights and passages_sentiment is not None:
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_sentiment[passage_mask.bool()]
             sentiment_pred = torch.tanh(self._sentiment_dense(masked_encoded_sentences))
