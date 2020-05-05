@@ -124,26 +124,26 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def generate_tree(self, story_contexts, steps: int):
 
-        print("Input story contexts", story_contexts)
+        # print("Input story contexts", story_contexts)
 
         combined_story_sequences = []
         for story_context in story_contexts:
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
-        flat_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
+        filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
-        print("Stories in progress", flat_story_sequences)
+        # print("Stories in progress", flat_story_sequences)
 
-        flat_story_sequences = self.filter_beam(flat_story_sequences)
+        filtered_story_sequences = self.filter_beam(filtered_story_sequences)
 
         if steps > 0:
             steps -= 1
-            for new_story_context in flat_story_sequences:
-                print("New story context", new_story_context)
-                self.generate_tree(new_story_context, steps)
 
-        return flat_story_sequences
+            print("New story context", filtered_story_sequences)
+            self.generate_tree(filtered_story_sequences, steps)
+
+        return filtered_story_sequences
 
     def generate_sentences(self, previous_tokens):
 
