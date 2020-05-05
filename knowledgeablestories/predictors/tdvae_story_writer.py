@@ -141,7 +141,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             steps -= 1
             for sent in flat_story_sequences:
                 new_context = copy.deepcopy(story_context) + [sent]
-                self._generate_tree(new_context, steps)
+                self.generate_tree(new_context, steps)
 
         return flat_story_sequences
 
