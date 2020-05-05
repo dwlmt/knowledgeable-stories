@@ -11,6 +11,7 @@ from allennlp.data import DatasetReader, Instance
 from allennlp.data.fields import TextField, ListField, MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 
@@ -25,6 +26,8 @@ def parse_bool(b):
 class TdvaeStoryWriterPredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
+
+        self._sentence_splitter: SentenceSplitter = SpacySentenceSplitter()
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
         self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
