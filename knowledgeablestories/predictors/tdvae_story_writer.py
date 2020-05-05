@@ -62,14 +62,14 @@ class TdvaeStoryWriterPredictor(Predictor):
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
 
         dont_generate_token_ids = [[0], [50256]]
-        eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|>"))
+        eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default=". ... .. <|endofsentence|>"))
 
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
         self._eos_token_ids = eos_text_token_ids
-        self._keep_eos_ids = []
+        self._keep_eos_ids = eos_tokens[0:2]
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
