@@ -40,14 +40,14 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
-        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=50))
+        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=100))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=3))
-        self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=10))
+        self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
 
         self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
+        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=20))
 
         self._max_previous_lm_tokens = int(os.getenv("STORY_WRITER_PREVIOUS_LM_TOKENS", default=924))
 
@@ -95,9 +95,9 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         story_length = len(copied_input_sentences)
         story_contexts = [copied_input_sentences]
-        generate_steps = self._rollout_steps
+
         while story_length < self._length_to_generate:
-            story_contexts = self.generate_tree(story_contexts, generate_steps)
+            story_contexts = self.generate_tree(story_contexts, story_length, 1)
 
             story_length += 1
 
@@ -122,7 +122,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         return story_sequences
 
-    def generate_tree(self, story_contexts, steps: int):
+    def generate_tree(self, story_contexts, sentence_num: int, steps: int):
 
         # print("Input story contexts", story_contexts)
 
@@ -132,6 +132,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
             for sent in generated_sentences:
+                sent["sentence_num"] = sentence_num + steps
                 combined_story_sequences.append(copy.deepcopy(story_context) + [sent])
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
@@ -139,11 +140,11 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         filtered_story_sequences = self.filter_beam(filtered_story_sequences)
 
-        if steps > 0:
-            steps -= 1
+        if steps <= self._rollout_steps:
+            steps += 1
 
             # print("New story context", filtered_story_sequences)
-            self.generate_tree(filtered_story_sequences, steps)
+            self.generate_tree(filtered_story_sequences, sentence_num, steps)
 
         return filtered_story_sequences
 
