@@ -128,7 +128,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         combined_story_sequences = []
         for story_context in story_contexts:
-            token_ids = [t["token_ids"] for t in story_context]
+            token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
         flat_story_sequences = more_itertools.flatten(combined_story_sequences)
@@ -175,6 +175,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
 
+            print(previous_tokens_tensor, output_sequences)
+
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
             for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
@@ -208,6 +210,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
+                            print(generated_sequences)
+
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
 
@@ -222,7 +226,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 for i, sentence in enumerate(sentences):
                     token_ids = self._tokenizer._tokenizer.encode(sentence)
                     sentence_dict_list.append(
-                        {"sentence_num": i, "token_ids": token_ids, "text": sentence + "<|endofsentence|>"})
+                        {"sentence_num": i, "tokens": token_ids, "text": sentence + "<|endofsentence|>"})
 
                 inputs["sentences"] = sentence_dict_list
 
