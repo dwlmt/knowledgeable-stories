@@ -106,7 +106,7 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
 
         combined_story_sequences = []
         for story_context in story_contexts:
-            generated_sentences = self._generate_sentences(story_context)
+            generated_sentences = self.generate_sentences(story_context)
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
         flat_story_sequences = more_itertools.flatten(combined_story_sequences)
 
