@@ -131,7 +131,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
-        flat_story_sequences = list(more_itertools.flatten(combined_story_sequences))
+        flat_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
         print("Stories in progress", flat_story_sequences)
 
