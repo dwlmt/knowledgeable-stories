@@ -642,7 +642,7 @@ class KnowledgeableStoriesModel(Model):
             text_mask = torch.zeros_like(text_tokens, dtype=torch.int8, device=text_tokens.device)
             for id in END_OF_TEXT_TOKEN_IDS:
                 text_mask += (text_tokens == id)
-            text_mask = (text_mask < 1).bool()()()
+            text_mask = (text_mask < 1).bool()
             text_mask = text_mask.to(text_tokens.device)
             return text_mask
 
