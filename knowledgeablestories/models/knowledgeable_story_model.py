@@ -10,7 +10,7 @@ from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from torch.nn import CrossEntropyLoss
-from torch.nn.functional import l1_loss
+from torch.nn.functional import l1_loss, binary_cross_entropy_with_logits
 from transformers.modeling_auto import AutoModelWithLMHead
 
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -444,7 +444,7 @@ class KnowledgeableStoriesModel(Model):
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]]
             position_pred = torch.sigmoid(torch.squeeze(self._position_dense(masked_encoded_sentences)))
-            pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
+            pos_loss = binary_cross_entropy_with_logits(position_pred, masked_predictions)
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
         return loss
