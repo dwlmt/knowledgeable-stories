@@ -8,10 +8,13 @@ import more_itertools
 import torch
 from allennlp.common import JsonDict
 from allennlp.data import DatasetReader
+from allennlp.data.token_indexers import PretrainedTransformerIndexer
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 
 from knowledgeablestories import KnowledgeablePredictor
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
 def parse_bool(b):
@@ -22,6 +25,17 @@ def parse_bool(b):
 class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
+
+        lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+
+        # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+
+        self._token_indexers = {
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
+
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=50))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
@@ -104,9 +118,12 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
 
     def generate_tree(self, story_contexts, steps: int):
 
+        print("Input story contexts", story_contexts)
+
         combined_story_sequences = []
         for story_context in story_contexts:
-            generated_sentences = self.generate_sentences(story_context)
+            token_ids = [t["token_ids"] for t in story_context]
+            generated_sentences = self.generate_sentences(token_ids)
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
         flat_story_sequences = more_itertools.flatten(combined_story_sequences)
 
@@ -197,6 +214,8 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
-                    sentence_dict_list.append({"sentence_num": i, "text": sentence + "<|endofsentence|>"})
+                    token_ids = self._tokenizer._tokenizer.encode(sentence)
+                    sentence_dict_list.append(
+                        {"sentence_num": i, "token_ids": token_ids, "text": sentence + "<|endofsentence|>"})
 
                 inputs["sentences"] = sentence_dict_list
