@@ -128,9 +128,10 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         combined_story_sequences = []
         for story_context in story_contexts:
+            print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
-            combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
+            combined_story_sequences.append(copy.deepcopy(story_context) + [generated_sentences])
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
         # print("Stories in progress", flat_story_sequences)
@@ -140,7 +141,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         if steps > 0:
             steps -= 1
 
-            print("New story context", filtered_story_sequences)
+            # print("New story context", filtered_story_sequences)
             self.generate_tree(filtered_story_sequences, steps)
 
         return filtered_story_sequences
