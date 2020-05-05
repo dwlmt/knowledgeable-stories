@@ -680,16 +680,16 @@ class KnowledgeableStoriesModel(Model):
         zero_mask = logits == 0.0
 
         # Mask out the same sentence.
-        source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool()(),
+        source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
                                  device=source_encoded.device)
         # Zero out the vector diagonal as this will always be the highest dot product.
         if exclude_self:
-            eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool()(), device=source_encoded.device)
+            eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
             source_mask.masked_fill_(eye, 0)
             source_mask.masked_fill_(zero_mask, 0)
         source_mask *= zero_mask
 
-        source_mask = source_mask.bool()()()
+        source_mask = source_mask.bool()
 
         target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
                                                       label_smoothing=label_smoothing, blank_mask=zero_mask).to(
