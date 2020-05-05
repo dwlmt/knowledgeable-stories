@@ -64,12 +64,12 @@ class TdvaeStoryWriterPredictor(Predictor):
         dont_generate_token_ids = [[0], [50256]]
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default=". ... .. <|endofsentence|>"))
 
-        eos_text_token_ids = []
+        eos_text_token_ids = [764]
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
         self._eos_token_ids = eos_text_token_ids
-        self._keep_eos_ids = eos_tokens[0:2]
+        self._keep_eos_ids = eos_text_token_ids[0:3]
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
@@ -224,9 +224,10 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
+                    sentence += "<|endofsentence|>"
                     token_ids = self._tokenizer._tokenizer.encode(sentence)
                     sentence_dict_list.append(
-                        {"sentence_num": i, "tokens": token_ids, "text": sentence + "<|endofsentence|>"})
+                        {"sentence_num": i, "tokens": token_ids, "text": sentence})
 
                 inputs["sentences"] = sentence_dict_list
 
