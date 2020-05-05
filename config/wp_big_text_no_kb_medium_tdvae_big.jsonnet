@@ -377,6 +377,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "tdvae_loss": 1.0,
         "sentence_disc_loss": 1.0,
         "sentence_autoencoder": 1.0,
+        "position_loss": 1.0,
+        "sentiment_loss": 1.0,
     },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
@@ -407,6 +409,20 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
       }
+    },
+    "sentiment_dense": {
+        "input_dim": 2048,
+        "num_layers": 1,
+        "hidden_dims": 1,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "position_dense": {
+        "input_dim": 2048,
+        "num_layers": 1,
+        "hidden_dims": 1,
+        "activations": "linear",
+        "dropout": 0.0
     },
     "passage_tdvae": {
          "x_size": 2048,
