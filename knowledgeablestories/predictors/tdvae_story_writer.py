@@ -110,6 +110,8 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
             combined_story_sequences.append(copy.copy(story_context) + [generated_sentences])
         flat_story_sequences = more_itertools.flatten(combined_story_sequences)
 
+        print("Stories in progress", flat_story_sequences)
+
         flat_story_sequences = self.filter_beam(flat_story_sequences)
 
         if steps > 0:
