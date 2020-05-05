@@ -7,13 +7,13 @@ import random
 import more_itertools
 import torch
 from allennlp.common import JsonDict
-from allennlp.data import DatasetReader
+from allennlp.data import DatasetReader, Instance
+from allennlp.data.fields import TextField, ListField, MetadataField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models import Model
 from allennlp.predictors import Predictor
 
-from knowledgeablestories import KnowledgeablePredictor
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
@@ -22,7 +22,7 @@ def parse_bool(b):
 
 
 @Predictor.register('tdvae_story_writer')
-class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
+class TdvaeStoryWriterPredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
 
@@ -41,8 +41,12 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=3))
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=10))
-        self._generate_per_step = int(os.getenv("STORY_WRITER_GENERATE_PER_STEP", default=100))
-        self._generate_per_step = int(os.getenv("STORY_WRITER_GENERATE_BATCH_SIZE", default=10))
+
+        self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=100))
+        self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
+        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
+
+        self._max_previous_lm_tokens = int(os.getenv("STORY_WRITER_PREVIOUS_LM_TOKENS", default=924))
 
         # Config for text generation
         gen_temp = float(os.getenv("STORY_WRITER_GEN_TEMP", default=1.0))
@@ -60,10 +64,9 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        eos_text_token_ids.append(764)
 
         self._eos_token_ids = eos_text_token_ids
-        self._keep_eos_ids = eos_text_token_ids
+        self._keep_eos_ids = []
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
@@ -89,7 +92,7 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
 
         story_length = len(copied_input_sentences)
         story_contexts = [copied_input_sentences]
-        generate_steps = self._generate_per_step
+        generate_steps = self._rollout_steps
         while story_length < self._length_to_generate:
             story_contexts = self.generate_tree(story_contexts, generate_steps)
 
@@ -219,3 +222,31 @@ class TdvaeStoryWriterPredictor(KnowledgeablePredictor):
                         {"sentence_num": i, "token_ids": token_ids, "text": sentence + "<|endofsentence|>"})
 
                 inputs["sentences"] = sentence_dict_list
+
+    def _text_to_instance(self, story_batch) -> Instance:
+        """This id duplicating create the passage instance as the multitask wrappers makes it awkward to access the
+           original tokenizers and indexers.
+        """
+
+        json_dict = {}
+        json_dict["prediction"] = True
+        json_dict["dataset"] = "prediction"
+
+        fields = {}
+
+        sentences = json_dict["sentences"]
+        sentences_text = [s["text"] for s in sentences]
+        sentences_num = [s["sentence_num"] for s in sentences]
+
+        text_field_list = []
+        for tokens, num in zip(sentences_text, sentences_num):
+            tokens = self._tokenizer.tokenize(tokens)
+            text_field_list.append(
+                TextField(tokens, token_indexers=self._token_indexers))
+        text_list_field = ListField(text_field_list)
+
+        fields["passages"] = text_list_field
+
+        fields["metadata"] = MetadataField(json_dict)
+
+        return Instance(fields)
