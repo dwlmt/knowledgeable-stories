@@ -9,6 +9,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer, SentenceSplitter
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from allennlp.nn.util import logger
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
@@ -33,6 +34,8 @@ class MultifileAbstractReader(DatasetReader):
                  slide: float = 0.5,
                  ) -> None:
         super().__init__(lazy=lazy)
+
+        self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._tokenizer._tokenizer.pad_id = 0
