@@ -80,11 +80,13 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": dont_generate_token_ids}
 
-        self._sent_id_tensor_dict = {}
+        self._sent_id_generated_tensor_dict = {}
+        self._sent_id_projected_tensor_dict = {}
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
-        self._sent_id_tensor_dict = {}
+        self._sent_id_generated_tensor_dict = {}
+        self._sent_id_projected_tensor_dict = {}
 
         story_outputs = {}
 
@@ -111,11 +113,12 @@ class TdvaeStoryWriterPredictor(Predictor):
         while story_length < self._length_to_generate:
 
             for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
-                predictions = self._text_to_instance(story_context_batch)
+                story_context_output = self._model.forward_on_instance(story_context_batch)
+                predictions = self._text_to_instance(story_context_output)
                 print("Forward predictions", predictions)
 
                 cached_dict = self.convert_output_to_tensors(predictions)
-                print("Cached dict", cached_dict)
+                print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
             story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
 
@@ -161,7 +164,8 @@ class TdvaeStoryWriterPredictor(Predictor):
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor)
-            print("Encoded sentences", encoded_sentences)
+            for sent, encoded_sentence in (generated_sentences, encoded_sentences):
+                self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentences.cpu()
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
