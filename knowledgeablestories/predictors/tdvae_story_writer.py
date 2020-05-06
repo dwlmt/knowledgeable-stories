@@ -311,7 +311,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         stories_field_list = []
         for story in story_batch:
             text_field_list = []
-            for tokens, num in zip([t["tokens"] for t in story], [t["sentence_num"] for t in story]):
+            for tokens, num in zip([t["text"] for t in story], [t["sentence_num"] for t in story]):
                 tokens = self._tokenizer.tokenize(tokens)
                 text_field_list.append(
                     TextField(tokens, token_indexers=self._token_indexers))
