@@ -288,6 +288,7 @@ class KnowledgeableStoriesModel(Model):
                         encoded_sentences = self._passage_dense(encoded_sentences)
 
                     if "passage_disc_loss" in self._loss_weights:
+                        '''
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                         encoded_sentences,
                                                                                         mask=passage_mask,
@@ -316,7 +317,6 @@ class KnowledgeableStoriesModel(Model):
                         loss += passage_disc_loss
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                        '''
 
                         loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
                                                             passages_encoded)
