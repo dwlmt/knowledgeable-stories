@@ -900,3 +900,6 @@ class KnowledgeableStoriesModel(Model):
                     metrics[k] = v.tolist()
 
         return metrics
+
+    def _get_prediction_device(self) -> int:
+        return 0
