@@ -85,61 +85,63 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
-        self._sent_id_generated_tensor_dict = {}
-        self._sent_id_projected_tensor_dict = {}
+        with torch.no_grad:
 
-        story_outputs = {}
+            self._sent_id_generated_tensor_dict = {}
+            self._sent_id_projected_tensor_dict = {}
 
-        self._split_sentences_if_required(inputs)
+            story_outputs = {}
 
-        copied_input_sentences = copy.deepcopy(inputs["sentences"])
-        copied_input = copy.deepcopy(inputs)
+            self._split_sentences_if_required(inputs)
 
-        story_outputs["input"] = inputs
+            copied_input_sentences = copy.deepcopy(inputs["sentences"])
+            copied_input = copy.deepcopy(inputs)
 
-        if "story_writer_generate_length" in inputs:
-            self._length_to_generate = inputs["story_writer_generate_length"]
+            story_outputs["input"] = inputs
 
-        story_length = len(copied_input_sentences)
-        story_contexts = [copied_input_sentences]
+            if "story_writer_generate_length" in inputs:
+                self._length_to_generate = inputs["story_writer_generate_length"]
 
-        sentence_id = 0
+            story_length = len(copied_input_sentences)
+            story_contexts = [copied_input_sentences]
 
-        for con in story_contexts:
-            for s in con:
-                s["sentence_id"] = sentence_id
-                sentence_id += 1
+            sentence_id = 0
 
-        while story_length < self._length_to_generate:
+            for con in story_contexts:
+                for s in con:
+                    s["sentence_id"] = sentence_id
+                    sentence_id += 1
 
-            for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
-                instance = self._text_to_instance(story_context_batch)
-                predictions = self._model.forward_on_instance(instance)
+            while story_length < self._length_to_generate:
 
-                print("Forward predictions", predictions)
+                for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
+                    instance = self._text_to_instance(story_context_batch)
+                    predictions = self._model.forward_on_instance(instance)
 
-                cached_dict = self.convert_output_to_tensors(predictions)
-                print("Rollout x", cached_dict["tdvae_rollout_x"].size())
+                    print("Forward predictions", predictions)
 
-                for story in story_context_batch:
-                    for sent, encoded_sentence in zip(story, cached_dict["tdvae_rollout_x"]):
-                        self._sent_id_projected_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
+                    cached_dict = self.convert_output_to_tensors(predictions)
+                    print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
-            story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
+                    for story in story_context_batch:
+                        for sent, encoded_sentence in zip(story, cached_dict["tdvae_rollout_x"].detach()):
+                            self._sent_id_projected_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
 
-            story_length += 1
+                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
 
-        final_stories = []
-        for sc in story_contexts:
-            if len(sc) > self._length_to_generate:
-                final_stories.append(sc[0:self._length_to_generate])
-            else:
-                final_stories.append(sc)
+                story_length += 1
 
-        if len(final_stories) > self._keep_top_n:
-            final_stories = final_stories[0:self._keep_top_n]
+            final_stories = []
+            for sc in story_contexts:
+                if len(sc) > self._length_to_generate:
+                    final_stories.append(sc[0:self._length_to_generate])
+                else:
+                    final_stories.append(sc)
 
-        story_outputs["generated"] = final_stories
+            if len(final_stories) > self._keep_top_n:
+                final_stories = final_stories[0:self._keep_top_n]
+
+            story_outputs["generated"] = final_stories
 
     def filter_beam(self, story_sequences):
 
@@ -168,7 +170,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
-            encoded_sentences = self.encode_sentences(sentence_tokens_tensor)
+            encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
             for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
                 self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
 
