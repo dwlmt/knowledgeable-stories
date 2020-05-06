@@ -235,7 +235,7 @@ class KnowledgeableStoriesModel(Model):
 
         if passages != None:
             print("Passages", passages["tokens"].size())
-            if len(passages["tokens"].size()) == 5:
+            if len(passages["tokens"].size()) == 4:
                 passages["tokens"] = torch.squeeze(passages["tokens"], dim=0)
 
             if self._sentence_seq2vec_encoder != None:
