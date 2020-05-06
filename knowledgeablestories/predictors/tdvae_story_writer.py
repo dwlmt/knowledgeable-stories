@@ -308,14 +308,18 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         fields = {}
 
-        text_field_list = []
-        for tokens, num in zip([t["tokens"] for t in story_batch], [t["sentence_num"] for t in story_batch]):
-            tokens = self._tokenizer.tokenize(tokens)
-            text_field_list.append(
-                TextField(tokens, token_indexers=self._token_indexers))
-        text_list_field = ListField(text_field_list)
+        stories_field_list = []
+        for story in story_batch:
+            text_field_list = []
+            for tokens, num in zip([t["tokens"] for t in story], [t["sentence_num"] for t in story]):
+                tokens = self._tokenizer.tokenize(tokens)
+                text_field_list.append(
+                    TextField(tokens, token_indexers=self._token_indexers))
+            text_list_field = ListField(text_field_list)
+            stories_field_list.append(text_list_field)
+        stories_list_field = ListField(stories_field_list)
 
-        fields["passages"] = text_list_field
+        fields["passages"] = stories_list_field
 
         fields["metadata"] = MetadataField(json_dict)
 
