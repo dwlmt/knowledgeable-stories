@@ -103,15 +103,19 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         sentence_id = 0
 
-        for s in story_contexts:
-            s["sentence_id"] = sentence_id
-            sentence_id += 1
+        for con in story_contexts:
+            for s in con:
+                s["sentence_id"] = sentence_id
+                sentence_id += 1
 
         while story_length < self._length_to_generate:
 
             for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
                 predictions = self._text_to_instance(story_context_batch)
                 print("Forward predictions", predictions)
+
+                cached_dict = self.convert_output_to_tensors(predictions)
+                print("Cached dict", cached_dict)
 
             story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
 
@@ -299,6 +303,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         json_dict = {}
         json_dict["prediction"] = True
+        json_dict["sampled"] = True
         json_dict["dataset"] = "prediction"
 
         fields = {}
@@ -315,3 +320,36 @@ class TdvaeStoryWriterPredictor(Predictor):
         fields["metadata"] = MetadataField(json_dict)
 
         return Instance(fields)
+
+    def convert_output_to_tensors(self, output_dict):
+        cached_dict = {}
+        print(f"Output Keys: {output_dict.keys()}")
+        for field in ["passages_encoded", "passages_mask", "sentences_encoded",
+                      "lm_encoded", "lm_mask", "tokens",
+                      "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1",
+                      "tdvae_rollout_sampled_x", "tdvae_rollout_sampled_z2", "tdvae_sampled_z1"
+                      ]:
+            if field in output_dict:
+                if "mask" in field:
+                    cached_dict[field] = torch.BoolTensor(output_dict[field]).cpu()
+                elif "token" in field:
+
+                    stripped_tokens = []
+
+                    all_tokens = output_dict[field]
+                    for tokens in all_tokens:
+                        for id in self._eos_token_ids:
+                            try:
+                                end_of_text_index = list(tokens).index(id)
+                            except ValueError:
+                                end_of_text_index = None
+                            if end_of_text_index:
+                                tokens = tokens[0:end_of_text_index]
+
+                        stripped_tokens.append(tokens)
+
+                    cached_dict[field] = stripped_tokens
+                else:
+                    cached_dict[field] = torch.FloatTensor(output_dict[field]).cpu()
+
+        return cached_dict
