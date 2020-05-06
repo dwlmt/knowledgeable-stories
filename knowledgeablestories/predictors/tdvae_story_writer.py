@@ -121,6 +121,10 @@ class TdvaeStoryWriterPredictor(Predictor):
                 cached_dict = self.convert_output_to_tensors(predictions)
                 print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
+                for story in story_context_batch:
+                    for sent, encoded_sentence in zip(story, cached_dict["tdvae_rollout_x"]):
+                        self._sent_id_projected_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
+
             story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
 
             story_length += 1
@@ -166,7 +170,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor)
             for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
-                self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentences.cpu()
+                self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
