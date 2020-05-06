@@ -85,7 +85,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
-        with torch.no_grad:
+        with torch.no_grad():
 
             self._sent_id_generated_tensor_dict = {}
             self._sent_id_projected_tensor_dict = {}
