@@ -165,7 +165,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor)
-            for sent, encoded_sentence in (generated_sentences, encoded_sentences):
+            for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
                 self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentences.cpu()
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
