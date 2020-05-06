@@ -44,6 +44,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=3))
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
+        self._forward_batch = int(os.getenv("STORY_WRITER_FORWARD_BATCH", default=5))
 
         self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=100))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
@@ -79,7 +80,11 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": dont_generate_token_ids}
 
+        self._sent_id_tensor_dict = {}
+
     def predict_json(self, inputs: JsonDict) -> JsonDict:
+
+        self._sent_id_tensor_dict = {}
 
         story_outputs = {}
 
@@ -96,8 +101,19 @@ class TdvaeStoryWriterPredictor(Predictor):
         story_length = len(copied_input_sentences)
         story_contexts = [copied_input_sentences]
 
+        sentence_id = 0
+
+        for s in story_contexts:
+            s["sentence_id"] = sentence_id
+            sentence_id += 1
+
         while story_length < self._length_to_generate:
-            story_contexts = self.generate_tree(story_contexts, story_length, 1)
+
+            for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
+                predictions = self._text_to_instance(story_context_batch)
+                print("Forward predictions", predictions)
+
+            story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
 
             story_length += 1
 
@@ -122,7 +138,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         return story_sequences
 
-    def generate_tree(self, story_contexts, sentence_num: int, steps: int):
+    def generate_tree(self, story_contexts, sentence_num: int, steps: int, sentence_id: int):
 
         # print("Input story contexts", story_contexts)
 
@@ -133,7 +149,16 @@ class TdvaeStoryWriterPredictor(Predictor):
             generated_sentences = self.generate_sentences(token_ids)
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
+                sent["sentence_id"] = sentence_id
+                sentence_id += 1
+
                 combined_story_sequences.append(copy.deepcopy(story_context) + [sent])
+
+            sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
+
+            encoded_sentences = self.encode_sentences(sentence_tokens_tensor)
+            print("Encoded sentences", encoded_sentences)
+
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
         # print("Stories in progress", flat_story_sequences)
@@ -144,9 +169,42 @@ class TdvaeStoryWriterPredictor(Predictor):
             steps += 1
 
             # print("New story context", filtered_story_sequences)
-            self.generate_tree(filtered_story_sequences, sentence_num, steps)
+            self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id)
 
         return filtered_story_sequences
+
+    def sentence_tokens_to_padded_tensor(self, generated_sentences):
+        def lengths(x):
+            if isinstance(x, list):
+                yield len(x)
+                for y in x:
+                    yield from lengths(y)
+
+        def pad(seq, target_length, padding=None):
+            length = len(seq)
+            seq.extend([padding] * (target_length - length))
+            return seq
+
+        sentence_tokens = [s["tokens"] for s in generated_sentences]
+        sentence_tokens_max_length = max(lengths(sentence_tokens))
+        sentence_tokens = [pad(s, sentence_tokens_max_length, padding=0) for s in sentence_tokens]
+        sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
+        return sentence_tokens_tensor
+
+    def encode_sentences(self, sentence_tokens_tensor):
+
+        if torch.cuda.is_available():
+            sentence_tokens_tensor = sentence_tokens_tensor.cuda()
+
+        lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
+
+        encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
+
+        if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
+            encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
+            encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+
+        return encoded_sentences_batch
 
     def generate_sentences(self, previous_tokens):
 
@@ -245,12 +303,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         fields = {}
 
-        sentences = json_dict["sentences"]
-        sentences_text = [s["text"] for s in sentences]
-        sentences_num = [s["sentence_num"] for s in sentences]
-
         text_field_list = []
-        for tokens, num in zip(sentences_text, sentences_num):
+        for tokens, num in zip([t["tokens"] for t in story_batch], [t["sentence_num"] for t in story_batch]):
             tokens = self._tokenizer.tokenize(tokens)
             text_field_list.append(
                 TextField(tokens, token_indexers=self._token_indexers))
