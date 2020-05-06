@@ -113,8 +113,9 @@ class TdvaeStoryWriterPredictor(Predictor):
         while story_length < self._length_to_generate:
 
             for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
-                story_context_output = self._model.forward_on_instance(story_context_batch)
-                predictions = self._text_to_instance(story_context_output)
+                instance = self._text_to_instance(story_context_batch)
+                predictions = self._model.forward_on_instance(instance)
+
                 print("Forward predictions", predictions)
 
                 cached_dict = self.convert_output_to_tensors(predictions)
