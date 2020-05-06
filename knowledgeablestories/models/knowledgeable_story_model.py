@@ -234,9 +234,9 @@ class KnowledgeableStoriesModel(Model):
             loss = loss.cuda()
 
         if passages != None:
-            print("Passages", passages.size())
-            if len(passages.size()) == 5:
-                passages = torch.squeeze(passages, dim=0)
+            print("Passages", passages["tokens"].size())
+            if len(passages["tokens"].size()) == 5:
+                passages["tokens"] = torch.squeeze(passages["tokens"], dim=0)
 
             if self._sentence_seq2vec_encoder != None:
 
