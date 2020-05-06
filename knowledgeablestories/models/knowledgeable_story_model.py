@@ -1,4 +1,5 @@
 import collections
+import os
 from typing import List, Dict, Optional, Any
 
 import torch
@@ -186,6 +187,12 @@ class KnowledgeableStoriesModel(Model):
             if self._passage_autoencoder:
                 self._metrics["passage_autoencoder_loss"] = Average()
 
+        def parse_bool(b):
+            return b == "True" or b == "TRUE" or b == "true" or b == "1"
+
+        self._prediction_mode = parse_bool(os.getenv("PREDICTION_MODE", default=False))
+        self._sampled = parse_bool(os.getenv("SAMPLED", default=False))
+
         if initializer is not None:
             initializer(self)
 
@@ -226,8 +233,8 @@ class KnowledgeableStoriesModel(Model):
         output = {}
         dataset_name = metadata[0]["dataset"]
 
-        prediction_mode = metadata[0].pop("prediction", False)
-        sampled = metadata[0].pop("sampled", False)
+        prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
+        sampled = metadata[0].pop("sampled", False) or self._sampled
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
