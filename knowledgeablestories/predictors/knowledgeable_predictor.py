@@ -451,6 +451,10 @@ class KnowledgeablePredictor(Predictor):
                 target_representation = encoded_sentences_tensor
                 if self._model._passage_dense is not None:
                     target_representation = self._model._passage_dense(target_representation)
+                    if len(target_representation.size()) == 3:
+                        target_representation = target_representation.view(
+                            target_representation.size(0) * target_representation.size(1),
+                            target_representation.size(2))
                 target_representation = target_representation.to(context_encoded_representation.device)
 
                 print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
@@ -496,7 +500,7 @@ class KnowledgeablePredictor(Predictor):
 
                 for (k, v) in metric_dict.items():
 
-                    #print(f"{k} - {v.size()}")
+                    # print(f"{k} - {v.size()}")
 
                     for value, gen_seq in zip(v, generated_sequences):
 
@@ -576,7 +580,7 @@ class KnowledgeablePredictor(Predictor):
 
         for i, gen_seq in enumerate(filtered_list):
 
-            #print(gen_seq.keys())
+            # print(gen_seq.keys())
 
             gen_seq["index"] = i
 
