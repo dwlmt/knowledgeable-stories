@@ -325,7 +325,8 @@ class KnowledgeablePredictor(Predictor):
                         kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
                         kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
 
-                    wasserstein = wasserstein_distance(z1_layer.numpy(), z2_layer.numpy())
+                        print("Wasserstein", z1_layer.size(), z2_layer.size())
+                        wasserstein = wasserstein_distance(z1_layer.numpy(), z2_layer.numpy())
 
                     res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                     res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
