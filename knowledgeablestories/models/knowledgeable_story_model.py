@@ -227,7 +227,7 @@ class KnowledgeableStoriesModel(Model):
         dataset_name = metadata[0]["dataset"]
 
         prediction_mode = metadata[0].pop("prediction", False)
-        fusion = metadata[0].pop("fusion", False)
+        sampled = metadata[0].pop("sampled", False)
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
@@ -379,11 +379,12 @@ class KnowledgeableStoriesModel(Model):
                             tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
                             print(f"TDVAE Keys: {tdvae_output.keys()}")
 
-                            rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                                encoded_sentences, do_sample=True)
-                            tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
-                            tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
-                            tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
+                            if sampled:
+                                rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
+                                    encoded_sentences, do_sample=True)
+                                tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
+                                tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
+                                tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
 
                             output = {**output, **tdvae_output}
 
