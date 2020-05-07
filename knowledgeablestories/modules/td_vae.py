@@ -230,6 +230,7 @@ class TDVAE(nn.Module, FromParams):
 
         batch_size, seq_size, embedding_size = x.size()
         for i in range(seq_size):
+            print("X", x.size())
             rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n, do_sample=do_sample)
             rollout_xs.append(rollout_x)
             rollout_z2s.append(rollout_z2)
@@ -242,6 +243,7 @@ class TDVAE(nn.Module, FromParams):
         bs = torch.stack(bs)
 
         if not do_sample:
+            print("Z2", rollout_z2s.size())
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
                                            int(rollout_z2s.size(2) / self.num_layers))
 
