@@ -123,11 +123,9 @@ class TdvaeStoryWriterPredictor(Predictor):
                     cached_dict = self.convert_output_to_tensors(predictions)
                     print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
-                    for story in story_context_batch:
-                        for sent, encoded_sentence in zip(story, cached_dict["tdvae_rollout_x"].detach()):
-                            self._sent_id_projected_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
+                    rollout_x = cached_dict["tdvae_rollout_x"].detach().cpu()
 
-                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id)
+                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_x)
 
                 story_length += 1
 
@@ -143,7 +141,10 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             story_outputs["generated"] = final_stories
 
-    def filter_beam(self, story_sequences):
+    def filter_beam(self, story_sequences, rollout_x):
+
+        print(story_sequences)
+        print(rollout_x.size())
 
         # Place holder, just randomly select for now.
         if len(story_sequences) > self._beam_n:
@@ -152,7 +153,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         return story_sequences
 
-    def generate_tree(self, story_contexts, sentence_num: int, steps: int, sentence_id: int):
+    def generate_tree(self, story_contexts, sentence_num: int, steps: int, sentence_id: int, rollout_x: torch.Tensor):
 
         # print("Input story contexts", story_contexts)
 
@@ -178,13 +179,13 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         # print("Stories in progress", flat_story_sequences)
 
-        filtered_story_sequences = self.filter_beam(filtered_story_sequences)
+        filtered_story_sequences = self.filter_beam(filtered_story_sequences, rollout_x)
 
         if steps <= self._rollout_steps:
             steps += 1
 
             # print("New story context", filtered_story_sequences)
-            self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id)
+            self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id, rollout_x)
 
         return filtered_story_sequences
 
