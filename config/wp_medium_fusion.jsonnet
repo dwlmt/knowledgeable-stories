@@ -135,7 +135,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",
- "patience": PATIENCE,
+    "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -149,9 +149,9 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "nesterov": true
     },
     "learning_rate_scheduler": {
-      "type": "reduce_on_plateau",
-      "factor": LR_REDUCE_RATE,
-"patience": LR_PATIENCE,
+    "type": "reduce_on_plateau",
+    "factor": LR_REDUCE_RATE,
+    "patience": LR_PATIENCE,
     }
   }
 }
