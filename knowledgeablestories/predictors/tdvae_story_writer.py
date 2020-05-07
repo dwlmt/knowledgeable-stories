@@ -40,6 +40,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
+        self._random = parse_bool(os.getenv("STORY_WRITER_RANDOM", default="False"))
+
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=100))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=3))
@@ -114,6 +116,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             while story_length < self._length_to_generate:
 
+                rollout_xs = []
                 for story_context_batch in more_itertools.chunked(story_contexts, self._forward_batch):
                     instance = self._text_to_instance(story_context_batch)
                     predictions = self._model.forward_on_instance(instance)
@@ -124,10 +127,18 @@ class TdvaeStoryWriterPredictor(Predictor):
                     print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
                     rollout_x = cached_dict["tdvae_rollout_x"].detach().cpu()
+                    rollout_xs.append(rollout_x)
+                rollout_xs = torch.cat(rollout_xs, dim=-1)
 
-                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_x)
+                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
 
                 story_length += 1
+
+                new_story_contexts = []
+                for story in story_contexts:
+                    story = story[0:story_length]
+                    new_story_contexts.append(story)
+                story_contexts = new_story_contexts
 
             final_stories = []
             for sc in story_contexts:
@@ -143,13 +154,23 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def filter_beam(self, story_sequences, rollout_x):
 
+        prior_sentence_length = rollout_x.size(0)
+
         print(story_sequences)
         print(rollout_x.size())
 
-        # Place holder, just randomly select for now.
+        rollout_x_last = rollout_x[-1]
+
         if len(story_sequences) > self._beam_n:
-            random.shuffle(story_sequences)
-            story_sequences = story_sequences[0: self._beam_n]
+            if self._random:
+                # Place holder, just randomly select for now.
+                random.shuffle(story_sequences)
+                story_sequences = story_sequences[0: self._beam_n]
+            else:
+
+                for story in story_sequences:
+                    story = story[prior_sentence_length:]
+                    print(story)
 
         return story_sequences
 
