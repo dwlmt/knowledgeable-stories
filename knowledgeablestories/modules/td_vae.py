@@ -244,11 +244,21 @@ class TDVAE(nn.Module, FromParams):
 
         if not do_sample:
             print("Z2", rollout_z2s.size())
-            rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
-                                           int(rollout_z2s.size(2) / self.num_layers))
+            if len(rollout_z2s.size()) == 3:
+                rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), self.num_layers,
+                                               int(rollout_z2s.size(2) / self.num_layers))
 
-            rollout_z1s = torch.squeeze(rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
-                                                         int(rollout_z1s.size(2) / self.num_layers)))
+                rollout_z1s = torch.squeeze(rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), self.num_layers,
+                                                             int(rollout_z1s.size(2) / self.num_layers)))
+            else:
+                rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), rollout_z2s.size(2),
+                                               self.num_layers,
+                                               int(rollout_z2s.size(3) / self.num_layers))
+
+                rollout_z1s = torch.squeeze(
+                    rollout_z1s.view(rollout_z1s.size(0), rollout_z1s.size(1), rollout_z2s.size(2), self.num_layers,
+                                     int(rollout_z1s.size(3) / self.num_layers)))
+
         else:
             rollout_z2s = rollout_z2s.view(rollout_z2s.size(0), rollout_z2s.size(1), rollout_z2s.size(2),
                                            self.num_layers,
