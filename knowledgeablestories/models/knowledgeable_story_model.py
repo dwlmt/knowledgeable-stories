@@ -381,7 +381,7 @@ class KnowledgeableStoriesModel(Model):
 
                     if prediction_mode:
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                            encoded_sentences)
+                            encoded_sentences, do_sample=False)
                         tdvae_output = {}
                         tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
                         tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
