@@ -23,10 +23,10 @@ END_OF_TEXT_TOKEN_ID = 50256
 
 torch.set_printoptions(profile="full")
 
+END_OF_SENTENCE_TOKEN_ID = 50257
 
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
-
 
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
@@ -841,6 +841,9 @@ class KnowledgeablePredictor(Predictor):
 
                         if first_index < self._generation_config["max_length"]:
                             generated_sequence = generated_sequence[: first_index]
+
+                        if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
+                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
