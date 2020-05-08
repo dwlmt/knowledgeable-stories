@@ -234,7 +234,6 @@ class KnowledgeableStoriesModel(Model):
         dataset_name = metadata[0]["dataset"]
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
-        sampled = metadata[0].pop("sampled", False) or self._sampled
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
@@ -389,7 +388,7 @@ class KnowledgeableStoriesModel(Model):
                         tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
                         print(f"TDVAE Keys: {tdvae_output.keys()}")
 
-                        if sampled:
+                        if self._sampled:
                             rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
                                 encoded_sentences, do_sample=True)
                             tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
