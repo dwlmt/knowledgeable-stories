@@ -181,11 +181,11 @@ class TdvaeStoryWriterPredictor(Predictor):
                 beam_dict = OrderedDict()
                 for i, (story, rollout_x_story), in enumerate(zip(story_sequences, rollout_x_last)):
                     # Get the story after the initial part which is the same.
-                    story = story[prior_sentence_length:]
+                    story_trunc = story[prior_sentence_length:]
 
                     beam_dict[i] = 0.0
 
-                    for sentence, rollout_x_sentence in zip(story, rollout_x_story):
+                    for sentence, rollout_x_sentence in zip(story_trunc, rollout_x_story):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
 
                         print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
@@ -194,12 +194,12 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                         beam_dict[i] += dist
 
-                    beam_dist, story = (list(t) for t in zip(*sorted(zip(beam_dict.values(), story))))
+                beam_dist, story = (list(t) for t in zip(*sorted(zip(beam_dict.values(), story))))
 
-                    print("Sorted beam stories", story)
-                    print("Sorted beam distances", beam_dist)
+                print("Sorted beam stories", story)
+                print("Sorted beam distances", beam_dist)
 
-                    story_sequences = story_sequences[0: self._beam_n]
+                story_sequences = story_sequences[0: self._beam_n]
 
         return story_sequences
 
