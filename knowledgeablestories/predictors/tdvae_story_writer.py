@@ -179,7 +179,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             else:
 
                 beam_dict = OrderedDict()
-                for i, story, rollout_x_story, in enumerate(zip(story_sequences, rollout_x_last)):
+                for i, (story, rollout_x_story), in enumerate(zip(story_sequences, rollout_x_last)):
                     # Get the story after the initial part which is the same.
                     story = story[prior_sentence_length:]
 
