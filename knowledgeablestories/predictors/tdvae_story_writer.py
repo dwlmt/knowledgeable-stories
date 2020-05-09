@@ -189,8 +189,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
 
                         print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                        dist = self._l2_distance(generated_sentence_tensor.cuda(),
-                                                 rollout_x_sentence.cuda()).cpu().item()
+                        dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                                                 torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
 
                         beam_dict[i] += dist
 
