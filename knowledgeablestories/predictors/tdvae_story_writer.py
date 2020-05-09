@@ -157,9 +157,6 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         prior_sentence_length = rollout_x.size(0)
 
-        print(story_sequences)
-        print(rollout_x.size())
-
         rollout_x_last = rollout_x[-1]
 
         if len(story_sequences) > self._beam_n:
@@ -171,7 +168,9 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 for story in story_sequences:
                     story = story[prior_sentence_length:]
-                    print(story)
+                    print("Story", story_sequences)
+                    print("Rollout X size", rollout_x.size())
+                    print("Prior sentence length", prior_sentence_length)
 
         return story_sequences
 
@@ -181,7 +180,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         combined_story_sequences = []
         for story_context in story_contexts:
-            print("Story context:", story_context)
+            # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids)
             for sent in generated_sentences:
@@ -312,7 +311,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-                            print(generated_sequences)
+                            #print(generated_sequences)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
