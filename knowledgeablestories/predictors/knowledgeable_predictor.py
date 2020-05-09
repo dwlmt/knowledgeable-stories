@@ -459,9 +459,9 @@ class KnowledgeablePredictor(Predictor):
                             target_representation.size(2))
                 target_representation = target_representation.to(context_encoded_representation.device)
 
-                print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
+                print("Logits input size:", context_encoded_representation.size(), final_encoded_representation,
                       target_representation.size())
-                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
+                logits = self._model.calculate_logits(torch.unsqueeze(final_encoded_representation, dim=0),
                                                       target_representation,
                                                       self._encoder_cosine)
 
