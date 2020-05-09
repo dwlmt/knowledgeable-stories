@@ -189,14 +189,16 @@ class TdvaeStoryWriterPredictor(Predictor):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
 
                         print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                        dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
-                                                 torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
+                        # dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                        #                         torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
+                        dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda(), dim=0).cpu().item()
 
                         beam_dict[i] += dist
 
-                beam_dist, story_sequences = (list(t) for t in zip(*sorted(zip(beam_dict.values(), story_sequences))))
+                beam_dist, story_sequences = (list(t) for t in
+                                              zip(*sorted(zip(beam_dict.values(), story_sequences)), reverse=True))
 
-                print("Sorted beam stories", story)
+                print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
 
                 story_sequences = story_sequences[0: self._beam_n]
