@@ -163,7 +163,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def filter_beam(self, story_sequences, rollout_x):
 
-        if len(rollout_x) == 3:
+        if len(rollout_x.size()) == 3:
             rollout_x = torch.unsqueeze(rollout_x, dim=0)
             rollout_x = rollout_x.expand(len(story_sequences), rollout_x.size(1), rollout_x.size(2), rollout_x.size(3))
 
