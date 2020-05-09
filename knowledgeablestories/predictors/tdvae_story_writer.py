@@ -196,7 +196,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                         beam_dict[i] += dist
 
                 beam_dist, story_sequences = (list(t) for t in
-                                              zip(*sorted(zip(beam_dict.values(), story_sequences)), reverse=True))
+                                              zip(*sorted(zip(beam_dict.values(), story_sequences), reverse=True)))
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
