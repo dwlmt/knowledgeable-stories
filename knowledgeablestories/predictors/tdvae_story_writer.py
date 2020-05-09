@@ -3,6 +3,7 @@
 import copy
 import os
 import random
+from collections import OrderedDict
 
 import more_itertools
 import torch
@@ -14,6 +15,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from allennlp.models import Model
 from allennlp.predictors import Predictor
+from torch import nn
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
@@ -42,6 +44,12 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
         self._random = parse_bool(os.getenv("STORY_WRITER_RANDOM", default="False"))
+
+        self._cosine_similarity = nn.CosineSimilarity(dim=-1)
+        self._l2_distance = nn.PairwiseDistance(p=2)
+        self._l1_distance = nn.PairwiseDistance(p=1)
+
+        self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="l2"))
 
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=100))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=100))
@@ -155,9 +163,13 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def filter_beam(self, story_sequences, rollout_x):
 
-        prior_sentence_length = rollout_x.size(0)
+        if len(rollout_x) == 3:
+            rollout_x = torch.unsqueeze(rollout_x, dim=0)
+            rollout_x = rollout_x.expand(len(story_sequences), rollout_x.size(1), rollout_x.size(2), rollout_x.size(3))
 
-        rollout_x_last = rollout_x[-1]
+        prior_sentence_length = rollout_x.size(1)
+
+        rollout_x_last = rollout_x[:, -1, :, :]
 
         if len(story_sequences) > self._beam_n:
             if self._random:
@@ -166,11 +178,27 @@ class TdvaeStoryWriterPredictor(Predictor):
                 story_sequences = story_sequences[0: self._beam_n]
             else:
 
-                for story in story_sequences:
+                beam_dict = OrderedDict()
+                for i, story, rollout_x_story, in enumerate(zip(story_sequences, rollout_x_last)):
+                    # Get the story after the initial part which is the same.
                     story = story[prior_sentence_length:]
-                    print("Story", story_sequences)
-                    print("Rollout X size", rollout_x.size())
-                    print("Prior sentence length", prior_sentence_length)
+
+                    beam_dict[i] = 0.0
+
+                    for sentence, rollout_x_sentence in zip(story, rollout_x_story):
+                        generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
+
+                        dist = self._l2_distance(generated_sentence_tensor.cuda(),
+                                                 rollout_x_sentence.cuda()).cpu().item()
+
+                        beam_dict[i] += dist
+
+                    story, beam_dist = (list(t) for t in zip(*sorted(zip(story, beam_dict.values()))))
+
+                    print("Sorted beam stories", story)
+                    print("Sorted beam distances", beam_dist)
+
+                    story_sequences = story_sequences[0: self._beam_n]
 
         return story_sequences
 
