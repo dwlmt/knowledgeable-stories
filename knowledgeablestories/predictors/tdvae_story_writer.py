@@ -188,6 +188,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                     for sentence, rollout_x_sentence in zip(story, rollout_x_story):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
 
+                        print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
                         dist = self._l2_distance(generated_sentence_tensor.cuda(),
                                                  rollout_x_sentence.cuda()).cpu().item()
 
