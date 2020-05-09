@@ -137,6 +137,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                     rollout_x = cached_dict["tdvae_rollout_x"].detach().cpu()
                     rollout_xs.append(rollout_x)
+
+                print("Print XS sizes", [x.size() for x in rollout_xs])
                 rollout_xs = torch.cat(rollout_xs, dim=-1)
 
                 story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
