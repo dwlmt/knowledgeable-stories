@@ -189,16 +189,17 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                     for sentence, rollout_x_sentence in zip(story_trunc, rollout_x_story):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
+                        generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
                         print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                        # dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
-                        #                         torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
-                        dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
+                        dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                                                 torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
+                        # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
 
                         beam_dict[i] += dist
 
                 beam_dist, story_sequences = (list(t) for t in
-                                              zip(*sorted(zip(beam_dict.values(), story_sequences), reverse=True)))
+                                              zip(*sorted(zip(beam_dict.values(), story_sequences))))
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
@@ -226,6 +227,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
+            encoded_sentences = torch.sigmoid(encoded_sentences)
             for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
                 self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
 
