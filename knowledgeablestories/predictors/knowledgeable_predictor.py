@@ -92,6 +92,8 @@ class KnowledgeablePredictor(Predictor):
         self._keep_eos_ids = eos_text_token_ids
 
         token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
+        dont_generate_token_ids = token_tags_ids + dont_generate_token_ids
+        dont_generate_token_ids = [t for t in dont_generate_token_ids if t not in self._eos_token_ids]
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
@@ -99,7 +101,7 @@ class KnowledgeablePredictor(Predictor):
                                    "max_length": gen_max_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": token_tags_ids + dont_generate_token_ids}
+                                   "bad_words_ids": dont_generate_token_ids}
 
         # print("Generation config", self._generation_config)
 

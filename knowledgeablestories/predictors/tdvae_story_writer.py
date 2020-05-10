@@ -85,6 +85,10 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
 
+        token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
+        dont_generate_token_ids = token_tags_ids + dont_generate_token_ids
+        dont_generate_token_ids = [t for t in dont_generate_token_ids if t not in self._eos_token_ids]
+
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
