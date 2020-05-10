@@ -464,7 +464,7 @@ class KnowledgeablePredictor(Predictor):
                 print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
                       target_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
-                                                      final_encoded_representation,
+                                                      target_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
