@@ -382,7 +382,7 @@ class KnowledgeablePredictor(Predictor):
                         previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"][
                             "entropy"]
 
-            for f in ["chain_l1_dist", "chain_l2_dist", "chain_cosine_dist"]:
+            for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist":
                 total_prob_factor = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() + 1.0
 
                 log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(fields_to_extract_dict[f])
@@ -459,9 +459,9 @@ class KnowledgeablePredictor(Predictor):
                             target_representation.size(2))
                 target_representation = target_representation.to(context_encoded_representation.device)
 
-                print("Logits input size:", context_encoded_representation.size(), final_encoded_representation,
+                print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
                       target_representation.size())
-                logits = self._model.calculate_logits(torch.unsqueeze(final_encoded_representation, dim=0),
+                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       target_representation,
                                                       self._encoder_cosine)
 
