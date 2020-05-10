@@ -21,6 +21,7 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
+
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
@@ -179,7 +180,6 @@ class TdvaeStoryWriterPredictor(Predictor):
                 random.shuffle(story_sequences)
                 story_sequences = story_sequences[0: self._beam_n]
             else:
-
                 beam_dict = OrderedDict()
                 for i, (story, rollout_x_story), in enumerate(zip(story_sequences, rollout_x_last)):
                     # Get the story after the initial part which is the same.
@@ -198,8 +198,9 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                         beam_dict[i] += dist
 
-                beam_dist, story_sequences = (list(t) for t in
-                                              zip(*sorted(zip(beam_dict.values(), story_sequences))))
+                beam_dist, story_sequences = (list(t) for t in zip(
+                    *sorted(zip(beam_dict.values(), story_sequences), key=lambda x: x[0])))
+                # (list(t) for t in zip(*sorted(zip(beam_dict.values(), story_sequences))))
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
@@ -346,7 +347,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-                            #print(generated_sequences)
+                            # print(generated_sequences)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
