@@ -135,15 +135,15 @@ class TdvaeStoryWriterPredictor(Predictor):
                     instance = self._text_to_instance(story_context_batch)
                     predictions = self._model.forward_on_instance(instance)
 
-                    print("Forward predictions", predictions)
+                    # print("Forward predictions", predictions)
 
                     cached_dict = self.convert_output_to_tensors(predictions)
-                    print("Rollout x", cached_dict["tdvae_rollout_x"].size())
+                    #print("Rollout x", cached_dict["tdvae_rollout_x"].size())
 
                     rollout_x = cached_dict["tdvae_rollout_x"].detach().cpu()
                     rollout_xs.append(rollout_x)
 
-                print("Print XS sizes", [x.size() for x in rollout_xs])
+                #print("Print XS sizes", [x.size() for x in rollout_xs])
                 rollout_xs = torch.cat(rollout_xs, dim=-1)
 
                 story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
@@ -195,7 +195,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                         generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
                         generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
-                        print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
+                        #print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
                         dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
                                                  torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
                         # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
