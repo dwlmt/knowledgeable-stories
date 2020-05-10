@@ -355,7 +355,7 @@ class KnowledgeablePredictor(Predictor):
 
             # Per level convert the required
             fields_to_extract = ["chain_log_prob", "chain_prob", "chain_l1_dist", "chain_cosine_dist",
-                                 "chain_l2_dist", "chain_sentiment_variance", "chain_dot_product"]
+                                 "chain_l2_dist", "chain_sentiment_variance"]
             fields_to_extract_dict = {}
 
             gold = [s["parent_relation_metrics"]["chain_log_prob"] for s in sentences if
@@ -382,7 +382,7 @@ class KnowledgeablePredictor(Predictor):
                         previous_prediction_metrics[f"{level}"]["entropy"] - parent["prediction_metrics"][f"{level}"][
                             "entropy"]
 
-            for f in "chain_l1_dist", "chain_l2_dist", "chain_cosine_dist", "chain_dot_product":
+            for f in ["chain_l1_dist", "chain_l2_dist", "chain_cosine_dist"]:
                 total_prob_factor = torch.exp(fields_to_extract_dict["chain_log_prob"]).sum() + 1.0
 
                 log_variance_tensor = fields_to_extract_dict["chain_log_prob"] + torch.log(fields_to_extract_dict[f])
