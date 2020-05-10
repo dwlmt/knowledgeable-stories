@@ -58,9 +58,9 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
         self._forward_batch = int(os.getenv("STORY_WRITER_FORWARD_BATCH", default=5))
 
-        self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=20))
+        self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=50))
         self._gen_num_of_sequences_max_retry = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=20))
+        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=50))
 
         self._max_previous_lm_tokens = int(os.getenv("STORY_WRITER_PREVIOUS_LM_TOKENS", default=924))
 
@@ -154,6 +154,16 @@ class TdvaeStoryWriterPredictor(Predictor):
                 for story in story_contexts:
                     story = story[0:story_length]
                     new_story_contexts.append(story)
+
+                # Use the dict to remove duplicate path continutions.
+                duplicate_dict = OrderedDict()
+                for story in new_story_contexts:
+                    duplicate_dict[story[-1]["sentence_id"]] = story
+                new_story_contexts = duplicate_dict.values()
+
+                if len(new_story_contexts) > self._keep_top_n:
+                    new_story_contexts = new_story_contexts[0:self._keep_top_n]
+
                 story_contexts = new_story_contexts
 
             final_stories = []
@@ -162,9 +172,6 @@ class TdvaeStoryWriterPredictor(Predictor):
                     final_stories.append(sc[0:self._length_to_generate])
                 else:
                     final_stories.append(sc)
-
-            if len(final_stories) > self._keep_top_n:
-                final_stories = final_stories[0:self._keep_top_n]
 
             story_outputs["generated"] = final_stories
 
@@ -313,7 +320,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
 
-            print(previous_tokens_tensor, output_sequences)
+            # print(previous_tokens_tensor, output_sequences)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
