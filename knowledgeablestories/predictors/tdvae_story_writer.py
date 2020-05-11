@@ -53,14 +53,14 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="l2"))
 
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=10))
-        self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=20))
+        self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=10))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=5))
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
         self._forward_batch = int(os.getenv("STORY_WRITER_FORWARD_BATCH", default=5))
 
         self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=20))
         self._gen_num_of_sequences_max_retry = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=20))
+        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
 
         self._max_previous_lm_tokens = int(os.getenv("STORY_WRITER_PREVIOUS_LM_TOKENS", default=924))
 
