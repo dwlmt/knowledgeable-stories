@@ -167,8 +167,10 @@ def extract_rows(args):
         for i, obj in tqdm(enumerate(reader)):
             story_id = obj["story_id"]
             for child in obj["sentences"]:
+                vector_columns = {k: numpy.array(child[k], dtype=numpy.float32) for k in args["vector_columns"] if
+                                  k in child}
                 processed_dict = {**{k: child[k] for k in args["metadata_columns"]},
-                                  **{k: numpy.array(child[k], dtype=numpy.float32) for k in args["vector_columns"]}}
+                                  **vector_columns}
                 processed_dict["story_id"] = story_id
                 yield processed_dict
 
