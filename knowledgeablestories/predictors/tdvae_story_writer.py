@@ -4,6 +4,7 @@ import copy
 import os
 import random
 from collections import OrderedDict
+from itertools import zip_longest
 
 import more_itertools
 import torch
@@ -147,7 +148,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 num_sentences = rollout_xs[0].size(0)
                 rollout_xs = [r for r in rollout_xs if r.size() == xs_size_first]
                 rollout_xs = torch.cat(rollout_xs, dim=0)
-                story_contexts = story_contexts[: num_sentences]
+                # story_contexts = story_contexts[: num_sentences]
 
                 story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
 
@@ -195,7 +196,13 @@ class TdvaeStoryWriterPredictor(Predictor):
                 story_sequences = story_sequences[0: self._beam_n]
             else:
                 beam_dict = OrderedDict()
-                for i, (story, rollout_x_story), in enumerate(zip(story_sequences, rollout_x_last)):
+                for i, (story, rollout_x_story), in enumerate(
+                        zip_longest(story_sequences, rollout_x_last, fillvalue=None)):
+
+                    if rollout_x_story is None:
+                        beam_dict[i] * 10 ** 6
+                        continue
+
                     # Get the story after the initial part which is the same.
                     story_trunc = story[prior_sentence_length:]
 
