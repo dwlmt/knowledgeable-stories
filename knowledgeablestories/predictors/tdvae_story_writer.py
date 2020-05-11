@@ -200,7 +200,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                         zip_longest(story_sequences, rollout_x_last, fillvalue=None)):
 
                     if rollout_x_story is None:
-                        beam_dict[i] * 10 ** 6
+                        beam_dict[i] = 10 ** 6
                         continue
 
                     # Get the story after the initial part which is the same.
