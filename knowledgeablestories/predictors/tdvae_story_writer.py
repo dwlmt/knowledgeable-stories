@@ -144,9 +144,10 @@ class TdvaeStoryWriterPredictor(Predictor):
                     rollout_xs.append(rollout_x)
 
                 xs_size_first = rollout_xs[0].size()
+                num_sentences = rollout_xs[0].size(0)
                 rollout_xs = [r for r in rollout_xs if r.size() == xs_size_first]
                 rollout_xs = torch.cat(rollout_xs, dim=0)
-                story_contexts = story_contexts[: xs_size_first[0]]
+                story_contexts = story_contexts[: num_sentences]
 
                 story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
 
