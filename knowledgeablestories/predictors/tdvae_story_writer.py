@@ -179,6 +179,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             story_outputs["generated"] = final_stories
 
+            return story_outputs
+
     def filter_beam(self, story_sequences, rollout_x):
 
         if len(rollout_x.size()) == 3:
