@@ -170,14 +170,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 story_contexts = new_story_contexts
 
-            final_stories = []
-            for sc in story_contexts:
-                if len(sc) > self._length_to_generate:
-                    final_stories.append(sc[0:self._length_to_generate])
-                else:
-                    final_stories.append(sc)
-
-            story_outputs["generated"] = final_stories
+            story_outputs["generated"] = story_contexts
 
             return story_outputs
 
