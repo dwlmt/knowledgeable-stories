@@ -20,6 +20,7 @@ from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_re
 class CmuAbstractMovieReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -112,6 +113,7 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "cmu_movie_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -120,7 +122,7 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
                  max_token_len: int = 128,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
@@ -129,7 +131,7 @@ class CmuMovieLMReader(CmuAbstractMovieReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "cmu_movie_lm"
+        text_dict["dataset"] = self._dataset_name
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -151,6 +153,7 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "cmu_movie_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -158,7 +161,7 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
@@ -166,7 +169,7 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "cmu_movie_hierarchy"
+        text_dict["dataset"] = self.dataset_name
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)

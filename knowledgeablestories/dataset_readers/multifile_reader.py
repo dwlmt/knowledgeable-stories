@@ -25,6 +25,7 @@ class MultifileAbstractReader(DatasetReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -106,6 +107,7 @@ class MultifileAbstractReader(DatasetReader):
 class MultifileLMReader(MultifileAbstractReader):
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "multifile_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -114,7 +116,7 @@ class MultifileLMReader(MultifileAbstractReader):
                  max_token_len: int = 256,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
@@ -123,7 +125,7 @@ class MultifileLMReader(MultifileAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "multifile_lm"
+        text_dict["dataset"] = self._dataset_name
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -140,6 +142,7 @@ class MultifileLMReader(MultifileAbstractReader):
 class MultifileHierarchyReader(MultifileAbstractReader):
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "multifile_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -147,7 +150,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
@@ -155,7 +158,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = "multifile_hierarchy"
+        text_dict["dataset"] = self._dataset_name
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)

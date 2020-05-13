@@ -17,6 +17,7 @@ from knowledgeablestories.dataset_readers.utils import convert_to_textfield, gro
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -88,6 +89,7 @@ class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -95,7 +97,7 @@ class WritingPromptsLMReaderNew(WritingPromptsAbstractReader):
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 128,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len)
@@ -125,6 +127,7 @@ class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentence_splitter: SentenceSplitter = SpacySentenceSplitter(),
@@ -132,7 +135,7 @@ class WritingPromptsHierarchyReaderNew(WritingPromptsAbstractReader):
                  max_sentence_grouping: int = 5,
                  max_token_len: int = 70,
                  ) -> None:
-        super().__init__(lazy=lazy, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len)

@@ -113,6 +113,7 @@ class RocHierarchyReader(DatasetReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
                  ) -> None:

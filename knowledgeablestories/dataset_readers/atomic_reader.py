@@ -21,10 +21,12 @@ class AtomicDatasetReader(DatasetReader):
 
     def __init__(self,
                  lazy: bool = False,
+                 dataset_name: str = "atomic_lm",
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
                  ) -> None:
         super().__init__(lazy=lazy)
 
+        self._dataset_name = dataset_name
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
 
         # Add the relations as new tokens.
