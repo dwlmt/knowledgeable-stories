@@ -161,7 +161,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 duplicate_dict = OrderedDict()
                 for story in new_story_contexts:
                     duplicate_dict[story[-1]["sentence_id"]] = story
-                new_story_contexts = duplicate_dict.values()
+                new_story_contexts = list(duplicate_dict.values())
 
                 if len(new_story_contexts) > self._keep_top_n:
                     new_story_contexts = new_story_contexts[0:self._keep_top_n]
