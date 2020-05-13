@@ -98,14 +98,12 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "bad_words_ids": dont_generate_token_ids}
 
         self._sent_id_generated_tensor_dict = {}
-        self._sent_id_projected_tensor_dict = {}
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
         with torch.no_grad():
 
             self._sent_id_generated_tensor_dict = {}
-            self._sent_id_projected_tensor_dict = {}
 
             story_outputs = {}
 
@@ -171,6 +169,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                 story_contexts = new_story_contexts
 
             story_outputs["generated"] = story_contexts
+
+            print(story_outputs)
 
             return story_outputs
 
