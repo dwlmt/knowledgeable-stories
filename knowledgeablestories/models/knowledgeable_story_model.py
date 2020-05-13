@@ -328,7 +328,7 @@ class KnowledgeableStoriesModel(Model):
                         loss += passage_disc_loss
 
                         self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                        '''
+                        
                         loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
                                                             passages_encoded)
 
