@@ -125,7 +125,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "negative_slope": 0.1
     },
     "fusion_dense": {
-        "input_dim": 1024,
+        "input_dim": 2048,
         "num_layers": 1,
         "hidden_dims": 1024,
         "activations": "linear",
