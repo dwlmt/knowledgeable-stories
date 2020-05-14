@@ -53,7 +53,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="l2"))
 
-        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=10))
+        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=5))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=10))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=5))
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
@@ -204,15 +204,19 @@ class TdvaeStoryWriterPredictor(Predictor):
                     beam_dict[i] = 0.0
 
                     for sentence, rollout_x_sentence in zip(story_trunc, rollout_x_story):
-                        generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
-                        generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
+                        if sentence["sentence_id"] not in self._sent_id_generated_tensor_dict:
 
-                        #print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                        dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
-                                                 torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
-                        # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
+                            beam_dict[i] += float(10 ** 6)
+                        else:
+                            generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
+                            generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
-                        beam_dict[i] += dist
+                            #print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
+                            dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                                                     torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
+                            # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
+
+                            beam_dict[i] += dist
 
                 beam_dist, story_sequences = (list(t) for t in zip(
                     *sorted(zip(beam_dict.values(), story_sequences), key=lambda x: x[0])))
