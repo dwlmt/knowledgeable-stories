@@ -246,16 +246,19 @@ class KnowledgeablePredictor(Predictor):
                 l1_dist = self._l1_distance(x, y)
                 l2_dist = self._l2_distance(x, y)
                 cosine_dist = 1.0 - self._cosine_similarity(x, y)
+                dot_product = torch.dot(torch.squeeze(x, dim=0), torch.squeeze(y, dim=0))
 
                 if len(l1_dist.size()) < 1:
                     res_dict[f"{name}_l1_dist"] = l1_dist.item()
                     res_dict[f"{name}_l2_dist"] = l2_dist.item()
                     res_dict[f"{name}_cosine_dist"] = cosine_dist.item()
+                    res_dict[f"{name}_dot_product"] = dot_product.item()
                 else:
                     for i in range(l1_dist.size(0)):
                         res_dict[f"{name}_{i}_l1_dist"] = l1_dist[i].item()
                         res_dict[f"{name}_{i}_l2_dist"] = l2_dist[i].item()
                         res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist[i].item()
+                        res_dict[f"{name}_{i}_dot_product"] = dot_product[i].item()
 
                 return res_dict
 
@@ -321,6 +324,9 @@ class KnowledgeablePredictor(Predictor):
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
+                    dot_product = torch.dot(torch.squeeze(z1_layer, dim=0),
+                                            torch.squeeze(z2_layer, dim=0))
+
                     with torch.no_grad():
                         z1_layer = torch.sigmoid(z1_layer)
                         z2_layer = torch.sigmoid(z2_layer)
@@ -334,6 +340,7 @@ class KnowledgeablePredictor(Predictor):
                     res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                     res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
                     res_dict[f"tdvae_suspense_{k}_cosine_dist"] = cosine.item()
+                    res_dict[f"tdvae_suspense_{k}_dot_product"] = dot_product.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z2_from_z1"] = kl_z2_from_z1.item()
                     res_dict[f"tdvae_suspense_{k}_kl_z1_from_z2"] = kl_z1_from_z2.item()
                     res_dict[f"tdvae_suspense_{k}_js_z"] = ((kl_z2_from_z1.item() + kl_z1_from_z2.item() / 2.0)) ** (
