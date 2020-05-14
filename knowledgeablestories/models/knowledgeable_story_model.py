@@ -599,7 +599,7 @@ class KnowledgeableStoriesModel(Model):
                                         torch.squeeze(y, dim=0))
                 metrics.append({f"ely_surprise_cosine_dist": cosine.item(),
                                 f"ely_surprise_l1_dist": dist_l1.item(), f"ely_surprise_l2_dist": dist_l2.item(),
-                                f"ely_surprise_dot_product": dot_product})
+                                f"ely_surprise_dot_product": dot_product.item()})
             return metrics
 
     def _evaluate_hierarchy_if_required(self, conclusions, dataset_name, encoded_sentences_batch, passages_encoded,
