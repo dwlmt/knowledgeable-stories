@@ -246,7 +246,7 @@ class KnowledgeablePredictor(Predictor):
                 l1_dist = self._l1_distance(x, y)
                 l2_dist = self._l2_distance(x, y)
                 cosine_dist = 1.0 - self._cosine_similarity(x, y)
-                dot_product = torch.dot(torch.squeeze(x, dim=0), torch.squeeze(y, dim=0))
+                dot_product = (x * y).sum(-1)
 
                 if len(l1_dist.size()) < 1:
                     res_dict[f"{name}_l1_dist"] = l1_dist.item()
@@ -258,6 +258,9 @@ class KnowledgeablePredictor(Predictor):
                         res_dict[f"{name}_{i}_l1_dist"] = l1_dist[i].item()
                         res_dict[f"{name}_{i}_l2_dist"] = l2_dist[i].item()
                         res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist[i].item()
+
+                        dot_product = torch.dot(torch.squeeze(x, dim=0), torch.squeeze(y, dim=0))
+
                         res_dict[f"{name}_{i}_dot_product"] = dot_product[i].item()
 
                 return res_dict
@@ -324,8 +327,7 @@ class KnowledgeablePredictor(Predictor):
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
-                    dot_product = torch.dot(torch.squeeze(z1_layer, dim=0),
-                                            torch.squeeze(z2_layer, dim=0))
+                    dot_product = (z1_layer * z2_layer).sum(-1)
 
                     with torch.no_grad():
                         z1_layer = torch.sigmoid(z1_layer)
