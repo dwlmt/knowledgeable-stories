@@ -294,38 +294,39 @@ class TDVAE(nn.Module, FromParams):
         outer_rollout_z1 = []
 
         if not do_sample:
-            b = torch.unsqueeze(b, dim=0)
+            b_expanded = torch.unsqueeze(b, dim=0)
+        else:
+            b_expanded = b
+        for in_b in b_expanded:
+            # Rollout for n timesteps predicting the future zs at n.
+            rollout_x = []
+            rollout_z2 = []
 
-        #for in_b in b_expanded:
-        # Rollout for n timesteps predicting the future zs at n.
-        rollout_x = []
-        rollout_z2 = []
+            # Compute posterior, state of the world from belief.
+            _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
+            # print(f"Z1 Initial size: {z1.size()}")
 
-        # Compute posterior, state of the world from belief.
-        _, _, z1, _, _, _ = self.sample_posterior_z(in_b, do_sample=do_sample)
-        #print(f"Z1 Initial size: {z1.size()}")
+            outer_rollout_z1.append(z1)
 
-        outer_rollout_z1 = z1
+            z = z1
+            for _ in range(n):
+                next_z = []
+                for layer in range(self.num_layers - 1, -1, -1):
+                    if layer == self.num_layers - 1:
+                        pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](z)
+                    else:
+                        pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](torch.cat([z, pt_z2_z1], dim=1))
+                    pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, do_sample)
+                    next_z.insert(0, pt_z2_z1)
 
-        z = z1
-        for _ in range(n):
-            next_z = []
-            for layer in range(self.num_layers - 1, -1, -1):
-                if layer == self.num_layers - 1:
-                    pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](z)
-                else:
-                    pt_z2_z1_mu, pt_z2_z1_logvar = self.z2_z1_prediction[layer](torch.cat([z, pt_z2_z1], dim=1))
-                pt_z2_z1 = reparameterize_gaussian(pt_z2_z1_mu, pt_z2_z1_logvar, do_sample)
-                next_z.insert(0, pt_z2_z1)
+                z = torch.cat(next_z, dim=1)
+                rollout_z2.append(z)
+                rollout_x.append(self.x_z_decoder(z))
 
-            z = torch.cat(next_z, dim=1)
-            rollout_z2.append(z)
-            rollout_x.append(self.x_z_decoder(z))
-
-        rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
-        outer_rollout_x = rollout_x
-        rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
-        outer_rollout_z2 = rollout_z2
+            rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
+            outer_rollout_x.append(rollout_x)
+            rollout_z2 = torch.squeeze(torch.stack(rollout_z2, dim=1), dim=0)
+            outer_rollout_z2.append(rollout_z2)
 
         outer_rollout_x = torch.squeeze(torch.stack(outer_rollout_x), dim=0)
         outer_rollout_z2 = torch.squeeze(torch.stack(outer_rollout_z2), dim=0)
