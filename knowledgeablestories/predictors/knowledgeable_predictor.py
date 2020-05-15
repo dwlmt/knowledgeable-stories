@@ -259,8 +259,6 @@ class KnowledgeablePredictor(Predictor):
                         res_dict[f"{name}_{i}_l2_dist"] = l2_dist[i].item()
                         res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist[i].item()
 
-                        dot_product = torch.dot(torch.squeeze(x, dim=0), torch.squeeze(y, dim=0))
-
                         res_dict[f"{name}_{i}_dot_product"] = dot_product[i].item()
 
                 return res_dict
