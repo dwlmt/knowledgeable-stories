@@ -641,7 +641,10 @@ class KnowledgeableStoriesModel(Model):
             self._lm_model = self._lm_model.to(text_tokens.device)
 
         print("LM sizes", text_tokens.size(), text_mask.size())
-        lm_output = self._lm_model.transformer(text_tokens, attention_mask=text_mask.to(text_tokens.device))
+        if self._lm_name != "openai-gpt":
+            lm_output = self._lm_model.transformer(text_tokens, attention_mask=text_mask.to(text_tokens.device))
+        else:
+            lm_output = self._lm_model.transformer(text_tokens)
 
         if last_hidden_state_only:
             lm_output = lm_output[0]
