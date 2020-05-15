@@ -325,7 +325,7 @@ class KnowledgeablePredictor(Predictor):
                     l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
                     cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
-                    dot_product = (z1_layer * z2_layer).sum(-1)
+                    dot_product = torch.squeeze((z1_layer * z2_layer).sum(-1))
 
                     with torch.no_grad():
                         z1_layer = torch.sigmoid(z1_layer)
