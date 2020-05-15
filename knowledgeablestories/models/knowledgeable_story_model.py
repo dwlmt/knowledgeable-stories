@@ -640,6 +640,7 @@ class KnowledgeableStoriesModel(Model):
         else:
             self._lm_model = self._lm_model.to(text_tokens.device)
 
+        print("LM sizes", text_tokens.size(), text_mask.size())
         lm_output = self._lm_model.transformer(text_tokens, attention_mask=text_mask.to(text_tokens.device))
 
         if last_hidden_state_only:
