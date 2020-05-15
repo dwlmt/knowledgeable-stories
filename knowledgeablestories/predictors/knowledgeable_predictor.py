@@ -433,7 +433,7 @@ class KnowledgeablePredictor(Predictor):
 
             # print(parent, input_tokens, generated_sequences)
 
-            if len(generated_sequences) > 0:
+            if len(generated_sequences) > 2:
 
                 # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
                 if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
