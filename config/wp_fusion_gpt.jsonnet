@@ -26,12 +26,12 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "lazy": true,
                 "batch_size" : 50,
                 "tokenizer": {
-                    "type": "pretrained_transformer"
+                    "type": "pretrained_transformer",
                     "model_name": "openai-gpt"
                 },
                  "token_indexers" {
                     "tokens": {
-                       "type": "pretrained_transformer"
+                       "type": "pretrained_transformer",
                        "model_name": "openai-gpt"
                     }
                 }
