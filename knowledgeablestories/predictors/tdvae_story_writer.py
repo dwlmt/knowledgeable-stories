@@ -117,6 +117,9 @@ class TdvaeStoryWriterPredictor(Predictor):
             if "story_writer_generate_length" in inputs:
                 self._length_to_generate = inputs["story_writer_generate_length"]
 
+            for sent in copied_input_sentences:
+                sent["prompt"] = True
+
             story_length = len(copied_input_sentences)
             story_contexts = [copied_input_sentences]
 
