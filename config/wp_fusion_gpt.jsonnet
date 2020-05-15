@@ -25,7 +25,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
                 "batch_size" : 50,
-                "tokenizer" {
+                "tokenizer": {
                     "type": "pretrained_transformer"
                     "model_name": "openai-gpt"
                 },
