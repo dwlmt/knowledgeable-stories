@@ -331,8 +331,8 @@ class KnowledgeablePredictor(Predictor):
                         kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
                         kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
 
-                        print("Dot Product sizes", z1_layer, z2_layer)
-                        dot_product = z1_layer.dot(z2_layer)
+                        print("Dot Product sizes", z1_layer.size(), z2_layer.size())
+                        dot_product = torch.squeeze(z1_layer).dot(torch.squeeze(z2_layer))
 
                         print("Wasserstein", z1_layer.size(), z2_layer.size())
                         wasserstein = wasserstein_distance(z1_layer.view(z1_layer.size(0) * z1_layer.size(1)).numpy(),
