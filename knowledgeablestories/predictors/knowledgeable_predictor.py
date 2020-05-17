@@ -81,11 +81,12 @@ class KnowledgeablePredictor(Predictor):
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
         dont_generate_token_ids = []
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default="<|endofsentence|> . .. ..."))
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> .. ..."))
 
-        eos_text_token_ids = [764]
+        eos_text_token_ids = []#[764]
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        eos_text_token_ids += [764]
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
