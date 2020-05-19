@@ -83,9 +83,10 @@ class KnowledgeablePredictor(Predictor):
         dont_generate_token_ids = []
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> .. ..."))
 
-        eos_text_token_ids = [764]
+        eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        eos_text_token_ids += [764]
 
 
         self._eos_token_ids = eos_text_token_ids
@@ -481,7 +482,7 @@ class KnowledgeablePredictor(Predictor):
                 print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
                       target_representation.size())
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
-                                                      target_representation,
+                                                      final_encoded_representation,
                                                       self._encoder_cosine)
 
                 logits /= self._prediction_temp
@@ -754,6 +755,8 @@ class KnowledgeablePredictor(Predictor):
 
             lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
 
+            if lm_hidden_state.numel() < 1:
+                return None, None, None
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
