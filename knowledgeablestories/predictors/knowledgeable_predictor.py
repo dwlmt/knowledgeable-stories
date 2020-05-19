@@ -83,10 +83,10 @@ class KnowledgeablePredictor(Predictor):
         dont_generate_token_ids = []
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> .. ..."))
 
-        eos_text_token_ids = []#[764]
+        eos_text_token_ids = [764]
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        eos_text_token_ids += [764]
+
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
@@ -449,6 +449,9 @@ class KnowledgeablePredictor(Predictor):
                 encoded_sentences_tensor, context_encoded_representation, final_encoded_representation = self._encode_representations(
                     generated_sequences, existing_sentences_encoded)
 
+                if encoded_sentences_tensor is None:
+                    continue
+
                 # For multistep rollout use the base context distance for comaprison.
                 # if "parent_relation_metrics" in parent and "context_representation" in parent["parent_relation_metrics"]:
                 #    context_encoded_representation = parent["parent_relation_metrics"]["context_representation"]
@@ -739,6 +742,10 @@ class KnowledgeablePredictor(Predictor):
 
             sentence_tokens = [s["tokens"] for s in generated_sequence_batch]
             sentence_tokens_max_length = max(lengths(sentence_tokens))
+
+            if sentence_tokens_max_length < 3:
+                return None, None, None
+
             sentence_tokens = [pad(s, sentence_tokens_max_length, padding=0) for s in sentence_tokens]
             sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
 
@@ -746,6 +753,7 @@ class KnowledgeablePredictor(Predictor):
                 sentence_tokens_tensor = sentence_tokens_tensor.cuda()
 
             lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
+
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
