@@ -113,7 +113,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 6,
+        "num_layers": 4,
         "num_attention_heads": 16,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
@@ -128,7 +128,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 6,
+        "num_layers": 4,
         "positional_encoding": "embedding",
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
@@ -139,7 +139,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "input_size": 2048,
          "belief_size": 2048,
          "z_posterior_size": 2048,
-         "num_layers": 6,
+         "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
          "t_diff_max": 8,
@@ -152,25 +152,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "hidden_dims":  [1024, 512, 256, 128],
         "negative_slope": 0.1
     },
-    "sentiment_dense": {
-        "input_dim": 2048,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "position_dense": {
-        "input_dim": 2048,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
   },
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",
- "patience": PATIENCE,
+    "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -186,7 +172,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": LR_REDUCE_RATE,
-"patience": LR_PATIENCE,
+      "patience": LR_PATIENCE,
     }
   }
 }
