@@ -95,7 +95,6 @@ echo "ALLENNLP Task========"
 
 allennlp train --file-friendly-logging --include-package knowledgeablestories \
   --serialization-dir ${SERIAL_DIR}/ \
-  --cache-directory ${CACHE_DIR} \
   ${EXP_CONFIG}
 
 echo "============"
