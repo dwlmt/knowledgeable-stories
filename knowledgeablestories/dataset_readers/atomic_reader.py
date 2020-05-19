@@ -27,15 +27,15 @@ class AtomicDatasetReader(DatasetReader):
         super().__init__(lazy=lazy)
 
         self._dataset_name = dataset_name
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2")}
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
         self._categories = categories or atomic_categories
 

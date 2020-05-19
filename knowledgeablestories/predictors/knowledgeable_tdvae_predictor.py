@@ -42,15 +42,15 @@ class KnowledgeableTdvaePredictor(Predictor):
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
 
-        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name)
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
 
         self._token_indexers = {
-            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name)}
 
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 

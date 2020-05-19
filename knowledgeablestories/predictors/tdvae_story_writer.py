@@ -35,15 +35,15 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._sentence_splitter: SentenceSplitter = SpacySentenceSplitter()
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
-        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name)
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
 
         self._token_indexers = {
-            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name)}
 
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
         self._random = parse_bool(os.getenv("STORY_WRITER_RANDOM", default="False"))
 
@@ -80,12 +80,12 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         eos_text_token_ids = [764]
         for t in eos_tokens.split():
-            eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+            eos_text_token_ids.extend(self._tokenizer.tokenizer.encode(t))
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
 
-        token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
+        token_tags_ids = [self._tokenizer.tokenizer.encode(t) for t in token_tags]
         dont_generate_token_ids = token_tags_ids + dont_generate_token_ids
         dont_generate_token_ids = [t for t in dont_generate_token_ids if t not in self._eos_token_ids]
 
@@ -362,7 +362,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                             generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
+                        generated_text = self._tokenizer.tokenizer.decode(generated_sequence,
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
 
@@ -385,7 +385,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
                     sentence += "<|endofsentence|>"
-                    token_ids = self._tokenizer._tokenizer.encode(sentence)
+                    token_ids = self._tokenizer.tokenizer.encode(sentence)
                     sentence_dict_list.append(
                         {"sentence_num": i, "tokens": token_ids, "text": sentence})
 

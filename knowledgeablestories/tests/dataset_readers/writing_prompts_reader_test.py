@@ -4,10 +4,11 @@ from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
 from allennlp.data import Vocabulary
 
+import os
+
 from knowledgeablestories.dataset_readers.writing_prompts_reader import WritingPromptsLMReader, \
     WritingPromptsHierarchyReader
-from knowledgeablestories.dataset_readers.writing_prompts_reader_new import WritingPromptsLMReaderNew, \
-    WritingPromptsHierarchyReaderNew
+
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
 
@@ -15,9 +16,10 @@ AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / ".
 class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
 
     def test_hierarchy(self):
-        reader = WritingPromptsHierarchyReaderNew()
+        reader = WritingPromptsHierarchyReader()
+        wp_path = f'{str(AllenNlpTestCase.MODULE_ROOT)}\\{str(os.path.join("knowledgeablestories", "tests", "fixtures", "data", "writing_prompts_25"))}'
         instances = reader.read(
-            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/writing_prompts_25"
+            str(AllenNlpTestCase.MODULE_ROOT) + wp_path
         )
         instances = ensure_list(instances)
 
@@ -33,9 +35,10 @@ class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
             print(instance_tensor_dict)
 
     def test_lm(self):
-        reader = WritingPromptsLMReaderNew()
+        reader = WritingPromptsLMReader()
+        wp_path = f'{str(AllenNlpTestCase.MODULE_ROOT)}\\{str(os.path.join("knowledgeablestories", "tests", "fixtures", "data", "writing_prompts_25"))}'
         instances = reader.read(
-            str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/writing_prompts_25"
+            wp_path
         )
         instances = ensure_list(instances)
 

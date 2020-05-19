@@ -7,7 +7,7 @@ from overrides import overrides
 from torch import nn
 
 
-@Seq2SeqEncoder.register("pytorch_transformer")
+@Seq2SeqEncoder.register("pytorch_transformer_new")
 class PytorchTransformer(Seq2SeqEncoder):
     """
     This is coped from the head version of allennlp and wraps the standard pytorch transformer.

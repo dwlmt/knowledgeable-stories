@@ -34,15 +34,15 @@ class KnowledgeablePredictor(Predictor):
         super().__init__(model=model, dataset_reader=dataset_reader)
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
-        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name)
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
 
         self._token_indexers = {
-            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name)}
 
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
         self._softmax = nn.Softmax(dim=-1)
 
@@ -85,14 +85,14 @@ class KnowledgeablePredictor(Predictor):
 
         eos_text_token_ids = []
         for t in eos_tokens.split():
-            eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+            eos_text_token_ids.extend(self._tokenizer.tokenizer.encode(t))
         eos_text_token_ids += [764]
 
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
 
-        token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
+        token_tags_ids = [self._tokenizer.tokenizer.encode(t) for t in token_tags]
         dont_generate_token_ids = token_tags_ids + dont_generate_token_ids
         dont_generate_token_ids = [t for t in dont_generate_token_ids if t not in self._eos_token_ids]
 
@@ -439,7 +439,7 @@ class KnowledgeablePredictor(Predictor):
                 # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
                 if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
                     gold_sentence = original_sentences[story_idx + 1]
-                    gold_sentence["tokens"] = self._tokenizer._tokenizer.encode(gold_sentence["text"])
+                    gold_sentence["tokens"] = self._tokenizer.tokenizer.encode(gold_sentence["text"])
                     gold_sentence["gold"] = True
                     generated_sequences.append(gold_sentence)
 
@@ -873,7 +873,7 @@ class KnowledgeablePredictor(Predictor):
                             generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
+                        generated_text = self._tokenizer.tokenizer.decode(generated_sequence,
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
 

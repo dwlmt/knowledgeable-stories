@@ -32,8 +32,8 @@ class CbtAbstractReader(DatasetReader):
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
-        self._tokenizer._tokenizer.pad_id = 0
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", max_length=max_token_len)
+        self._tokenizer.tokenizer.pad_id = 0
         self._batch_size = batch_size
         self._max_token_len = max_token_len
         self._max_sentence_grouping = max_sentence_grouping
@@ -45,12 +45,12 @@ class CbtAbstractReader(DatasetReader):
         self._slide = slide
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
-        vocab_size = len(self._tokenizer._tokenizer)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=max_token_len)}
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}

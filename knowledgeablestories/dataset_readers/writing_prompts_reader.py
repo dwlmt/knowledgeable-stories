@@ -33,7 +33,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._dataset_name = dataset_name
         self._max_sentence_grouping = max_sentence_grouping
         self._max_token_len = max_token_len
-        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
+        self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", max_length=max_token_len)
         self._batch_size = batch_size
         self._max_sentence_grouping = max_sentence_grouping
         self._max_token_len = max_token_len
@@ -47,14 +47,14 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._fusion = fusion
 
         # Add the relations as new tokens.
-        self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer.tokenizer.add_tokens(token_tags)
 
-        vocab_size = len(self._tokenizer._tokenizer)
+        vocab_size = len(self._tokenizer.tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")
         self._token_indexers = token_indexers or {
-            "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
+            "tokens": PretrainedTransformerIndexer(model_name="gpt2", max_length=max_token_len)}
 
-        self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+        self._token_indexers["tokens"]._tokenizer = self._tokenizer.tokenizer
 
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
