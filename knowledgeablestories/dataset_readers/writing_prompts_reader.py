@@ -29,7 +29,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  max_token_len: int = 128,
                  slide: float = 0.5,
                  fusion=False) -> None:
-        super().__init__(lazy=lazy, cache_directory=cache_directory)
+        super().__init__(lazy=lazy)
 
         self._dataset_name = dataset_name
         self._max_sentence_grouping = max_sentence_grouping
