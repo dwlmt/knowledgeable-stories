@@ -34,14 +34,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     }
     }
   },
-  "train_data_path": {
+  "train_data_path": {{
         "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
-  },
-  "validation_data_path": {
+  }},
+  "validation_data_path": {{
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
-  },
+  }},
   "data_loader": {
     "batch_size": 1,
     "batches_per_epoch": TRAINING_ITERATION_SIZE,
