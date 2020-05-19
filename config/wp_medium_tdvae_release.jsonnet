@@ -44,7 +44,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   },
   "data_loader": {
     "batch_size": 1,
-    "batches_per_epoch": TRAINING_ITERATION_SIZE
+    "batches_per_epoch": TRAINING_ITERATION_SIZE,
     "num_workers": 6,
   },
   "validation_data_loader": {
