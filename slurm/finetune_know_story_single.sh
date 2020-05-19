@@ -19,7 +19,7 @@ set -e # fail fast
 export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
 
 # Activate Conda
-source /home/${USER}/miniconda3/bin/activate allennlp
+source /home/${USER}/miniconda3/bin/activate allennlp-release
 
 echo "I'm running on ${SLURM_JOB_NODELIST}"
 dt=$(date '+%d_%m_%y__%H_%M')
