@@ -18,7 +18,8 @@ from knowledgeablestories.dataset_readers.utils import convert_to_textfield, gro
 
 class WritingPromptsAbstractReader(DatasetReader):
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -28,7 +29,7 @@ class WritingPromptsAbstractReader(DatasetReader):
                  max_token_len: int = 128,
                  slide: float = 0.5,
                  fusion=False) -> None:
-        super().__init__(lazy=lazy)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
         self._dataset_name = dataset_name
         self._max_sentence_grouping = max_sentence_grouping
@@ -111,7 +112,8 @@ class WritingPromptsAbstractReader(DatasetReader):
 class WritingPromptsLMReader(WritingPromptsAbstractReader):
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "writing_prompts_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -121,7 +123,7 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
                  max_token_len: int = 128,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len, slide=slide)
@@ -133,7 +135,7 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -151,7 +153,8 @@ class WritingPromptsLMReader(WritingPromptsAbstractReader):
 class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "writing_prompts_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -160,7 +163,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  fusion: bool = False) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide,
@@ -174,7 +177,7 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
         text_dict["fusion"] = self._fusion
 
         story_text = text_dict["story_text"]
@@ -195,7 +198,8 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
 class WritingPromptsCompressionReader(WritingPromptsHierarchyReader):
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "writing_prompts_generation",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -204,7 +208,7 @@ class WritingPromptsCompressionReader(WritingPromptsHierarchyReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  fusion: bool = False) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide,

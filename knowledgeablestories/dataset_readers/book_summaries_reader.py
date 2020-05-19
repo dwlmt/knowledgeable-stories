@@ -19,7 +19,8 @@ from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_re
 
 class CmuAbstractBookReader(DatasetReader):
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -29,7 +30,7 @@ class CmuAbstractBookReader(DatasetReader):
                  max_sentence_grouping: int = 5,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
@@ -112,7 +113,8 @@ class CmuBookLMReader(CmuAbstractBookReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "cmu_book_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -122,7 +124,7 @@ class CmuBookLMReader(CmuAbstractBookReader):
                  max_token_len: int = 128,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
@@ -131,7 +133,6 @@ class CmuBookLMReader(CmuAbstractBookReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -152,7 +153,8 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "cmu_book_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -161,7 +163,7 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
                  max_token_len=64,
                  slide: float = 1.0,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
@@ -169,7 +171,7 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)

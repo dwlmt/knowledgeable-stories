@@ -24,7 +24,8 @@ class MultifileAbstractReader(DatasetReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -34,7 +35,7 @@ class MultifileAbstractReader(DatasetReader):
                  max_sentence_grouping: int = 14,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
@@ -106,7 +107,8 @@ class MultifileAbstractReader(DatasetReader):
 @DatasetReader.register("multifile_lm")
 class MultifileLMReader(MultifileAbstractReader):
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "multifile_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -116,7 +118,7 @@ class MultifileLMReader(MultifileAbstractReader):
                  max_token_len: int = 256,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
@@ -125,7 +127,7 @@ class MultifileLMReader(MultifileAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -141,7 +143,8 @@ class MultifileLMReader(MultifileAbstractReader):
 @DatasetReader.register("multifile_hierarchy")
 class MultifileHierarchyReader(MultifileAbstractReader):
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "multifile_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -150,7 +153,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
@@ -158,7 +161,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
 
         story_text = text_dict["story_text"]
         text_field_list = convert_to_textfield(story_text, self._tokenizer, self._max_token_len, self._token_indexers)

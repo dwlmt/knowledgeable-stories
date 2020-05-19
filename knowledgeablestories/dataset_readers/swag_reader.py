@@ -20,11 +20,12 @@ class SwagKnowDatasetReader(DatasetReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "",
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
                  ) -> None:
-        super().__init__(lazy=lazy)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2")
 

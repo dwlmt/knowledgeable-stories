@@ -18,7 +18,8 @@ from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_re
 
 class CbtAbstractReader(DatasetReader):
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -28,7 +29,7 @@ class CbtAbstractReader(DatasetReader):
                  max_sentence_grouping: int = 5,
                  slide: float = 0.5,
                  ) -> None:
-        super().__init__(lazy=lazy)
+        super().__init__(lazy=lazy, cache_directory=cache_directory)
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
@@ -127,7 +128,8 @@ class CbtLMReader(CbtAbstractReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "cbt_lm",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -137,7 +139,7 @@ class CbtLMReader(CbtAbstractReader):
                  slide: float = 0.5,
                  max_token_len: int = 70,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_sentence_grouping=max_sentence_grouping,
                          max_token_len=max_token_len,
@@ -146,7 +148,7 @@ class CbtLMReader(CbtAbstractReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        text_dict["dataset"] = self._dataset_name
+
 
         text = text_dict["story_text"]
         group_sentences = group_into_n_sentences(text, self._max_sentence_grouping)
@@ -165,7 +167,8 @@ class CbtHierarchyReader(CbtAbstractReader):
     """
 
     def __init__(self,
-                 lazy: bool = False,
+                 lazy: bool = True,
+                 cache_directory: str = None,
                  dataset_name: str = "cbt_hierarchy",
                  tokenizer: Tokenizer = None,
                  token_indexers: Dict[str, TokenIndexer] = None,
@@ -174,7 +177,7 @@ class CbtHierarchyReader(CbtAbstractReader):
                  max_token_len: int = 70,
                  slide: float = 1.0,
                  ) -> None:
-        super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
+        super().__init__(lazy=lazy, cache_directory=cache_directory, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
