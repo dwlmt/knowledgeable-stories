@@ -31,6 +31,7 @@ class CbtAbstractReader(DatasetReader):
         super().__init__(lazy=lazy)
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
+        self._dataset_name = dataset_name
 
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._tokenizer._tokenizer.pad_id = 0

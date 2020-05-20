@@ -59,7 +59,6 @@ class RocLMReader(DatasetReader):
 
     def __init__(self,
                  lazy: bool = False,
-                 cache_directory: Optional[str] = None,
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
                  ) -> None:
         super().__init__(lazy=lazy)

@@ -33,6 +33,8 @@ class CmuAbstractMovieReader(DatasetReader):
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
+        self._dataset_name = dataset_name
+
         self._tokenizer = tokenizer or PretrainedTransformerTokenizer(model_name="gpt2", do_lowercase=False)
         self._batch_size = batch_size
         self._max_token_len = max_token_len
