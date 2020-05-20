@@ -15,8 +15,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 
-local WP_TRAIN_PATH = dataset_root + "/WritingPrompts/train.wp_target";
-local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target";
 
 {
   "dataset_reader": {
@@ -37,8 +35,8 @@ local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target";
     }
     }
   },
-  "train_data_path":  '{"writing_prompts_lm": "%(self.WP_TRAIN_PATH)", "writing_prompts_hierarchy": "%(self.WP_TRAIN_PATH)"}' ,
-  "validation_data_path": '{"writing_prompts_lm": "%(self.WP_VALID_PATH)","writing_prompts_hierarchy": "%(self.WP_VALID_PATH)"}',
+  "train_data_path":  '{"writing_prompts_lm": "/home/s1569885/datasets/story_datasets/WritingPrompts/train.wp_target", "writing_prompts_hierarchy": "/home/s1569885/datasets/story_datasets/WritingPrompts/train.wp_target"}' ,
+  "validation_data_path": '{"writing_prompts_lm": "/home/s1569885/datasets/story_datasets//WritingPrompts/train.wp_target","writing_prompts_hierarchy": "/home/s1569885/datasets/story_datasets/WritingPrompts/train.wp_target"}',
   "data_loader": {
     "batch_size": 1,
     "batches_per_epoch": TRAINING_ITERATION_SIZE,
