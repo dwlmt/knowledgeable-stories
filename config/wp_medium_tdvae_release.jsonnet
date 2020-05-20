@@ -37,8 +37,8 @@ local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target";
     }
     }
   },
-  "train_data_path":  '{{"writing_prompts_lm": "%(self.WP_TRAIN_PATH)", "writing_prompts_hierarchy": "%(self.WP_TRAIN_PATH)"}}' ,
-  "validation_data_path": '{{"writing_prompts_lm": "%(self.WP_VALID_PATH)","writing_prompts_hierarchy": "%(self.WP_VALID_PATH)"}}',
+  "train_data_path":  '{"writing_prompts_lm": "%(self.WP_TRAIN_PATH)", "writing_prompts_hierarchy": "%(self.WP_TRAIN_PATH)"}' ,
+  "validation_data_path": '{"writing_prompts_lm": "%(self.WP_VALID_PATH)","writing_prompts_hierarchy": "%(self.WP_VALID_PATH)"}',
   "data_loader": {
     "batch_size": 1,
     "batches_per_epoch": TRAINING_ITERATION_SIZE,
