@@ -410,20 +410,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "dropout_prob": 0.0,
       }
     },
-    "sentiment_dense": {
-        "input_dim": 2048,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "position_dense": {
-        "input_dim": 2048,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
     "passage_tdvae": {
          "x_size": 2048,
          "input_size": 2048,
