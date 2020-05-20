@@ -15,8 +15,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 
-local WP_TRAIN_PATH = dataset_root + "/WritingPrompts/train.wp_target"
-local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target"
+local WP_TRAIN_PATH = dataset_root + "/WritingPrompts/train.wp_target";
+local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target";
 
 {
   "dataset_reader": {
