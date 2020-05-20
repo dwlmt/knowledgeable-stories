@@ -6,8 +6,6 @@ from allennlp.data import Vocabulary
 
 from knowledgeablestories.dataset_readers.writing_prompts_reader import WritingPromptsLMReader, \
     WritingPromptsHierarchyReader
-from knowledgeablestories.dataset_readers.writing_prompts_reader_new import WritingPromptsLMReaderNew, \
-    WritingPromptsHierarchyReaderNew
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
 
@@ -15,7 +13,7 @@ AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / ".
 class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
 
     def test_hierarchy(self):
-        reader = WritingPromptsHierarchyReaderNew()
+        reader = WritingPromptsHierarchyReader()
         instances = reader.read(
             str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/writing_prompts_25"
         )
@@ -33,7 +31,7 @@ class TestWritingPromptsLMDatasetReader(AllenNlpTestCase):
             print(instance_tensor_dict)
 
     def test_lm(self):
-        reader = WritingPromptsLMReaderNew()
+        reader = WritingPromptsLMReader()
         instances = reader.read(
             str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/writing_prompts_25"
         )
