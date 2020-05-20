@@ -15,6 +15,9 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
 local TRAINING_ITERATION_SIZE = std.parseInt(std.extVar("TRAINING_ITERATION_SIZE"));
 local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_SIZE"));
 
+local WP_TRAIN_PATH = dataset_root + "/WritingPrompts/train.wp_target"
+local WP_VALID_PATH = dataset_root + "/WritingPrompts/valid.wp_target"
+
 {
   "dataset_reader": {
     "type": "interleaving",
@@ -34,8 +37,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     }
     }
   },
-  "train_data_path": '{{"writing_prompts_lm": "/WritingPrompts/train.wp_target","writing_prompts_hierarchy": "/WritingPrompts/train.wp_target"}}',
-  "validation_data_path": '{{"writing_prompts_lm": "/WritingPrompts/valid.wp_target","writing_prompts_hierarchy": "/WritingPrompts/valid.wp_target"}}',
+  "train_data_path":  ||| {{"writing_prompts_lm": "%(WP_TRAIN_PATH)","writing_prompts_hierarchy": "%(WP_TRAIN_PATH)"}}' ||| % self,
+  "validation_data_path":  ||| {{"writing_prompts_lm": "%(WP_VALID_PATH)","writing_prompts_hierarchy": "%(WP_VALID_PATH)"}}' ||| % self,
   "data_loader": {
     "batch_size": 1,
     "batches_per_epoch": TRAINING_ITERATION_SIZE,
