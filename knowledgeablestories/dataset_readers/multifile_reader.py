@@ -82,7 +82,7 @@ class MultifileAbstractReader(DatasetReader):
 
     def _chunk_instances(self, text_sentences):
         absolute_positions = [(r + 1) for r in range(len(text_sentences))]
-        relative_positions = [p / float(len(text_sentences)) * 100.0 for p in absolute_positions]
+        relative_positions = [(p / float(len(text_sentences))) * 100.0 for p in absolute_positions]
 
         for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
                                                                         step=int(round(
