@@ -453,8 +453,8 @@ class KnowledgeableStoriesModel(Model):
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]]
-            position_pred = torch.sigmoid(torch.squeeze(self._position_dense(masked_encoded_sentences)))
-            pos_loss = binary_cross_entropy(position_pred, masked_predictions)
+            position_pred = torch.squeeze(self._position_dense(masked_encoded_sentences))
+            pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
         return loss
