@@ -168,7 +168,7 @@ class MultifileHierarchyReader(MultifileAbstractReader):
 
         fields["passages"] = text_field_list
 
-        fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
+        #fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
         fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
 
         fields["metadata"] = MetadataField(text_dict)
