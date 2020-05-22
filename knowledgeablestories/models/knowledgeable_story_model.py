@@ -462,7 +462,7 @@ class KnowledgeableStoriesModel(Model):
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
 
-            print(encoded_sentences.size(), passages_relative_positions.size())
+            #print(encoded_sentences.size(), passages_relative_positions.size())
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]].long()
@@ -472,7 +472,7 @@ class KnowledgeableStoriesModel(Model):
             if len(position_pred.size()) == 3:
                 position_pred = position_pred.view(position_pred.size(0) * position_pred.size(1), position_pred.size(2))
 
-            print("Pos sizes", position_pred.size(), masked_predictions.size())
+            #print("Pos sizes", position_pred.size(), masked_predictions.size())
             pos_loss = self._cross_entropy_loss(position_pred, masked_predictions)
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
@@ -488,7 +488,7 @@ class KnowledgeableStoriesModel(Model):
                 sentiment_pred = sentiment_pred.view(sentiment_pred.size(0) * sentiment_pred.size(1), sentiment_pred.size(2))
 
 
-            print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
+            #print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
