@@ -87,6 +87,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_name": "gpt2-medium",
     "lm_device": 1,
     "tdvae_device": 2,
+    "cat_minus": true,
     "lm_finetune_final_layer_only": false,
     "sent_offsets": [-1, 1],
     "sent_scales": [10.0, 10.0],
@@ -147,20 +148,20 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "decoder_hidden_size": 2048,
     },
     "sentence_autoencoder": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "embedding_dim": 64,
         "hidden_dims":  [1024, 512, 256, 128],
         "negative_slope": 0.1
     },
      "sentiment_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 9,
         "activations": "linear",
         "dropout": 0.0
     },
     "position_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 20,
         "activations": "linear",
