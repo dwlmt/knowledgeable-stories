@@ -513,7 +513,7 @@ class KnowledgeableStoriesModel(Model):
             #print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(dataset_pred, masked_predictions)
             loss += sent_loss
-            self._metrics["dataset_loss"](sent_loss)
+            self._metrics["storytype_loss"](sent_loss)
         return loss
 
     def fusion_loss_if_required(self, lm_mask, lm_output, labels, loss, passages_encoded):
