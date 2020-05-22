@@ -42,6 +42,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_dense: FeedForward = None,
                  sentiment_dense: FeedForward = None,
                  position_dense: FeedForward = None,
+                 dense_minus: bool = False,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
                  dropout: float = 0.0,
@@ -99,6 +100,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._fusion_dense = fusion_dense
         self._passage_dense = passage_dense
+        self._dense_minus = dense_minus
 
         self._passage_tdvae = passage_tdvae
 
@@ -271,17 +273,25 @@ class KnowledgeableStoriesModel(Model):
 
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
-                    encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
+                    encoded_sentences_cat = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
+                else:
+                    encoded_sentences_cat = encoded_sentences
 
-                loss = self.position_prediction_if_required(encoded_sentences, passage_mask,
+
+                if not self._dense_minus or (self._sentence_2_seq2seq_encoder is None and self._sentence_2_seq2vec_encoder is None):
+                    encoded_sentences_pred = encoded_sentences_cat
+                else:
+                    encoded_sentences_pred = torch.cat((encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
+
+                loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
                                                             passages_relative_positions, loss)
 
-                loss = self.sentiment_prediction_if_required(encoded_sentences, passage_mask, passages_sentiment, loss)
+                loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment, loss)
 
                 if self._sentence_detach:
-                    encoded_sentences = encoded_sentences.detach()
+                    encoded_sentences_cat = encoded_sentences_cat.detach()
 
-                loss = self._sentence_autoencoder_if_required(encoded_sentences, loss, output, prediction_mode)
+                loss = self._sentence_autoencoder_if_required(encoded_sentences_cat, loss, output, prediction_mode)
 
                 output["sentences_encoded"] = encoded_sentences
                 output["lm_encoded"] = lm_output
@@ -291,15 +301,15 @@ class KnowledgeableStoriesModel(Model):
                 if self._passage_seq2seq_encoder != None:
 
                     passages_encoded, passages_mask = \
-                        self.encode_passages(encoded_sentences, passage_mask)
+                        self.encode_passages(encoded_sentences_cat, passage_mask)
 
                     if self._passage_dense is not None:
-                        encoded_sentences = self._passage_dense(encoded_sentences)
+                        encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
 
                     if "passage_disc_loss" in self._loss_weights:
 
                         passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        encoded_sentences,
+                                                                                        encoded_sentences_cat,
                                                                                         mask=passage_mask,
                                                                                         offsets=self._passage_offsets,
                                                                                         scales=self._passage_scales,
@@ -343,20 +353,20 @@ class KnowledgeableStoriesModel(Model):
 
 
                     if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
-                        self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences,
+                        self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
                                                              passages_encoded, lm_mask)
 
                 if self._passage_tdvae is not None:
 
-                    encoded_sentences = torch.sigmoid(encoded_sentences)
+                    encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat)
 
                     orig_device = None
                     if self._tdvae_device:
-                        orig_device = encoded_sentences.device
-                        encoded_sentences = encoded_sentences.to(self._tdvae_device)
+                        orig_device = encoded_sentences_cat.device
+                        encoded_sentences = encoded_sentences_cat.to(self._tdvae_device)
                         passage_mask = passage_mask.to(self._tdvae_device)
 
-                    tdvae_return = self._passage_tdvae(encoded_sentences, mask=passage_mask)
+                    tdvae_return = self._passage_tdvae(encoded_sentences_cat, mask=passage_mask)
 
                     if tdvae_return is not None:
 
@@ -364,7 +374,7 @@ class KnowledgeableStoriesModel(Model):
                             tdvae_return)
 
                         if orig_device:
-                            encoded_sentences = encoded_sentences.to(orig_device)
+                            encoded_sentences_cat = encoded_sentences_cat.to(orig_device)
                             passage_mask = passage_mask.to(orig_device)
                             total_loss = total_loss.to(orig_device)
                             kl_div_qs_pb = kl_div_qs_pb.to(orig_device)
@@ -380,7 +390,7 @@ class KnowledgeableStoriesModel(Model):
 
                     if prediction_mode:
                         rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                            encoded_sentences, do_sample=False)
+                            encoded_sentences_cat, do_sample=False)
                         tdvae_output = {}
                         tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
                         tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
@@ -390,7 +400,7 @@ class KnowledgeableStoriesModel(Model):
 
                         if self._sampled:
                             rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                                encoded_sentences, do_sample=True)
+                                encoded_sentences_cat, do_sample=True)
                             tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
                             tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
                             tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
