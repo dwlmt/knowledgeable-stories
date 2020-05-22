@@ -182,6 +182,7 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["tdvae_predict_loss"] = Average()
             self._metrics["sentiment_loss"] = Average()
             self._metrics["position_loss"] = Average()
+            self._metrics["storytype_loss"] = Average()
 
             self._metrics["passage_disc_logits_mean"] = Average()
             self._metrics["passage_disc_logits_std"] = Average()
