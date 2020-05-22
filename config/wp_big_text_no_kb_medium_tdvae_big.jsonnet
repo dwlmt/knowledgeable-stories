@@ -411,14 +411,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       }
     },
     "sentiment_dense": {
-        "input_dim": 3072,
+        "input_dim": 2048,
         "num_layers": 1,
         "hidden_dims": 9,
         "activations": "linear",
         "dropout": 0.0
     },
     "position_dense": {
-        "input_dim": 3072,
+        "input_dim": 2048,
         "num_layers": 1,
         "hidden_dims": 20,
         "activations": "linear",
