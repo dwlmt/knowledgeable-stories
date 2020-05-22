@@ -351,6 +351,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "lm_name": "gpt2-medium",
     "lm_device": 1,
     "tdvae_device": 2,
+    "dense_minus": true,
     "lm_finetune_final_layer_only": false,
     "sent_offsets": [-1, 1],
     "sent_scales": [10.0, 10.0],
@@ -411,16 +412,16 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       }
     },
     "sentiment_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
-        "hidden_dims": 1,
+        "hidden_dims": 9,
         "activations": "linear",
         "dropout": 0.0
     },
     "position_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
-        "hidden_dims": 1,
+        "hidden_dims": 20,
         "activations": "linear",
         "dropout": 0.0
     },

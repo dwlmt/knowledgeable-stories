@@ -150,6 +150,7 @@ class KnowledgeableStoriesModel(Model):
         self._dropout = torch.nn.Dropout(dropout)
 
         self._kl_loss = nn.KLDivLoss(reduction='batchmean')
+        self._cross_entropy_loss = nn.CrossEntropyLoss()
 
         self._metrics = {}
         for dataset_name, values in self._dataset_config.items():
@@ -462,9 +463,16 @@ class KnowledgeableStoriesModel(Model):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
-                passage_mask.bool()[:, : passages_relative_positions.size(-1)]]
+                passage_mask.bool()[:, : passages_relative_positions.size(-1)]].long()
+
             position_pred = torch.squeeze(self._position_dense(masked_encoded_sentences))
-            pos_loss = l1_loss(position_pred, masked_predictions, reduction="mean")
+
+            if len(position_pred.size()) == 3:
+                position_pred = position_pred.view(position_pred.size(0) * position_pred.size(1), position_pred.size(2))
+            if len(masked_predictions.size()) == 3:
+                masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1), masked_predictions.size(2))
+
+            pos_loss = self._cross_entropy_loss(position_pred, masked_predictions, reduction="mean")
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
         return loss
@@ -472,9 +480,16 @@ class KnowledgeableStoriesModel(Model):
     def sentiment_prediction_if_required(self, encoded_sentences, passage_mask, passages_sentiment, loss):
         if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights and passages_sentiment is not None:
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
-            masked_predictions = passages_sentiment[passage_mask.bool()]
-            sentiment_pred = torch.tanh(torch.squeeze(self._sentiment_dense(masked_encoded_sentences)))
-            sent_loss = l1_loss(sentiment_pred, masked_predictions, reduction="mean")
+            masked_predictions = passages_sentiment[passage_mask.bool()].long()
+            sentiment_pred = torch.squeeze(self._sentiment_dense(masked_encoded_sentences))
+
+            if len(sentiment_pred.size()) == 3:
+                sentiment_pred = sentiment_pred.view(sentiment_pred.size(0) * sentiment_pred.size(1), sentiment_pred.size(2))
+            if len(masked_predictions.size()) == 3:
+                masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1),
+                                                             masked_predictions.size(2))
+
+            sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
         return loss

@@ -13,7 +13,8 @@ from allennlp.nn.util import logger
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
-from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences
+from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, \
+    position_to_labels_field, sentiment_to_labels_field
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
 
@@ -77,7 +78,7 @@ class CmuAbstractBookReader(DatasetReader):
                 text_sentences = self.convert_text_to_sentences(line["story_text"])
 
                 absolute_positions = [(r + 1) for r in range(len(text_sentences))]
-                relative_positions = [(p / float(len(text_sentences))) * 100.0 for p in absolute_positions]
+                relative_positions = [(p / float(len(text_sentences))) for p in absolute_positions]
 
                 for i, sentence_batch in enumerate(list(more_itertools.windowed(text_sentences, self._batch_size,
                                                                                 step=int(
@@ -89,7 +90,7 @@ class CmuAbstractBookReader(DatasetReader):
 
                     line["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
                     line["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
-                    line["sentiment"] = [100.0 * float(self._vader_analyzer.polarity_scores(t)["compound"]) for t in
+                    line["sentiment"] = [float(self._vader_analyzer.polarity_scores(t)["compound"]) for t in
                                          sentence_batch]
 
                     yield self.text_to_instance(line)
@@ -178,8 +179,8 @@ class CmuBookHierarchyReader(CmuAbstractBookReader):
 
         fields["passages"] = text_field_list
 
-        fields["passages_relative_positions"] = ArrayField(numpy.array(text_dict["relative_positions"]))
-        fields["passages_sentiment"] = ArrayField(numpy.array(text_dict["sentiment"]))
+        fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
+        fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
 
         fields["metadata"] = MetadataField(text_dict)
 
