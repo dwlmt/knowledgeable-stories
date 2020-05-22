@@ -88,7 +88,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "type": "sharded_simple",
             "lazy": true,
             "base_reader": {
-                "type": "multifile_lm",
+                "type": "multifile_hierarchy",
                 "lazy": true,
                 "types_label": 1,
             },
