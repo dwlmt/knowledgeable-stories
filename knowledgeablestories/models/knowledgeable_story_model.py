@@ -461,16 +461,16 @@ class KnowledgeableStoriesModel(Model):
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
+
+            print(encoded_sentences.size(), passages_relative_positions.size())
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]].long()
 
-            position_pred = torch.squeeze(self._position_dense(masked_encoded_sentences))
+            position_pred = self._position_dense(masked_encoded_sentences)
 
             if len(position_pred.size()) == 3:
                 position_pred = position_pred.view(position_pred.size(0) * position_pred.size(1), position_pred.size(2))
-            if len(masked_predictions.size()) == 3:
-                masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1), masked_predictions.size(2))
 
             print("Pos sizes", position_pred.size(), masked_predictions.size())
             pos_loss = self._cross_entropy_loss(position_pred, masked_predictions)
@@ -482,13 +482,11 @@ class KnowledgeableStoriesModel(Model):
         if self._sentiment_dense is not None and "sentiment_loss" in self._loss_weights and passages_sentiment is not None:
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_sentiment[passage_mask.bool()].long()
-            sentiment_pred = torch.squeeze(self._sentiment_dense(masked_encoded_sentences))
+            sentiment_pred = self._sentiment_dense(masked_encoded_sentences)
 
             if len(sentiment_pred.size()) == 3:
                 sentiment_pred = sentiment_pred.view(sentiment_pred.size(0) * sentiment_pred.size(1), sentiment_pred.size(2))
-            if len(masked_predictions.size()) == 3:
-                masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1),
-                                                             masked_predictions.size(2))
+
 
             print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
