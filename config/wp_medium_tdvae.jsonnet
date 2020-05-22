@@ -89,7 +89,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_finetune_final_layer_only": false,
     "sent_offsets": [-1, 1],
     "sent_scales": [10.0, 10.0],
-    "dense_minus": true,
     "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {

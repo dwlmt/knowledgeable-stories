@@ -30,7 +30,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
             "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
         },
         "roc_lm": {
             "type": "roc_lm",
@@ -50,7 +50,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "cmu_movie_hierarchy": {
             "type": "cmu_movie_hierarchy",
             "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
         },
          "cmu_book_lm": {
             "type": "cmu_book_lm",
@@ -62,7 +62,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "cmu_book_hierarchy": {
             "type": "cmu_book_hierarchy",
             "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
         },
          "cbt_lm": {
            "type": "cbt_lm",
@@ -74,7 +74,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
             "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
         },
         "schmoop_lm": {
             "type": "sharded_simple",
@@ -351,7 +351,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "lm_name": "gpt2-medium",
     "lm_device": 1,
     "tdvae_device": 2,
-    "dense_minus": true,
     "lm_finetune_final_layer_only": false,
     "sent_offsets": [-1, 1],
     "sent_scales": [10.0, 10.0],

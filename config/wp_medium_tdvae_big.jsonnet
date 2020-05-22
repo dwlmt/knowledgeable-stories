@@ -31,7 +31,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-            "batch_size" : 200,
+             "batch_size" : 100,
                 "slide" : 1.0,
             }
         },
