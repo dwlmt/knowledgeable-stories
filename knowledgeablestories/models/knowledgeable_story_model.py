@@ -472,6 +472,7 @@ class KnowledgeableStoriesModel(Model):
             if len(masked_predictions.size()) == 3:
                 masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1), masked_predictions.size(2))
 
+            print("Pos sizes", position_pred.size(), masked_predictions.size())
             pos_loss = self._cross_entropy_loss(position_pred, masked_predictions)
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
@@ -489,6 +490,7 @@ class KnowledgeableStoriesModel(Model):
                 masked_predictions = masked_predictions.view(masked_predictions.size(0) * masked_predictions.size(1),
                                                              masked_predictions.size(2))
 
+            print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
