@@ -42,7 +42,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_dense: FeedForward = None,
                  sentiment_dense: FeedForward = None,
                  position_dense: FeedForward = None,
-                 dense_minus: bool = False,
+                 cat_minus: bool = False,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
                  dropout: float = 0.0,
@@ -100,7 +100,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._fusion_dense = fusion_dense
         self._passage_dense = passage_dense
-        self._dense_minus = dense_minus
+        self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
 
@@ -279,7 +279,7 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_cat = encoded_sentences
 
 
-                if not self._dense_minus or (self._sentence_2_seq2seq_encoder is None and self._sentence_2_seq2vec_encoder is None):
+                if not self._cat_minus or (self._sentence_2_seq2seq_encoder is None and self._sentence_2_seq2vec_encoder is None):
                     encoded_sentences_pred = encoded_sentences_cat
                 else:
                     encoded_sentences_pred = torch.cat((encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
