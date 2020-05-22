@@ -37,7 +37,7 @@ def cleanup_text(text, ascii=True):
 def position_to_labels_field(scalar_values):
 
     labels_list = []
-    cat_ints = [max(min(int(s / 0.05) - 1, 0),19) for  s in scalar_values]
+    cat_ints = [min(max(int(s / 0.05) - 1, 0),19) for  s in scalar_values]
     for cat in cat_ints:
         labels_list.append(LabelField(cat,skip_indexing=True))
     field = ListField(labels_list)
