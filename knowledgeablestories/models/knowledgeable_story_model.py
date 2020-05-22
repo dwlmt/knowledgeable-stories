@@ -42,6 +42,7 @@ class KnowledgeableStoriesModel(Model):
                  passage_dense: FeedForward = None,
                  sentiment_dense: FeedForward = None,
                  position_dense: FeedForward = None,
+                 storytype_dense: FeedForward = None,
                  cat_minus: bool = False,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
@@ -73,6 +74,7 @@ class KnowledgeableStoriesModel(Model):
                             "passage_autoencoder": 1.0,
                             "sentiment_loss": 1.0,
                             "position_loss": 1.0,
+                            "storytype_loss": 1.0,
                             }
 
         if metric_config is None:
@@ -100,6 +102,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._fusion_dense = fusion_dense
         self._passage_dense = passage_dense
+        self._storytype_dense = storytype_dense
         self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
@@ -224,6 +227,7 @@ class KnowledgeableStoriesModel(Model):
                 passages: Dict[str, torch.Tensor] = None,
                 passages_relative_positions: torch.Tensor = None,
                 passages_sentiment: torch.Tensor = None,
+                passages_storytype: torch.Tensor = None,
                 premises: Dict[str, torch.Tensor] = None,
                 conclusions: Dict[str, torch.Tensor] = None,
                 negative_conclusions: Dict[str, torch.Tensor] = None,
@@ -288,6 +292,9 @@ class KnowledgeableStoriesModel(Model):
                                                             passages_relative_positions, loss)
 
                 loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment, loss)
+
+                loss = self.storytype_prediction_if_required(encoded_sentences_pred, passage_mask, passages_storytype,
+                                                             loss)
 
                 if self._sentence_detach:
                     encoded_sentences_cat = encoded_sentences_cat.detach()
@@ -492,6 +499,21 @@ class KnowledgeableStoriesModel(Model):
             sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
+        return loss
+
+    def storytype_prediction_if_required(self, encoded_sentences, passage_mask, passages_type, loss):
+        if self._storytype_dense is not None and "storytype_loss" in self._loss_weights and passages_type is not None:
+            masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
+            masked_predictions = passages_type[passage_mask.bool()].long()
+            dataset_pred = self._storytype_dense(masked_encoded_sentences)
+
+            if len(dataset_pred.size()) == 3:
+                dataset_pred = dataset_pred.view(dataset_pred.size(0) * dataset_pred.size(1), dataset_pred.size(2))
+
+            #print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
+            sent_loss = self._cross_entropy_loss(dataset_pred, masked_predictions)
+            loss += sent_loss
+            self._metrics["dataset_loss"](sent_loss)
         return loss
 
     def fusion_loss_if_required(self, lm_mask, lm_output, labels, loss, passages_encoded):

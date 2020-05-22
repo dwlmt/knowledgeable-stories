@@ -13,7 +13,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, \
-    position_to_labels_field, sentiment_to_labels_field
+    position_to_labels_field, sentiment_to_labels_field, type_to_labels_field
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
 
@@ -152,11 +152,13 @@ class MultifileHierarchyReader(MultifileAbstractReader):
                  batch_size: int = 100,
                  max_token_len: int = 70,
                  slide: float = 1.0,
+                 types_label = 1
                  ) -> None:
         super().__init__(lazy=lazy, dataset_name=dataset_name, tokenizer=tokenizer, token_indexers=token_indexers,
                          sentence_splitter=sentence_splitter, batch_size=batch_size,
                          max_token_len=max_token_len,
                          slide=slide)
+        self._types_label = types_label
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
@@ -170,6 +172,9 @@ class MultifileHierarchyReader(MultifileAbstractReader):
 
         #fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
         fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+
+        label_text = self._types_label
+        fields["passages_storytype"] = type_to_labels_field(label_text, len(story_text))
 
         fields["metadata"] = MetadataField(text_dict)
 

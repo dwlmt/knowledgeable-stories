@@ -90,6 +90,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "base_reader": {
                 "type": "multifile_lm",
                 "lazy": true,
+                "types_label": 1,
             },
         },
         "bookscorpus_lm": {
@@ -106,6 +107,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "base_reader": {
                 "type": "multifile_hierarchy",
                 "lazy": true,
+                "types_label": 1,
             },
         },
         "filmcorpus_lm": {
@@ -122,6 +124,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "base_reader": {
                 "type": "multifile_hierarchy",
                 "lazy": true,
+                "types_label": 2,
             },
         },
     },
@@ -411,16 +414,23 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       }
     },
     "sentiment_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 9,
         "activations": "linear",
         "dropout": 0.0
     },
     "position_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 20,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "storytype_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 4,
         "activations": "linear",
         "dropout": 0.0
     },

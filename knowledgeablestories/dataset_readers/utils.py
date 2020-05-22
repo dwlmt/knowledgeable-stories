@@ -43,6 +43,14 @@ def position_to_labels_field(scalar_values):
     field = ListField(labels_list)
     return field
 
+def type_to_labels_field(scalar_value, number_of_sentences):
+
+    labels_list = []
+    for i in range(number_of_sentences):
+        labels_list.append(LabelField(scalar_value,skip_indexing=True))
+    field = ListField(labels_list)
+    return field
+
 def sentiment_to_labels_field(scalar_values):
 
     def map_sentiment(scalar):
@@ -73,6 +81,8 @@ def sentiment_to_labels_field(scalar_values):
     field = ListField(labels_list)
     return field
 
+
+
 def convert_to_textfield(text_batch, tokenizer, max_token_len, token_indexers):
     text_field_list = []
     for text in text_batch:
@@ -83,6 +93,8 @@ def convert_to_textfield(text_batch, tokenizer, max_token_len, token_indexers):
             TextField(tokens, token_indexers=token_indexers))
     text_list_field = ListField(text_field_list)
     return text_list_field
+
+
 
 def group_into_n_sentences(text, n):
     return [" ".join(text[i * n:(i + 1) * n]) for i in range((len(text) + n - 1) // n)]

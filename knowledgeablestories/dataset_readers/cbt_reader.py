@@ -13,7 +13,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.dataset_readers.utils import convert_to_textfield, group_into_n_sentences, \
-    position_to_labels_field, sentiment_to_labels_field
+    position_to_labels_field, sentiment_to_labels_field, type_to_labels_field
 from knowledgeablestories.dataset_readers.writing_prompts_reader import strip_repeating_punctuation
 
 
@@ -193,6 +193,7 @@ class CbtHierarchyReader(CbtAbstractReader):
 
         fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
         fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+        fields["passages_storytype"] = type_to_labels_field(3, len(story_text))
 
         fields["metadata"] = MetadataField(text_dict)
 
