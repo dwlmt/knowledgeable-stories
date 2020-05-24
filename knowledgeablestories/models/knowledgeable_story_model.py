@@ -197,8 +197,9 @@ class KnowledgeableStoriesModel(Model):
         def parse_bool(b):
             return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
-        self._prediction_mode = parse_bool(os.getenv("PREDICTION_MODE", default=False))
-        self._sampled = parse_bool(os.getenv("SAMPLED", default=False))
+        self._prediction_mode = parse_bool(os.getenv("PREDICTION_MODE", default="False"))
+        self._sampled = parse_bool(os.getenv("SAMPLED", default="False"))
+        self._sentence_disc = parse_bool(os.getenv("sentence_disc", default="True"))
 
         if initializer is not None:
             initializer(self)
@@ -316,39 +317,38 @@ class KnowledgeableStoriesModel(Model):
                         encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
 
                     if "passage_disc_loss" in self._loss_weights:
+                        if self._sentence_disc:
+                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                            encoded_sentences_cat,
+                                                                                            mask=passage_mask,
+                                                                                            offsets=self._passage_offsets,
+                                                                                            scales=self._passage_scales,
+                                                                                            label_smoothing=self._label_smoothing,
+                                                                                            level_name="passage",
+                                                                                            exclude_self=True)
 
-                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        encoded_sentences_cat,
-                                                                                        mask=passage_mask,
-                                                                                        offsets=self._passage_offsets,
-                                                                                        scales=self._passage_scales,
-                                                                                        label_smoothing=self._label_smoothing,
-                                                                                        level_name="passage",
-                                                                                        exclude_self=True)
+                            output = {**output, **disc_output_dict}
 
-                        output = {**output, **disc_output_dict}
+                            loss += passage_disc_loss
 
-                        loss += passage_disc_loss
+                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                        else:
 
-                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                        '''
+                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                            passages_encoded,
+                                                                                            mask=passage_mask,
+                                                                                            offsets=self._passage_offsets,
+                                                                                            scales=self._passage_scales,
+                                                                                            label_smoothing=self._label_smoothing,
+                                                                                            level_name="passage",
+                                                                                            exclude_self=True)
 
-                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                        passages_encoded,
-                                                                                        mask=passage_mask,
-                                                                                        offsets=self._passage_offsets,
-                                                                                        scales=self._passage_scales,
-                                                                                        label_smoothing=self._label_smoothing,
-                                                                                        level_name="passage",
-                                                                                        exclude_self=True)
+                            loss += passage_disc_loss
 
-                        loss += passage_disc_loss
+                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                        
-                        loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
-                                                            passages_encoded)
-                        '''
+                            loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                                passages_encoded)
 
                     if prediction_mode:
                         output["passages_encoded"] = passages_encoded
