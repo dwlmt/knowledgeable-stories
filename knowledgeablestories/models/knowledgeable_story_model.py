@@ -199,7 +199,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._prediction_mode = parse_bool(os.getenv("PREDICTION_MODE", default="False"))
         self._sampled = parse_bool(os.getenv("SAMPLED", default="False"))
-        self._sentence_disc = parse_bool(os.getenv("sentence_disc", default="True"))
+        self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         if initializer is not None:
             initializer(self)
