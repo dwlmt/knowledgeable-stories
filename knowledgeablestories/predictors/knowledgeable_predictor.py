@@ -83,6 +83,8 @@ class KnowledgeablePredictor(Predictor):
         dont_generate_token_ids = []
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> .. ..."))
 
+        self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
+
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
@@ -481,6 +483,10 @@ class KnowledgeablePredictor(Predictor):
 
                 print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
                       target_representation.size())
+
+                if not self._sentence_disc:
+                    target_representation = final_encoded_representation
+
                 logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                                       target_representation,
                                                       self._encoder_cosine)
@@ -710,7 +716,7 @@ class KnowledgeablePredictor(Predictor):
         return chain_measure
 
     def _vader_polarity(self, sentence_batch):
-        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
+        sentiment_polarity = [100.0 * float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
                               sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
             s["sentiment"] = p

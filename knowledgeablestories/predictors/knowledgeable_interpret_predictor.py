@@ -98,7 +98,7 @@ class KnowledgeableInterpretPredictor(Predictor):
 
 
     def _vader_polarity(self, sentence_batch):
-        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
+        sentiment_polarity = [100.0 * float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
                               sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
             s["sentiment"] = p
