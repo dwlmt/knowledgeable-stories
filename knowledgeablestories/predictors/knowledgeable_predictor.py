@@ -28,6 +28,20 @@ END_OF_SENTENCE_TOKEN_ID = 50257
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
+
+def random_sample(logits: torch.Tensor, top_k_words=None) -> int:
+    indices = None
+    if top_k_words is not None and top_k_words > 0:
+        logits, indices = torch.topk(logits, k=top_k_words)
+
+    d = torch.distributions.Categorical(logits=logits)
+    sampled = d.sample()
+
+    if indices is not None:
+        sampled = indices[sampled]
+
+    return sampled.item()
+
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
@@ -429,21 +443,16 @@ class KnowledgeablePredictor(Predictor):
             if "sentences" not in parent:
                 parent["sentences"] = []
 
-            # if self._model._fusion_dense is None:
+            #if self._model._fusion_dense is None:
             generated_sequences = self.generate_sentences(input_tokens)
-            # else:
-            #    generated_sequences = self.generate_sentences_fused(input_tokens)
+            #else:
+            #    generated_sequences = self.fusion_generate_sentence(input_tokens, encoded_story=final_encoded_representation)
 
             # print(parent, input_tokens, generated_sequences)
 
             if len(generated_sequences) > 2:
 
-                # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
-                if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
-                    gold_sentence = original_sentences[story_idx + 1]
-                    gold_sentence["tokens"] = self._tokenizer._tokenizer.encode(gold_sentence["text"])
-                    gold_sentence["gold"] = True
-                    generated_sequences.append(gold_sentence)
+                self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
 
                 existing_sentences_encoded = existing_sentences_encoded[
                                              max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
@@ -459,91 +468,15 @@ class KnowledgeablePredictor(Predictor):
                 # if "parent_relation_metrics" in parent and "context_representation" in parent["parent_relation_metrics"]:
                 #    context_encoded_representation = parent["parent_relation_metrics"]["context_representation"]
 
-                if torch.cuda.is_available():
-                    final_encoded_representation = final_encoded_representation.cuda()
-                    context_encoded_representation = context_encoded_representation.cuda()
-                    encoded_sentences_tensor = encoded_sentences_tensor.cuda()
-                    existing_sentences_encoded = existing_sentences_encoded.cuda()
+                final_encoded_representation, metric_dict = self._calc_leaf_probs(context_encoded_representation,
+                                                                                  encoded_sentences_tensor,
+                                                                                  existing_sentences_encoded,
+                                                                                  final_encoded_representation,
+                                                                                  generated_sequences, input_tokens,
+                                                                                  log_prob_tensor_list,
+                                                                                  num_levels_rollout, parent)
 
-                # print(context_encoded_representation.size(), final_encoded_representation.size())
-
-                target_representation = encoded_sentences_tensor
-                if self._model._passage_dense is not None:
-                    target_representation = self._model._passage_dense(target_representation)
-                    if len(target_representation.size()) == 3:
-                        target_representation = target_representation.view(
-                            target_representation.size(0) * target_representation.size(1),
-                            target_representation.size(2))
-                target_representation = target_representation.to(context_encoded_representation.device)
-
-                if len(final_encoded_representation.size()) == 3:
-                    final_encoded_representation = final_encoded_representation.view(
-                        final_encoded_representation.size(0) * final_encoded_representation.size(1),
-                        final_encoded_representation.size(2))
-
-                print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
-                      target_representation.size())
-
-                if not self._sentence_disc:
-                    target_representation = final_encoded_representation
-
-                logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
-                                                      target_representation,
-                                                      self._encoder_cosine)
-
-                logits /= self._prediction_temp
-                # print(f"Logits {logits}, {logits.size()}")
-
-                probs, log_probs = self._logits_to_probs(logits)
-
-                if num_levels_rollout == self._num_levels_rollout:
-                    chain_log_prob = log_probs
-                    chain_prob = probs
-                else:
-                    chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
-
-                log_prob_tensor_list.append(chain_log_prob)
-
-                for i, gen_seq in enumerate(generated_sequences, start=0):
-                    gen_seq["parent"] = parent
-
-                    merged_input_tokens = copy.deepcopy(input_tokens)
-                    merged_input_tokens.append(gen_seq["tokens"])
-
-                    gen_seq["merged_tokens"] = merged_input_tokens
-
-                    merged_sentences_encoded = torch.cat(
-                        (existing_sentences_encoded, torch.unsqueeze(
-                            encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) *
-                                                          encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
-
-                    gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
-
-                metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
-                               "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
-                               "context_representation": torch.unsqueeze(context_encoded_representation,
-                                                                         dim=0).expand_as(
-                                   final_encoded_representation),
-                               "final_encoded_representation": final_encoded_representation}
-
-                for (k, v) in metric_dict.items():
-
-                    # print(f"{k} - {v.size()}")
-
-                    for value, gen_seq in zip(v, generated_sequences):
-
-                        # print(f"{k} - {v.size()}: {value}")
-
-                        if "parent_relation_metrics" not in gen_seq:
-                            gen_seq["parent_relation_metrics"] = {}
-
-                        if k in ["context_representation", "final_encoded_representation"]:
-                            gen_seq[k] = value.cpu()
-                        else:
-                            if len(value.size()) > 0:
-                                gen_seq["parent_relation_metrics"][k] = value.cpu()
-                            else:
-                                gen_seq["parent_relation_metrics"][k] = value.item()
+                self._unpack_metrics(generated_sequences, metric_dict)
 
                 all_level_list.extend(generated_sequences)
 
@@ -553,59 +486,149 @@ class KnowledgeablePredictor(Predictor):
             return
 
         # If needed then filter the beem for the whole level.
-        filtered_list = []
-        log_prob_tensor = torch.cat(log_prob_tensor_list)
-        if log_prob_tensor.size(0) > self._beam_size_keep:
-            top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size_keep)
-            log_prob_threshold = top_k_tensor[-1]
-            for gen_seq in all_level_list:
-                if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold or (
-                        "gold" in gen_seq and gen_seq["gold"] == True):
-                    filtered_list.append(gen_seq)
-        else:
-            filtered_list = all_level_list
+        filtered_list, log_prob_tensor = self.filter_beam(all_level_list, log_prob_tensor_list)
 
         # Early return if it fails to generate any valid sequences.
         if len(filtered_list) <= 3:
             num_levels_rollout -= 1
             return
 
-        # Recalculate probabilities for the reduced beam.
-        if len(filtered_list) < len(all_level_list):
-            log_prob_tensor_list = []
-            logits_list = []
-            for gen_seq in generated_sequences:
-                logits_list.append(gen_seq["parent_relation_metrics"]["logit"])
-
-            logits = torch.FloatTensor(logits_list)
-
-            if torch.cuda.is_available():
-                logits = logits.cuda()
-
-            probs, log_probs = self._logits_to_probs(logits)
-
-            for gen_seq, prob, log_prob in zip(filtered_list, probs, log_probs):
-
-                if num_levels_rollout == self._num_levels_rollout:
-                    chain_log_prob = log_prob
-                    chain_prob = prob
-                else:
-                    chain_log_prob, chain_prob = self._chain_probs_from_parent(
-                        gen_seq["parent"],
-                        prob,
-                        log_prob)
-
-                log_prob_tensor_list.append(chain_log_prob)
-
-                gen_seq["parent_relation_metrics"]["prob"] = prob.item()
-                gen_seq["parent_relation_metrics"]["log_prob"] = log_prob.item()
-                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_prob.item()
-                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_prob.item()
-
-            log_prob_tensor = torch.tensor(log_prob_tensor_list).cpu()
+        log_prob_tensor = self._recalculate_beam_probs(all_level_list, filtered_list, generated_sequences,
+                                                       log_prob_tensor, num_levels_rollout)
 
         self._vader_polarity(filtered_list)
 
+        self.calculate_leaf_metrics(filtered_list, num_levels_rollout, parent)
+
+        # Filter the generate from list if required.
+
+        log_prob_threshold = None
+        # print(f"Log prob tensor: {log_prob_tensor.size()}")
+
+        if len(log_prob_tensor) == 0:
+            return
+
+        if self._beam_size_gen < len(filtered_list):
+            top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
+            log_prob_threshold = top_k_tensor[-1]
+
+        parent_list = []
+        input_tokens_batch = []
+        existing_sentences_encoded_batch = []
+
+        num_levels_rollout -= 1
+        for gen_seq in filtered_list:
+
+            if log_prob_threshold is None or gen_seq["parent_relation_metrics"][
+                "chain_log_prob"] >= log_prob_threshold or (
+                    "gold" in gen_seq and gen_seq["gold"] == True):
+                gen_seq["level"] = self._num_levels_rollout - num_levels_rollout
+
+                parent_list.append(gen_seq)
+                merged_input_tokens = gen_seq["merged_tokens"]
+                input_tokens_batch.append(merged_input_tokens)
+
+                existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
+
+                existing_sentences_encoded_batch.append(existing_sentences_encoded)
+
+
+            del gen_seq["parent"]
+            del gen_seq["merged_tokens"]
+            del gen_seq["encoded_sentences_tensor"]
+
+        if num_levels_rollout > 0:
+            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
+                                 original_sentences, story_idx)
+
+    def _unpack_metrics(self, generated_sequences, metric_dict):
+        for (k, v) in metric_dict.items():
+
+            # print(f"{k} - {v.size()}")
+
+            for value, gen_seq in zip(v, generated_sequences):
+
+                # print(f"{k} - {v.size()}: {value}")
+
+                if "parent_relation_metrics" not in gen_seq:
+                    gen_seq["parent_relation_metrics"] = {}
+
+                if k in ["context_representation", "final_encoded_representation"]:
+                    gen_seq[k] = value.cpu()
+                else:
+                    if len(value.size()) > 0:
+                        gen_seq["parent_relation_metrics"][k] = value.cpu()
+                    else:
+                        gen_seq["parent_relation_metrics"][k] = value.item()
+
+    def _calc_leaf_probs(self, context_encoded_representation, encoded_sentences_tensor, existing_sentences_encoded,
+                         final_encoded_representation, generated_sequences, input_tokens, log_prob_tensor_list,
+                         num_levels_rollout, parent):
+        if torch.cuda.is_available():
+            final_encoded_representation = final_encoded_representation.cuda()
+            context_encoded_representation = context_encoded_representation.cuda()
+            encoded_sentences_tensor = encoded_sentences_tensor.cuda()
+            existing_sentences_encoded = existing_sentences_encoded.cuda()
+        # print(context_encoded_representation.size(), final_encoded_representation.size())
+        target_representation = encoded_sentences_tensor
+        if self._model._passage_dense is not None:
+            target_representation = self._model._passage_dense(target_representation)
+            if len(target_representation.size()) == 3:
+                target_representation = target_representation.view(
+                    target_representation.size(0) * target_representation.size(1),
+                    target_representation.size(2))
+        target_representation = target_representation.to(context_encoded_representation.device)
+        if len(final_encoded_representation.size()) == 3:
+            final_encoded_representation = final_encoded_representation.view(
+                final_encoded_representation.size(0) * final_encoded_representation.size(1),
+                final_encoded_representation.size(2))
+        print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
+              target_representation.size())
+        if not self._sentence_disc:
+            target_representation = final_encoded_representation
+        logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
+                                              target_representation,
+                                              self._encoder_cosine)
+        logits /= self._prediction_temp
+        # print(f"Logits {logits}, {logits.size()}")
+        probs, log_probs = self._logits_to_probs(logits)
+        if num_levels_rollout == self._num_levels_rollout:
+            chain_log_prob = log_probs
+            chain_prob = probs
+        else:
+            chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
+        log_prob_tensor_list.append(chain_log_prob)
+        for i, gen_seq in enumerate(generated_sequences, start=0):
+            gen_seq["parent"] = parent
+
+            merged_input_tokens = copy.deepcopy(input_tokens)
+            merged_input_tokens.append(gen_seq["tokens"])
+
+            gen_seq["merged_tokens"] = merged_input_tokens
+
+            merged_sentences_encoded = torch.cat(
+                (existing_sentences_encoded, torch.unsqueeze(
+                    encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) *
+                                                  encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
+
+            gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
+        metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
+                       "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
+                       "context_representation": torch.unsqueeze(context_encoded_representation,
+                                                                 dim=0).expand_as(
+                           final_encoded_representation),
+                       "final_encoded_representation": final_encoded_representation}
+        return final_encoded_representation, metric_dict
+
+    def _add_gold(self, generated_sequences, num_levels_rollout, original_sentences, story_idx):
+        # For the first rollout add the Gold sentence to the end so Hale surprise can be calculated.
+        if num_levels_rollout == self._num_levels_rollout and story_idx + 1 < len(original_sentences):
+            gold_sentence = original_sentences[story_idx + 1]
+            gold_sentence["tokens"] = self._tokenizer._tokenizer.encode(gold_sentence["text"])
+            gold_sentence["gold"] = True
+            generated_sequences.append(gold_sentence)
+
+    def calculate_leaf_metrics(self, filtered_list, num_levels_rollout, parent):
         for i, gen_seq in enumerate(filtered_list):
 
             # print(gen_seq.keys())
@@ -655,45 +678,56 @@ class KnowledgeablePredictor(Predictor):
             del gen_seq["context_representation"]
             del gen_seq["final_encoded_representation"]
 
-        # Filter the generate from list if required.
+    def _recalculate_beam_probs(self, all_level_list, filtered_list, generated_sequences, log_prob_tensor,
+                                num_levels_rollout):
+        # Recalculate probabilities for the reduced beam.
+        if len(filtered_list) < len(all_level_list):
+            log_prob_tensor_list = []
+            logits_list = []
+            for gen_seq in generated_sequences:
+                logits_list.append(gen_seq["parent_relation_metrics"]["logit"])
 
-        log_prob_threshold = None
-        # print(f"Log prob tensor: {log_prob_tensor.size()}")
+            logits = torch.FloatTensor(logits_list)
 
-        if len(log_prob_tensor) == 0:
-            return
+            if torch.cuda.is_available():
+                logits = logits.cuda()
 
-        if self._beam_size_gen < len(filtered_list):
-            top_k_tensor, _ = torch.topk(log_prob_tensor, k=self._beam_size_gen)
+            probs, log_probs = self._logits_to_probs(logits)
+
+            for gen_seq, prob, log_prob in zip(filtered_list, probs, log_probs):
+
+                if num_levels_rollout == self._num_levels_rollout:
+                    chain_log_prob = log_prob
+                    chain_prob = prob
+                else:
+                    chain_log_prob, chain_prob = self._chain_probs_from_parent(
+                        gen_seq["parent"],
+                        prob,
+                        log_prob)
+
+                log_prob_tensor_list.append(chain_log_prob)
+
+                gen_seq["parent_relation_metrics"]["prob"] = prob.item()
+                gen_seq["parent_relation_metrics"]["log_prob"] = log_prob.item()
+                gen_seq["parent_relation_metrics"]["chain_prob"] = chain_prob.item()
+                gen_seq["parent_relation_metrics"]["chain_log_prob"] = chain_log_prob.item()
+
+            log_prob_tensor = torch.tensor(log_prob_tensor_list).cpu()
+        return log_prob_tensor
+
+    def filter_beam(self, all_level_list, log_prob_tensor_list):
+        filtered_list = []
+        log_prob_tensor = torch.cat(log_prob_tensor_list)
+        if log_prob_tensor.size(0) > self._beam_size_keep:
+            top_k_tensor, indices = torch.topk(log_prob_tensor, k=self._beam_size_keep)
             log_prob_threshold = top_k_tensor[-1]
-
-        parent_list = []
-        input_tokens_batch = []
-        existing_sentences_encoded_batch = []
-
-        num_levels_rollout -= 1
-        for gen_seq in filtered_list:
-
-            if log_prob_threshold is None or gen_seq["parent_relation_metrics"][
-                "chain_log_prob"] >= log_prob_threshold or (
-                    "gold" in gen_seq and gen_seq["gold"] == True):
-                gen_seq["level"] = self._num_levels_rollout - num_levels_rollout
-
-                parent_list.append(gen_seq)
-                merged_input_tokens = gen_seq["merged_tokens"]
-                input_tokens_batch.append(merged_input_tokens)
-
-                existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
-
-                existing_sentences_encoded_batch.append(existing_sentences_encoded)
-
-            del gen_seq["parent"]
-            del gen_seq["merged_tokens"]
-            del gen_seq["encoded_sentences_tensor"]
-
-        if num_levels_rollout > 0:
-            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
-                                 original_sentences, story_idx)
+            for gen_seq in all_level_list:
+                if gen_seq["parent_relation_metrics"]["chain_log_prob"] >= log_prob_threshold or (
+                        "gold" in gen_seq and gen_seq["gold"] == True):
+                    filtered_list.append(gen_seq)
+        else:
+            filtered_list = all_level_list
+        return filtered_list, log_prob_tensor
 
     def _chain_probs_from_parent(self, parent, probs, log_probs):
         if "parent_relation_metrics" in parent:
@@ -1007,3 +1041,78 @@ class KnowledgeablePredictor(Predictor):
             self._model = self._model.cuda()
         outputs = self._model.forward_on_instance(instance)
         return sanitize(outputs)
+
+    def fusion_generate_sentence(self, position, indexed_tokens, encoded_story):
+
+        ctx_size = self.max_generated_sentence_length
+
+        gen_sentence = []
+
+        start_pos = max(0, position - self.context_sentence_to_generate_from)
+        end_pos = position + 1
+
+        indexed_tokens_context = indexed_tokens[start_pos: end_pos]
+        encoded_story_context = encoded_story[start_pos: end_pos]
+
+        sentence_sums = torch.sum(indexed_tokens_context > 0, dim=1)
+
+        indexed_tokens_context_masked = torch.cat([indexed_tokens_context[x, 0: y] for x, y in
+                                                   enumerate(sentence_sums)], dim=0).to(self._device)
+
+        encoded_story_context_masked = torch.cat(
+            [torch.unsqueeze(encoded_story_context[x], dim=0).expand(y, -1) for x, y in enumerate(sentence_sums)]
+            , dim=0)
+
+        indexed_tokens_context_merged = indexed_tokens_context_masked
+        indexed_length = indexed_tokens_context_masked.shape[0]
+
+        for i in range(ctx_size):
+            if len(gen_sentence) > 0:
+                indexed_tokens_context_merged = torch.cat(
+                    (indexed_tokens_context_masked, torch.tensor(gen_sentence).long().to(self._device)))
+                indexed_length = indexed_tokens_context_merged.shape[0]
+
+            if indexed_length > ctx_size:
+
+                indexed_tokens_context_merged = indexed_tokens_context_merged[indexed_length - ctx_size:]
+                encoded_story_context_masked = encoded_story_context_masked[
+                                               encoded_story_context_masked.shape[0] - ctx_size:]
+
+            elif indexed_length < ctx_size:
+                blank_index = torch.zeros((ctx_size)).long().to(self._device)
+                blank_index[0:indexed_tokens_context_merged.shape[0]] = indexed_tokens_context_merged
+                indexed_tokens_context_merged = blank_index
+
+            encoded_text_context_masked = self.embedder(torch.unsqueeze(indexed_tokens_context_merged, dim=0))
+            encoded_text_context_masked = torch.squeeze(encoded_text_context_masked, dim=0)
+
+            next_word_id = self.old_generate_next_word(encoded_text_context_masked, encoded_story_context_masked)
+
+            if not next_word_id:
+                break
+
+            encoded_story_context_masked = torch.cat(
+                (encoded_story_context_masked, torch.unsqueeze(encoded_story_context_masked[-1,], dim=0)))
+
+            gen_sentence.append(next_word_id)
+
+            if next_word_id in self._eos_token_ids:
+                break
+
+        return gen_sentence
+
+    def old_generate_next_word(self, embedded_text, story, indexed_length=None):
+
+        logits = self._model._lm_model(embedded_text.to(self._device), story.to(self._device))
+        logits = torch.squeeze(logits, dim=0)
+
+        if indexed_length is None:
+            logits = logits[-1]
+        else:
+            logits = logits[indexed_length - 1]
+
+        # Scale the logits by the temperature.
+        next_word_id = random_sample(logits / self._generation_sampling_temperature, self.sample_top_k_words)
+
+        return next_word_id
+
