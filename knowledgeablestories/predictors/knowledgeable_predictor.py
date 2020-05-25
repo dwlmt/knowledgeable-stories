@@ -198,15 +198,19 @@ class KnowledgeablePredictor(Predictor):
                         input_tokens = previous_tokens + current_tokens[: s_upper_bound]
 
                         merged_sentences_encoded = cached_dict["sentences_encoded"][0: s_upper_bound, ...]
+                        merged_passages_encoded = cached_dict["passages_encoded"][0: s_upper_bound, ...]
 
                         if previous_tensor_dict:
                             merged_sentences_encoded = torch.cat(
                                 [previous_tensor_dict["sentences_encoded"], merged_sentences_encoded], dim=0)
 
+                            merged_passages_encoded = torch.cat(
+                                [previous_tensor_dict["passages_encoded"], merged_passages_encoded], dim=0)
+
                         if story_idx in rollout_indices:
 
                             if not self._tdvae:
-                                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded], [merged_passages_encoded],
                                                      self._num_levels_rollout, original_sentences, story_idx)
 
                             self._calculate_autoregressive_metrics(parent, previous_prediction_metrics)
@@ -432,21 +436,19 @@ class KnowledgeablePredictor(Predictor):
 
             level += 1
 
-    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
+    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, passages_batch, num_levels_rollout,
                         original_sentences, story_idx):
 
         log_prob_tensor_list = []
         all_level_list = []
-        for parent, input_tokens, existing_sentences_encoded in zip(parent_list, input_tokens_batch,
-                                                                    existing_sentences_encoded_batch):
+        for parent, input_tokens, existing_sentences_encoded, passages_encoded in zip(parent_list, input_tokens_batch,
+                                                                    existing_sentences_encoded_batch, passages_batch):
 
             if "sentences" not in parent:
                 parent["sentences"] = []
 
             #if self._model._fusion_dense is None:
-            generated_sequences = self.generate_sentences(input_tokens)
-            #else:
-            #    generated_sequences = self.fusion_generate_sentence(input_tokens, encoded_story=final_encoded_representation)
+            generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
             # print(parent, input_tokens, generated_sequences)
 
@@ -515,6 +517,7 @@ class KnowledgeablePredictor(Predictor):
         parent_list = []
         input_tokens_batch = []
         existing_sentences_encoded_batch = []
+        existing_passages_batch = []
 
         num_levels_rollout -= 1
         for gen_seq in filtered_list:
@@ -529,16 +532,18 @@ class KnowledgeablePredictor(Predictor):
                 input_tokens_batch.append(merged_input_tokens)
 
                 existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
-
                 existing_sentences_encoded_batch.append(existing_sentences_encoded)
 
+                existing_passages_batch = gen_seq["encoded_passages_tensor"]
+                existing_passages_batch.append(existing_sentences_encoded)
 
             del gen_seq["parent"]
             del gen_seq["merged_tokens"]
             del gen_seq["encoded_sentences_tensor"]
+            del gen_seq["encoded_passages_tensor"]
 
         if num_levels_rollout > 0:
-            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, num_levels_rollout,
+            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, existing_passages_batch, num_levels_rollout,
                                  original_sentences, story_idx)
 
     def _unpack_metrics(self, generated_sequences, metric_dict):
@@ -617,7 +622,7 @@ class KnowledgeablePredictor(Predictor):
                        "context_representation": torch.unsqueeze(context_encoded_representation,
                                                                  dim=0).expand_as(
                            final_encoded_representation),
-                       "final_encoded_representation": final_encoded_representation}
+                       "encoded_passages_tensor": final_encoded_representation}
         return final_encoded_representation, metric_dict
 
     def _add_gold(self, generated_sequences, num_levels_rollout, original_sentences, story_idx):
@@ -636,18 +641,18 @@ class KnowledgeablePredictor(Predictor):
             gen_seq["index"] = i
 
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
-            final_encoded_representation = torch.unsqueeze(gen_seq["final_encoded_representation"], dim=0)
+            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"], dim=0)
 
             if torch.cuda.is_available():
                 context_representation = context_representation.cuda()
-                final_encoded_representation = final_encoded_representation.cuda()
+                encoded_passages = encoded_passages.cuda()
 
-            cosine_distance = 1.0 - self._cosine_similarity(context_representation, final_encoded_representation)
+            cosine_distance = 1.0 - self._cosine_similarity(context_representation, encoded_passages)
 
-            l1 = self._l1_distance(context_representation, final_encoded_representation)
-            l2 = self._l2_distance(context_representation, final_encoded_representation)
+            l1 = self._l1_distance(context_representation, encoded_passages)
+            l2 = self._l2_distance(context_representation, encoded_passages)
             dot_product = torch.dot(torch.squeeze(context_representation, dim=0),
-                                    torch.squeeze(final_encoded_representation, dim=0))
+                                    torch.squeeze(encoded_passages, dim=0))
 
             context_sentiment = parent["sentiment"]
             sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
@@ -676,7 +681,6 @@ class KnowledgeablePredictor(Predictor):
             parent["sentences"].append(gen_seq)
 
             del gen_seq["context_representation"]
-            del gen_seq["final_encoded_representation"]
 
     def _recalculate_beam_probs(self, all_level_list, filtered_list, generated_sequences, log_prob_tensor,
                                 num_levels_rollout):
@@ -750,7 +754,7 @@ class KnowledgeablePredictor(Predictor):
         return chain_measure
 
     def _vader_polarity(self, sentence_batch):
-        sentiment_polarity = [100.0 * float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
+        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
                               sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
             s["sentiment"] = p
@@ -858,7 +862,7 @@ class KnowledgeablePredictor(Predictor):
                     sentence["prediction_metrics"] = {}
                 sentence["prediction_metrics"][f"{k}"] = dist_metric
 
-    def generate_sentences(self, previous_tokens):
+    def generate_sentences(self, previous_tokens, passages_encoded=None):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
@@ -879,11 +883,44 @@ class KnowledgeablePredictor(Predictor):
 
             retries += 1
 
-            output_sequences = self._model.generate_text(previous_tokens_tensor,
-                                                         num_of_sequences=min(
-                                                             self._gen_num_of_sequences - len(generated_sequences),
-                                                             self._gen_max_per_batch),
-                                                         override_gen_config=self._generation_config)
+            if self._model._fusion_dense is None:
+                output_sequences = self._model.generate_text(previous_tokens_tensor,
+                                                             num_of_sequences=min(
+                                                                 self._gen_num_of_sequences - len(generated_sequences),
+                                                                 self._gen_max_per_batch),
+                                                             override_gen_config=self._generation_config)
+            else:
+
+                orig_device = None
+                if self._lm_device is not None:
+                    orig_device = previous_tokens_tensor.device
+                    previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
+                    self._lm_model = self._lm_model.to(self._lm_device)
+                else:
+                    self._lm_model = self._lm_model.to(previous_tokens_tensor.device)
+
+                gen_config = self._generation_config
+
+                print("Passages Encoded", passages_encoded.size())
+                output_sequences = self._generate_no_beam_search(
+                    input_ids=previous_tokens_tensor,
+                    passages_encoded=passages_encoded,
+                    max_length=gen_config["max_length"],
+                    temperature=gen_config["temperature"],
+                    top_k=gen_config["top_k"],
+                    top_p=gen_config["top_p"],
+                    do_sample=gen_config["do_sample"],
+                    num_beams=gen_config["num_beams"],
+                    eos_token_id=gen_config["eos_token_ids"],
+                    repetition_penalty=gen_config["repetition_penalty"],
+                    pad_token_id=END_OF_TEXT_TOKEN_ID,
+                    length_penalty=gen_config["length_penalty"],
+                    num_return_sequences=min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch),
+                    bad_words_ids=gen_config["bad_words_ids"]
+                )
+
+                if orig_device is not None:
+                    output_sequences = output_sequences.to(orig_device)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
@@ -924,43 +961,103 @@ class KnowledgeablePredictor(Predictor):
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
 
-    def generate_sentences_fused(self, input_tokens):
+    def _generate_no_beam_search(
+        self,
+        input_ids,
+        passages_encoded,
+        cur_len,
+        max_length,
+        min_length,
+        do_sample,
+        temperature,
+        top_k,
+        top_p,
+        repetition_penalty,
+        no_repeat_ngram_size,
+        bad_words_ids,
+        bos_token_id,
+        pad_token_id,
+        eos_token_id,
+        decoder_start_token_id,
+        batch_size,
+        encoder_outputs,
+        attention_mask,
+        use_cache,
+        model_specific_kwargs,
+    ):
+        """ This is a copy from Hugging Face but adding fusion of word embeddings.
+        """
+        unfinished_sents = input_ids.new(batch_size).fill_(1)
+        sent_lengths = input_ids.new(batch_size).fill_(max_length)
 
-        print("Input tokens ", input_tokens.size())
+        past = encoder_outputs  # defined for encoder-decoder models, None for decoder-only models
 
-        lm_hidden_state, lm_mask = self._model.lm_mask_and_hidden_states({"tokens": input_tokens})
+        while cur_len < max_length:
 
-        print("LM states ", lm_hidden_state.size(), lm_mask.size())
+            outputs = self._model._lm_model.transformer(input_ids)[0]
 
-        encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
+            next_token_hidden = outputs[0][:, -1, :]
 
-        if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
-            encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
-            encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+            if passages_encoded is not None:
+                print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
+                next_token_hidden = self._model._fusion_dense(next_token_hidden, passages_encoded[-1])
 
-        print("Encoded sentences", encoded_sentences_batch.size())
+            next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
 
-        passages_encoded, _ = self._model.encode_passages(encoded_sentences_batch)
+            # set eos token prob to zero if min_length is not reached
+            if eos_token_id is not None and cur_len < min_length:
+                next_token_logits[:, eos_token_id] = -float("inf")
 
-        print("Passages Encoded", passages_encoded.size())
+            if do_sample:
+                # Temperature (higher temperature => more likely to sample low probability tokens)
+                if temperature != 1.0:
+                    next_token_logits = next_token_logits / temperature
+                # Top-p/top-k filtering
+                next_token_logits = self._model._lm_model.top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
+                # Sample
+                import torch.Functional as F
+                probs = F.softmax(next_token_logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
+            else:
+                # Greedy decoding
+                next_token = torch.argmax(next_token_logits, dim=-1)
 
-        passages_expanded = torch.unsqueeze(passages_encoded,
-                                            dim=2).expand(
-            passages_encoded.size(0), passages_encoded.size(1), lm_hidden_state.size(2),
-            passages_encoded.size(2))
+            # update generations and finished sentences
+            if eos_token_id is not None:
+                # pad finished sentences if eos_token_id exist
+                tokens_to_add = next_token * unfinished_sents + (pad_token_id) * (1 - unfinished_sents)
+            else:
+                tokens_to_add = next_token
 
-        print("Passages Expanded", passages_expanded.size())
+            # add token and increase length by one
+            input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
+            cur_len = cur_len + 1
 
-        hidden_states = torch.cat((input_tokens.to(passages_expanded.device), passages_expanded), dim=-1)
+            if eos_token_id is not None:
+                eos_in_sents = tokens_to_add == eos_token_id
+                # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
+                is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
+                sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len)
+                # unfinished_sents is set to zero if eos in sentence
+                unfinished_sents.mul_((~eos_in_sents).long())
 
-        print("Hidden States", hidden_states.size())
+            # stop when there is a </s> in each sentence, or if we exceed the maximul length
+            if unfinished_sents.max() == 0:
+                break
 
-        self._fusion_dense = self._fusion_dense.to(hidden_states.device)
-        hidden_states = self._fusion_dense(hidden_states)
+        # if there are different sentences lengths in the batch, some batches have to be padded
+        if sent_lengths.min().item() != sent_lengths.max().item():
+            assert pad_token_id is not None, "`Pad_token_id` has to be defined if batches have different lengths"
+            # finished sents are filled with pad_token
+            decoded = input_ids.new(batch_size, sent_lengths.max().item()).fill_(pad_token_id)
+        else:
+            decoded = input_ids
 
-        print("Hidden States Fused", hidden_states.size())
+        for hypo_idx, hypo in enumerate(input_ids):
+            decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
 
-        exit()
+        return decoded
+
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
@@ -1042,64 +1139,6 @@ class KnowledgeablePredictor(Predictor):
         outputs = self._model.forward_on_instance(instance)
         return sanitize(outputs)
 
-    def fusion_generate_sentence(self, position, indexed_tokens, encoded_story):
-
-        ctx_size = self.max_generated_sentence_length
-
-        gen_sentence = []
-
-        start_pos = max(0, position - self.context_sentence_to_generate_from)
-        end_pos = position + 1
-
-        indexed_tokens_context = indexed_tokens[start_pos: end_pos]
-        encoded_story_context = encoded_story[start_pos: end_pos]
-
-        sentence_sums = torch.sum(indexed_tokens_context > 0, dim=1)
-
-        indexed_tokens_context_masked = torch.cat([indexed_tokens_context[x, 0: y] for x, y in
-                                                   enumerate(sentence_sums)], dim=0).to(self._device)
-
-        encoded_story_context_masked = torch.cat(
-            [torch.unsqueeze(encoded_story_context[x], dim=0).expand(y, -1) for x, y in enumerate(sentence_sums)]
-            , dim=0)
-
-        indexed_tokens_context_merged = indexed_tokens_context_masked
-        indexed_length = indexed_tokens_context_masked.shape[0]
-
-        for i in range(ctx_size):
-            if len(gen_sentence) > 0:
-                indexed_tokens_context_merged = torch.cat(
-                    (indexed_tokens_context_masked, torch.tensor(gen_sentence).long().to(self._device)))
-                indexed_length = indexed_tokens_context_merged.shape[0]
-
-            if indexed_length > ctx_size:
-
-                indexed_tokens_context_merged = indexed_tokens_context_merged[indexed_length - ctx_size:]
-                encoded_story_context_masked = encoded_story_context_masked[
-                                               encoded_story_context_masked.shape[0] - ctx_size:]
-
-            elif indexed_length < ctx_size:
-                blank_index = torch.zeros((ctx_size)).long().to(self._device)
-                blank_index[0:indexed_tokens_context_merged.shape[0]] = indexed_tokens_context_merged
-                indexed_tokens_context_merged = blank_index
-
-            encoded_text_context_masked = self.embedder(torch.unsqueeze(indexed_tokens_context_merged, dim=0))
-            encoded_text_context_masked = torch.squeeze(encoded_text_context_masked, dim=0)
-
-            next_word_id = self.old_generate_next_word(encoded_text_context_masked, encoded_story_context_masked)
-
-            if not next_word_id:
-                break
-
-            encoded_story_context_masked = torch.cat(
-                (encoded_story_context_masked, torch.unsqueeze(encoded_story_context_masked[-1,], dim=0)))
-
-            gen_sentence.append(next_word_id)
-
-            if next_word_id in self._eos_token_ids:
-                break
-
-        return gen_sentence
 
     def old_generate_next_word(self, embedded_text, story, indexed_length=None):
 
