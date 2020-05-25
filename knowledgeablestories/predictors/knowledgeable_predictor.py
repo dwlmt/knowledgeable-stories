@@ -1007,7 +1007,7 @@ class KnowledgeablePredictor(Predictor):
 
             print("Outputs", outputs[0].size())
 
-            next_token_hidden = outputs[0][:, -1, :]
+            next_token_hidden = outputs[0][-1, :]
 
             if passages_encoded is not None:
                 print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
