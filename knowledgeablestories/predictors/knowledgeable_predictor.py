@@ -903,8 +903,7 @@ class KnowledgeablePredictor(Predictor):
 
                 print("Passages Encoded", passages_encoded.size())
 
-                batch_size = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
-                passages_encoded = passages_encoded.expand(batch_size, passages_encoded.size(-1))
+                num_return_sequences = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
 
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
@@ -918,7 +917,7 @@ class KnowledgeablePredictor(Predictor):
                     do_sample=gen_config["do_sample"],
                     eos_token_id=gen_config["eos_token_ids"],
                     pad_token_id=END_OF_TEXT_TOKEN_ID,
-                    batch_size=batch_size
+                    num_return_sequences=num_return_sequences
                 )
 
                 if orig_device is not None:
@@ -976,12 +975,30 @@ class KnowledgeablePredictor(Predictor):
         top_p,
         pad_token_id,
         eos_token_id,
-        batch_size
+        num_return_sequences
     ):
         """ This is a copy from Hugging Face but adding fusion of word embeddings.
         """
-        unfinished_sents = input_ids.new(batch_size).fill_(1)
-        sent_lengths = input_ids.new(batch_size).fill_(max_length)
+
+        batch_size = input_ids.shape[0]
+
+        effective_batch_size = batch_size * num_return_sequences
+        effective_batch_mult = num_return_sequences
+
+        input_ids_len = input_ids.shape[-1]
+        input_ids = input_ids.unsqueeze(1).expand(batch_size, effective_batch_mult, input_ids_len)
+
+        passages_encoded = passages_encoded.unsqueeze(1).expand(batch_size, effective_batch_mult, passages_encoded.size(-1))
+
+        input_ids = input_ids.contiguous().view(
+            effective_batch_size, input_ids_len
+        )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
+        passages_encoded = passages_encoded.contiguous().view(
+            effective_batch_size, -1
+        )
+
+        unfinished_sents = input_ids.new(effective_batch_size).fill_(1)
+        sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         while cur_len < max_length:
 
