@@ -909,6 +909,8 @@ class KnowledgeablePredictor(Predictor):
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
                     passages_encoded=passages_encoded,
+                    cur_len=len(previous_tokens_tensor),
+                    min_length=3,
                     max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
@@ -974,15 +976,12 @@ class KnowledgeablePredictor(Predictor):
         top_p,
         pad_token_id,
         eos_token_id,
-        batch_size,
-        encoder_outputs,
+        batch_size
     ):
         """ This is a copy from Hugging Face but adding fusion of word embeddings.
         """
         unfinished_sents = input_ids.new(batch_size).fill_(1)
         sent_lengths = input_ids.new(batch_size).fill_(max_length)
-
-        past = encoder_outputs  # defined for encoder-decoder models, None for decoder-only models
 
         while cur_len < max_length:
 
