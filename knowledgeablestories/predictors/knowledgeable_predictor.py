@@ -25,6 +25,7 @@ torch.set_printoptions(profile="full")
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
+
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
@@ -41,6 +42,7 @@ def random_sample(logits: torch.Tensor, top_k_words=None) -> int:
         sampled = indices[sampled]
 
     return sampled.item()
+
 
 @Predictor.register('know_stories')
 class KnowledgeablePredictor(Predictor):
@@ -103,7 +105,6 @@ class KnowledgeablePredictor(Predictor):
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
         eos_text_token_ids += [764]
-
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
@@ -210,7 +211,8 @@ class KnowledgeablePredictor(Predictor):
                         if story_idx in rollout_indices:
 
                             if not self._tdvae:
-                                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded], [merged_passages_encoded],
+                                self.tree_generation([parent], [input_tokens], [merged_sentences_encoded],
+                                                     [merged_passages_encoded],
                                                      self._num_levels_rollout, original_sentences, story_idx)
 
                             self._calculate_autoregressive_metrics(parent, previous_prediction_metrics)
@@ -436,18 +438,20 @@ class KnowledgeablePredictor(Predictor):
 
             level += 1
 
-    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, passages_batch, num_levels_rollout,
+    def tree_generation(self, parent_list, input_tokens_batch, existing_sentences_encoded_batch, passages_batch,
+                        num_levels_rollout,
                         original_sentences, story_idx):
 
         log_prob_tensor_list = []
         all_level_list = []
         for parent, input_tokens, existing_sentences_encoded, passages_encoded in zip(parent_list, input_tokens_batch,
-                                                                    existing_sentences_encoded_batch, passages_batch):
+                                                                                      existing_sentences_encoded_batch,
+                                                                                      passages_batch):
 
             if "sentences" not in parent:
                 parent["sentences"] = []
 
-            #if self._model._fusion_dense is None:
+            # if self._model._fusion_dense is None:
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
             # print(parent, input_tokens, generated_sequences)
@@ -543,7 +547,8 @@ class KnowledgeablePredictor(Predictor):
             del gen_seq["encoded_passages_tensor"]
 
         if num_levels_rollout > 0:
-            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch, existing_passages_batch, num_levels_rollout,
+            self.tree_generation(parent_list, input_tokens_batch, existing_sentences_encoded_batch,
+                                 existing_passages_batch, num_levels_rollout,
                                  original_sentences, story_idx)
 
     def _unpack_metrics(self, generated_sequences, metric_dict):
@@ -903,7 +908,7 @@ class KnowledgeablePredictor(Predictor):
 
                 print("Passages Encoded", passages_encoded.size())
 
-                num_return_sequences = 1 #min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
+                num_return_sequences = 1  # min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
 
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
@@ -963,19 +968,19 @@ class KnowledgeablePredictor(Predictor):
         return generated_sequences
 
     def _generate_no_beam_search(
-        self,
-        input_ids,
-        passages_encoded,
-        cur_len,
-        max_length,
-        min_length,
-        do_sample,
-        temperature,
-        top_k,
-        top_p,
-        pad_token_id,
-        eos_token_id,
-        num_return_sequences
+            self,
+            input_ids,
+            passages_encoded,
+            cur_len,
+            max_length,
+            min_length,
+            do_sample,
+            temperature,
+            top_k,
+            top_p,
+            pad_token_id,
+            eos_token_id,
+            num_return_sequences
     ):
         """ This is a copy from Hugging Face but adding fusion of word embeddings.
         """
@@ -988,7 +993,8 @@ class KnowledgeablePredictor(Predictor):
         input_ids_len = input_ids.shape[-1]
         input_ids = input_ids.unsqueeze(1).expand(batch_size, effective_batch_mult, input_ids_len)
 
-        passages_encoded = passages_encoded.unsqueeze(1).expand(batch_size, effective_batch_mult, passages_encoded.size(-1))
+        passages_encoded = passages_encoded.unsqueeze(1).expand(batch_size, effective_batch_mult,
+                                                                passages_encoded.size(-1))
 
         input_ids = input_ids.contiguous().view(
             effective_batch_size, input_ids_len
@@ -1011,7 +1017,9 @@ class KnowledgeablePredictor(Predictor):
 
             if passages_encoded is not None:
                 print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
-                next_token_hidden = self._model._fusion_dense(torch.cat((torch.unsqueeze(next_token_hidden, dim=-1), passages_encoded[-1])),dim=-1)
+                next_token_hidden = self._model._fusion_dense(torch.cat(
+                    (torch.unsqueeze(next_token_hidden, dim=-1), passages_encoded[-1].to(next_token_hidden.device))),
+                                                              dim=-1)
 
             next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
 
@@ -1024,7 +1032,8 @@ class KnowledgeablePredictor(Predictor):
                 if temperature != 1.0:
                     next_token_logits = next_token_logits / temperature
                 # Top-p/top-k filtering
-                next_token_logits = self._model._lm_model.top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
+                next_token_logits = self._model._lm_model.top_k_top_p_filtering(next_token_logits, top_k=top_k,
+                                                                                top_p=top_p)
                 # Sample
                 import torch.Functional as F
                 probs = F.softmax(next_token_logits, dim=-1)
@@ -1068,7 +1077,6 @@ class KnowledgeablePredictor(Predictor):
             decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
 
         return decoded
-
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
@@ -1150,7 +1158,6 @@ class KnowledgeablePredictor(Predictor):
         outputs = self._model.forward_on_instance(instance)
         return sanitize(outputs)
 
-
     def old_generate_next_word(self, embedded_text, story, indexed_length=None):
 
         logits = self._model._lm_model(embedded_text.to(self._device), story.to(self._device))
@@ -1165,4 +1172,3 @@ class KnowledgeablePredictor(Predictor):
         next_word_id = random_sample(logits / self._generation_sampling_temperature, self.sample_top_k_words)
 
         return next_word_id
-
