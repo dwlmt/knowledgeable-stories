@@ -1002,8 +1002,10 @@ class KnowledgeablePredictor(Predictor):
 
         while cur_len < max_length:
 
-            print("Inout Id Sizes", input_ids.size())
+            print("Input Id Sizes", input_ids.size())
             outputs = self._model._lm_model.transformer(input_ids)[0]
+
+            print("Outputs", outputs[0].size())
 
             next_token_hidden = outputs[0][:, -1, :]
 
