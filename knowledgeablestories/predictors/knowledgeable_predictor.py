@@ -902,6 +902,10 @@ class KnowledgeablePredictor(Predictor):
                 gen_config = self._generation_config
 
                 print("Passages Encoded", passages_encoded.size())
+
+                batch_size = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
+                passages_encoded = passages_encoded.expand(batch_size, passages_encoded.size(-1))
+
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
                     passages_encoded=passages_encoded,
@@ -910,13 +914,9 @@ class KnowledgeablePredictor(Predictor):
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     do_sample=gen_config["do_sample"],
-                    num_beams=gen_config["num_beams"],
                     eos_token_id=gen_config["eos_token_ids"],
-                    repetition_penalty=gen_config["repetition_penalty"],
                     pad_token_id=END_OF_TEXT_TOKEN_ID,
-                    length_penalty=gen_config["length_penalty"],
-                    num_return_sequences=min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch),
-                    bad_words_ids=gen_config["bad_words_ids"]
+                    batch_size=batch_size
                 )
 
                 if orig_device is not None:
@@ -972,18 +972,10 @@ class KnowledgeablePredictor(Predictor):
         temperature,
         top_k,
         top_p,
-        repetition_penalty,
-        no_repeat_ngram_size,
-        bad_words_ids,
-        bos_token_id,
         pad_token_id,
         eos_token_id,
-        decoder_start_token_id,
         batch_size,
         encoder_outputs,
-        attention_mask,
-        use_cache,
-        model_specific_kwargs,
     ):
         """ This is a copy from Hugging Face but adding fusion of word embeddings.
         """
