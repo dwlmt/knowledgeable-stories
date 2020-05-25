@@ -894,8 +894,8 @@ class KnowledgeablePredictor(Predictor):
                 orig_device = None
                 if self._model._lm_device is not None:
                     orig_device = previous_tokens_tensor.device
-                    previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
-                    self._model._lm_model = self._lm_model.to(self._lm_device)
+                    previous_tokens_tensor = previous_tokens_tensor.to(self._model._lm_device)
+                    self._model._lm_model = self._lm_model.to(self._model._lm_device)
                 else:
                     self._model._lm_model = self._lm_model.to(previous_tokens_tensor.device)
 
