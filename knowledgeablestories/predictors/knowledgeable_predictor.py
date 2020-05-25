@@ -903,7 +903,7 @@ class KnowledgeablePredictor(Predictor):
 
                 print("Passages Encoded", passages_encoded.size())
 
-                num_return_sequences = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
+                num_return_sequences = 1 #min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
 
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
