@@ -367,12 +367,12 @@ class KnowledgeableStoriesModel(Model):
 
                 if self._passage_tdvae is not None:
 
-                    encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat)
+                    encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
 
                     orig_device = None
                     if self._tdvae_device:
                         orig_device = encoded_sentences_cat.device
-                        encoded_sentences = encoded_sentences_cat.to(self._tdvae_device)
+                        encoded_sentences_cat = encoded_sentences_cat.to(self._tdvae_device)
                         passage_mask = passage_mask.to(self._tdvae_device)
 
                     tdvae_return = self._passage_tdvae(encoded_sentences_cat, mask=passage_mask)
