@@ -1033,7 +1033,8 @@ class KnowledgeablePredictor(Predictor):
                 if temperature != 1.0:
                     next_token_logits = next_token_logits / temperature
                 # Top-p/top-k filtering
-                next_token_logits = self._model._lm_model.top_k_top_p_filtering(next_token_logits, top_k=top_k,
+                from transformers import top_k_top_p_filtering
+                next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
                                                                                 top_p=top_p)
                 # Sample
                 import torch.Functional as F
