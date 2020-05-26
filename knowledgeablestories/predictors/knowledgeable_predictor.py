@@ -1002,7 +1002,6 @@ class KnowledgeablePredictor(Predictor):
             effective_batch_size, -1
         )
 
-        unfinished_sents = input_ids.new(effective_batch_size).fill_(1)
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         while cur_len < max_length:
@@ -1044,36 +1043,16 @@ class KnowledgeablePredictor(Predictor):
 
             print("Next token", next_token)
 
-            # update generations and finished sentences
-            if eos_token_ids is not None:
-                # pad finished sentences if eos_token_id exist
-                tokens_to_add = next_token * unfinished_sents + (pad_token_id) * (1 - unfinished_sents)
-            else:
-                tokens_to_add = next_token
+            tokens_to_add = next_token
 
             # add token and increase length by one
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
             cur_len = cur_len + 1
 
-            if eos_token_ids is not None:
-                eos_in_sents = tokens_to_add in eos_token_ids
-                # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
-                is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
-                sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len)
-                # unfinished_sents is set to zero if eos in sentence
-                unfinished_sents.mul_((~eos_in_sents).long())
-
-            # stop when there is a </s> in each sentence, or if we exceed the maximul length
-            if unfinished_sents.max() == 0:
+            if tokens_to_add in eos_token_ids:
                 break
 
-        # if there are different sentences lengths in the batch, some batches have to be padded
-        if sent_lengths.min().item() != sent_lengths.max().item():
-            assert pad_token_id is not None, "`Pad_token_id` has to be defined if batches have different lengths"
-            # finished sents are filled with pad_token
-            decoded = input_ids.new(batch_size, sent_lengths.max().item()).fill_(pad_token_id)
-        else:
-            decoded = input_ids
+        decoded = input_ids
 
         for hypo_idx, hypo in enumerate(input_ids):
             decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
