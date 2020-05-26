@@ -649,7 +649,7 @@ class KnowledgeablePredictor(Predictor):
 
             print(gen_seq.keys())
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
-            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"], dim=0)
+            encoded_passages = gen_seq["encoded_passages_tensor"]
             print("Encoded Passages", encoded_passages.size())
 
             if torch.cuda.is_available():
