@@ -92,6 +92,7 @@ class KnowledgeablePredictor(Predictor):
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
+        gen_min_length = int(os.getenv("PREDICTOR_GEN_MIN_LENGTH", default=3))
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
@@ -116,7 +117,7 @@ class KnowledgeablePredictor(Predictor):
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
-                                   "max_length": gen_max_length, "do_sample": gen_do_sample,
+                                   "max_length": gen_max_length,  "min_length": gen_min_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": dont_generate_token_ids}
@@ -914,14 +915,13 @@ class KnowledgeablePredictor(Predictor):
                     input_ids=previous_tokens_tensor,
                     passages_encoded=passages_encoded,
                     cur_len=len(previous_tokens_tensor),
-                    min_length=3,
+                    min_length=gen_config["min_length"],
                     max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
-                    do_sample=gen_config["do_sample"],
-                    eos_token_id=gen_config["eos_token_ids"],
-                    pad_token_id=END_OF_TEXT_TOKEN_ID,
+                    eos_token_ids=self._eos_token_ids,
+                    pad_token_id=0,
                     num_return_sequences=num_return_sequences
                 )
 
@@ -974,12 +974,11 @@ class KnowledgeablePredictor(Predictor):
             cur_len,
             max_length,
             min_length,
-            do_sample,
             temperature,
             top_k,
             top_p,
             pad_token_id,
-            eos_token_id,
+            eos_token_ids,
             num_return_sequences
     ):
         """ This is a copy from Hugging Face but adding fusion of word embeddings.
@@ -1027,8 +1026,9 @@ class KnowledgeablePredictor(Predictor):
 
 
             # set eos token prob to zero if min_length is not reached
-            if eos_token_id is not None and cur_len < min_length:
-                next_token_logits[:, eos_token_id] = -float("inf")
+            if eos_token_ids is not None and cur_len < min_length:
+                for eos_token_id in eos_token_ids:
+                    next_token_logits[:, eos_token_id] = -float("inf")
 
             # Temperature (higher temperature => more likely to sample low probability tokens)
             if temperature != 1.0:
@@ -1037,6 +1037,8 @@ class KnowledgeablePredictor(Predictor):
             from transformers import top_k_top_p_filtering
             next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
                                                                             top_p=top_p)
+
+            print(next_token_logits)
             # Sample
             import torch.nn.functional as F
             probs = F.softmax(next_token_logits, dim=-1)
