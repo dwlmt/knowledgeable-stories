@@ -660,8 +660,7 @@ class KnowledgeablePredictor(Predictor):
 
             l1 = self._l1_distance(context_representation, encoded_passages)
             l2 = self._l2_distance(context_representation, encoded_passages)
-            dot_product = torch.dot(torch.squeeze(context_representation, dim=0),
-                                    torch.squeeze(encoded_passages, dim=0))
+            dot_product = (context_representation.expand_as(encoded_passages) * encoded_passages).sum(-1)
 
             context_sentiment = parent["sentiment"]
             sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
