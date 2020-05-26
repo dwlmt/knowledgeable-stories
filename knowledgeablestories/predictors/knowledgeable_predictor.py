@@ -1004,56 +1004,61 @@ class KnowledgeablePredictor(Predictor):
 
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
-        while cur_len < max_length:
+        def gen_sentence(input_ids, cur_len):
+            while cur_len < max_length:
 
-            print("Input Id Sizes", input_ids.size())
-            outputs = self._model._lm_model.transformer(input_ids)
+                print("Input Id Sizes", input_ids.size())
+                outputs = self._model._lm_model.transformer(input_ids)
 
-            print("Outputs", outputs[0].size())
+                print("Outputs", outputs[0].size())
 
-            next_token_hidden = outputs[0][-1, :]
+                next_token_hidden = outputs[0][-1, :]
 
-            if passages_encoded is not None:
-                next_token_hidden = torch.unsqueeze(next_token_hidden[-1], dim=0)
-                print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
-                fused = torch.cat(
-                    (next_token_hidden, passages_encoded.to(next_token_hidden.device)),dim=-1)
-                self._model._fusion_dense = self._model._fusion_dense.to(fused.device)
-                next_token_hidden = self._model._fusion_dense(fused)
+                if passages_encoded is not None:
+                    next_token_hidden = torch.unsqueeze(next_token_hidden[-1], dim=0)
+                    print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
+                    fused = torch.cat(
+                        (next_token_hidden, passages_encoded.to(next_token_hidden.device)),dim=-1)
+                    self._model._fusion_dense = self._model._fusion_dense.to(fused.device)
+                    next_token_hidden = self._model._fusion_dense(fused)
 
-            next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
+                next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
 
 
-            # set eos token prob to zero if min_length is not reached
-            if eos_token_ids is not None and cur_len < min_length:
-                for eos_token_id in eos_token_ids:
-                    next_token_logits[:, eos_token_id] = -float("inf")
+                # set eos token prob to zero if min_length is not reached
+                if eos_token_ids is not None and cur_len < min_length:
+                    for eos_token_id in eos_token_ids:
+                        next_token_logits[:, eos_token_id] = -float("inf")
 
-            # Temperature (higher temperature => more likely to sample low probability tokens)
-            if temperature != 1.0:
-                next_token_logits = next_token_logits / temperature
-            # Top-p/top-k filtering
-            from transformers import top_k_top_p_filtering
-            next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
-                                                                            top_p=top_p)
-            # Sample
-            import torch.nn.functional as F
-            probs = F.softmax(next_token_logits, dim=-1)
-            next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
+                # Temperature (higher temperature => more likely to sample low probability tokens)
+                if temperature != 1.0:
+                    next_token_logits = next_token_logits / temperature
+                # Top-p/top-k filtering
+                from transformers import top_k_top_p_filtering
+                next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
+                                                                                top_p=top_p)
+                # Sample
+                import torch.nn.functional as F
+                probs = F.softmax(next_token_logits, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
 
-            print("Next token", next_token)
+                print("Next token", next_token)
 
-            tokens_to_add = next_token
+                tokens_to_add = next_token
 
-            # add token and increase length by one
-            input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
-            cur_len = cur_len + 1
+                # add token and increase length by one
+                input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
+                cur_len = cur_len + 1
 
-            print("Should break", tokens_to_add, input_ids, eos_token_ids)
-            for eos in eos_token_ids:
-                print(eos, tokens_to_add.item())
-                if int(eos) == int(tokens_to_add.item()):
-                    break
+                print("Should break", tokens_to_add, input_ids, eos_token_ids)
+                for eos in eos_token_ids:
+                    print(eos, tokens_to_add.item())
+                    if int(eos) == int(tokens_to_add.item()):
+                        return input_ids
+
+            return input_ids
+
+        input_ids = gen_sentence(input_ids, cur_len)
 
         decoded = input_ids
         print("Decoded", decoded)
