@@ -623,12 +623,13 @@ class KnowledgeablePredictor(Predictor):
                                                   encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
 
             gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
+            gen_seq["encoded_passages_tensor"] = final_encoded_representation.cpu()
         metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                        "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                        "context_representation": torch.unsqueeze(context_encoded_representation,
                                                                  dim=0).expand_as(
                            final_encoded_representation),
-                       "encoded_passages_tensor": final_encoded_representation}
+                      }
         return final_encoded_representation, metric_dict
 
     def _add_gold(self, generated_sequences, num_levels_rollout, original_sentences, story_idx):
