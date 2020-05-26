@@ -1017,9 +1017,9 @@ class KnowledgeablePredictor(Predictor):
 
             if passages_encoded is not None:
                 print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
-                next_token_hidden = self._model._fusion_dense(torch.cat(
-                    (torch.unsqueeze(next_token_hidden, dim=0), passages_encoded.to(next_token_hidden.device))),
-                                                              dim=-1)
+                fused = torch.cat(
+                    (torch.unsqueeze(next_token_hidden, dim=0), passages_encoded.to(next_token_hidden.device)),dim=-1)
+                next_token_hidden = self._model._fusion_dense(fused)
 
             next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
 
