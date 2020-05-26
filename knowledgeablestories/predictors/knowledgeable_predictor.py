@@ -1049,7 +1049,7 @@ class KnowledgeablePredictor(Predictor):
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
             cur_len = cur_len + 1
 
-            print("Should break", tokens_to_add, eos_token_ids)
+            print("Should break", tokens_to_add, input_ids, eos_token_ids)
             if tokens_to_add.item() in eos_token_ids:
                 break
 
