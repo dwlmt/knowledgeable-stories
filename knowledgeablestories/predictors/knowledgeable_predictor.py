@@ -646,6 +646,7 @@ class KnowledgeablePredictor(Predictor):
 
             gen_seq["index"] = i
 
+            print(gen_seq.keys())
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
             encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"], dim=0)
 
