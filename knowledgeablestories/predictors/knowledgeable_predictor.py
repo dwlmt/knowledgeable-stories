@@ -1050,7 +1050,7 @@ class KnowledgeablePredictor(Predictor):
             cur_len = cur_len + 1
 
             print("Should break", tokens_to_add, eos_token_ids)
-            if tokens_to_add in eos_token_ids:
+            if tokens_to_add.item() in eos_token_ids:
                 break
 
         decoded = input_ids
