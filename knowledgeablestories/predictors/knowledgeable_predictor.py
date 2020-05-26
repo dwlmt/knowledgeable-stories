@@ -1025,25 +1025,24 @@ class KnowledgeablePredictor(Predictor):
 
             next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
 
+
             # set eos token prob to zero if min_length is not reached
             if eos_token_id is not None and cur_len < min_length:
                 next_token_logits[:, eos_token_id] = -float("inf")
 
-            if do_sample:
-                # Temperature (higher temperature => more likely to sample low probability tokens)
-                if temperature != 1.0:
-                    next_token_logits = next_token_logits / temperature
-                # Top-p/top-k filtering
-                from transformers import top_k_top_p_filtering
-                next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
-                                                                                top_p=top_p)
-                # Sample
-                import torch.nn.functional as F
-                probs = F.softmax(next_token_logits, dim=-1)
-                next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
-            else:
-                # Greedy decoding
-                next_token = torch.argmax(next_token_logits, dim=-1)
+            # Temperature (higher temperature => more likely to sample low probability tokens)
+            if temperature != 1.0:
+                next_token_logits = next_token_logits / temperature
+            # Top-p/top-k filtering
+            from transformers import top_k_top_p_filtering
+            next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
+                                                                            top_p=top_p)
+            # Sample
+            import torch.nn.functional as F
+            probs = F.softmax(next_token_logits, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
+
+            print("Next token", next_token)
 
             # update generations and finished sentences
             if eos_token_id is not None:
