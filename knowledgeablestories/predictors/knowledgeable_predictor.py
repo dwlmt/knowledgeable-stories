@@ -1037,7 +1037,7 @@ class KnowledgeablePredictor(Predictor):
                 next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
                                                                                 top_p=top_p)
                 # Sample
-                import torch.Functional as F
+                import torch.nn.functional as F
                 probs = F.softmax(next_token_logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
             else:
