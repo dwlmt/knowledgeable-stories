@@ -1049,14 +1049,17 @@ class KnowledgeablePredictor(Predictor):
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
             cur_len = cur_len + 1
 
+            print("Should break", tokens_to_add, eos_token_ids)
             if tokens_to_add in eos_token_ids:
                 break
 
         decoded = input_ids
+        print("Decoded", decoded)
 
         for hypo_idx, hypo in enumerate(input_ids):
             decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
 
+        print("Decoded returned", decoded)
         return decoded
 
     def convert_output_to_tensors(self, output_dict):
