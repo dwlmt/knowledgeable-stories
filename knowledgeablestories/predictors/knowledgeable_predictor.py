@@ -623,7 +623,7 @@ class KnowledgeablePredictor(Predictor):
                                                   encoded_sentences_tensor.size(1), -1)[i, ...], dim=0)), dim=0)
 
             gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
-            gen_seq["encoded_passages_tensor"] = final_encoded_representation.cpu()
+            gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation.cpu(),dim=0)
         metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                        "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                        "context_representation": torch.unsqueeze(context_encoded_representation,
