@@ -539,8 +539,8 @@ class KnowledgeablePredictor(Predictor):
                 existing_sentences_encoded = gen_seq["encoded_sentences_tensor"]
                 existing_sentences_encoded_batch.append(existing_sentences_encoded)
 
-                existing_passages_batch = gen_seq["encoded_passages_tensor"]
-                existing_passages_batch.append(existing_sentences_encoded)
+                existing_passages_encoded = gen_seq["encoded_passages_tensor"]
+                existing_passages_batch.append(existing_passages_encoded)
 
             del gen_seq["parent"]
             del gen_seq["merged_tokens"]
