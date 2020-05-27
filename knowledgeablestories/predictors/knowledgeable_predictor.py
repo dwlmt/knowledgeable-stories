@@ -580,11 +580,10 @@ class KnowledgeablePredictor(Predictor):
             encoded_sentences_tensor = self._model._passage_dense(encoded_sentences_tensor)
 
         if len(encoded_sentences_tensor.size()) == 3:
-            target_representation = encoded_sentences_tensor.view(
+            encoded_sentences_tensor = encoded_sentences_tensor.view(
                 encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
                 encoded_sentences_tensor.size(2))
 
-        target_representation = target_representation.to(context_encoded_representation.device)
         if len(final_encoded_representation.size()) == 3:
             final_encoded_representation = final_encoded_representation.view(
                 final_encoded_representation.size(0) * final_encoded_representation.size(1),
@@ -594,6 +593,7 @@ class KnowledgeablePredictor(Predictor):
             target_representation = final_encoded_representation
         else:
             target_representation = encoded_sentences_tensor
+        target_representation = target_representation.to(context_encoded_representation.device)
 
         print("Logits", context_encoded_representation.size(),target_representation.size())
         logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
