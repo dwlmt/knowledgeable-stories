@@ -70,6 +70,8 @@ class KnowledgeablePredictor(Predictor):
 
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
+        self._random_test_vector = parse_bool(os.getenv("RANDOM_TEST_VECTOR", default="False"))
+
         # Whether is a TD-VAE model
         self._tdvae = parse_bool(os.getenv("TDVAE", default="False"))
 
@@ -577,12 +579,14 @@ class KnowledgeablePredictor(Predictor):
             existing_sentences_encoded = existing_sentences_encoded.cuda()
 
         if self._model._passage_dense is not None:
-            encoded_sentences_tensor = self._model._passage_dense(encoded_sentences_tensor)
+            target_representation = self._model._passage_dense(encoded_sentences_tensor)
+        else:
+            target_representation = encoded_sentences_tensor
 
-        if len(encoded_sentences_tensor.size()) == 3:
-            encoded_sentences_tensor = encoded_sentences_tensor.view(
-                encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
-                encoded_sentences_tensor.size(2))
+        if len(target_representation.size()) == 3:
+            target_representation = target_representation.view(
+                target_representation.size(0) * target_representation.size(1),
+                target_representation.size(2))
 
         if len(final_encoded_representation.size()) == 3:
             final_encoded_representation = final_encoded_representation.view(
@@ -591,8 +595,7 @@ class KnowledgeablePredictor(Predictor):
 
         if not self._sentence_disc:
             target_representation = final_encoded_representation
-        else:
-            target_representation = encoded_sentences_tensor
+
         target_representation = target_representation.to(context_encoded_representation.device)
 
         print("Logits", context_encoded_representation.size(),target_representation.size())
