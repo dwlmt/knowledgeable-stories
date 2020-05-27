@@ -457,8 +457,6 @@ class KnowledgeablePredictor(Predictor):
 
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
-            # print(parent, input_tokens, generated_sequences)
-
             if len(generated_sequences) > 2:
 
                 self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
@@ -512,7 +510,6 @@ class KnowledgeablePredictor(Predictor):
         # Filter the generate from list if required.
 
         log_prob_threshold = None
-        # print(f"Log prob tensor: {log_prob_tensor.size()}")
 
         if len(log_prob_tensor) == 0:
             return
@@ -557,11 +554,7 @@ class KnowledgeablePredictor(Predictor):
     def _unpack_metrics(self, generated_sequences, metric_dict):
         for (k, v) in metric_dict.items():
 
-            # print(f"{k} - {v.size()}")
-
             for value, gen_seq in zip(v, generated_sequences):
-
-                # print(f"{k} - {v.size()}: {value}")
 
                 if "parent_relation_metrics" not in gen_seq:
                     gen_seq["parent_relation_metrics"] = {}
@@ -582,7 +575,7 @@ class KnowledgeablePredictor(Predictor):
             context_encoded_representation = context_encoded_representation.cuda()
             encoded_sentences_tensor = encoded_sentences_tensor.cuda()
             existing_sentences_encoded = existing_sentences_encoded.cuda()
-        # print(context_encoded_representation.size(), final_encoded_representation.size())
+
         target_representation = encoded_sentences_tensor
         if self._model._passage_dense is not None:
             target_representation = self._model._passage_dense(target_representation)
@@ -595,15 +588,14 @@ class KnowledgeablePredictor(Predictor):
             final_encoded_representation = final_encoded_representation.view(
                 final_encoded_representation.size(0) * final_encoded_representation.size(1),
                 final_encoded_representation.size(2))
-        print("Logits input size:", context_encoded_representation.size(), encoded_sentences_tensor.size(),
-              target_representation.size())
+
         if not self._sentence_disc:
             target_representation = final_encoded_representation
         logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                               target_representation,
                                               self._encoder_cosine)
         logits /= self._prediction_temp
-        # print(f"Logits {logits}, {logits.size()}")
+
         probs, log_probs = self._logits_to_probs(logits)
         if num_levels_rollout == self._num_levels_rollout:
             chain_log_prob = log_probs
@@ -645,14 +637,10 @@ class KnowledgeablePredictor(Predictor):
     def calculate_leaf_metrics(self, filtered_list, num_levels_rollout, parent):
         for i, gen_seq in enumerate(filtered_list):
 
-            # print(gen_seq.keys())
-
             gen_seq["index"] = i
 
-            print(gen_seq.keys())
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
             encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"][i],dim=0)
-            print("Encoded Passages", encoded_passages.size(), context_representation.size())
 
             if torch.cuda.is_available():
                 context_representation = context_representation.cuda()
@@ -911,8 +899,6 @@ class KnowledgeablePredictor(Predictor):
 
                 gen_config = self._generation_config
 
-                print("Passages Encoded", passages_encoded.size())
-
                 num_return_sequences = 1  # min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
 
                 output_sequences = self._generate_no_beam_search(
@@ -1011,16 +997,13 @@ class KnowledgeablePredictor(Predictor):
         def gen_sentence(input_ids, cur_len):
             while cur_len < max_length:
 
-                print("Input Id Sizes", input_ids.size())
                 outputs = self._model._lm_model.transformer(input_ids)
-
-                print("Outputs", outputs[0].size())
 
                 next_token_hidden = outputs[0][-1, :]
 
                 if passages_encoded is not None:
                     next_token_hidden = torch.unsqueeze(next_token_hidden[-1], dim=0)
-                    print("Passages encoded sizes", next_token_hidden.size(), passages_encoded.size())
+
                     fused = torch.cat(
                         (next_token_hidden, passages_encoded.to(next_token_hidden.device)),dim=-1)
                     self._model._fusion_dense = self._model._fusion_dense.to(fused.device)
@@ -1046,7 +1029,6 @@ class KnowledgeablePredictor(Predictor):
                 probs = F.softmax(next_token_logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
 
-                print("Next token", next_token)
 
                 tokens_to_add = next_token
 
@@ -1054,9 +1036,8 @@ class KnowledgeablePredictor(Predictor):
                 input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
                 cur_len = cur_len + 1
 
-                print("Should break", tokens_to_add, input_ids, eos_token_ids)
                 for eos in eos_token_ids:
-                    print(eos, tokens_to_add.item())
+
                     if int(eos) == int(tokens_to_add.item()):
                         return input_ids
 
@@ -1065,17 +1046,15 @@ class KnowledgeablePredictor(Predictor):
         input_ids = gen_sentence(input_ids, cur_len)
 
         decoded = input_ids
-        print("Decoded", decoded)
 
         for hypo_idx, hypo in enumerate(input_ids):
             decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
 
-        print("Decoded returned", decoded)
         return decoded
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
-        print(f"Output Keys: {output_dict.keys()}")
+
         for field in ["passages_encoded", "passages_mask", "sentences_encoded",
                       "lm_encoded", "lm_mask", "tokens",
                       "tdvae_rollout_x", "tdvae_rollout_z2", "tdvae_z1",
