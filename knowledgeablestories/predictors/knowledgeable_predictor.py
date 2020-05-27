@@ -583,6 +583,7 @@ class KnowledgeablePredictor(Predictor):
                 target_representation = target_representation.view(
                     target_representation.size(0) * target_representation.size(1),
                     target_representation.size(2))
+
         target_representation = target_representation.to(context_encoded_representation.device)
         if len(final_encoded_representation.size()) == 3:
             final_encoded_representation = final_encoded_representation.view(
@@ -591,6 +592,8 @@ class KnowledgeablePredictor(Predictor):
 
         if not self._sentence_disc:
             target_representation = final_encoded_representation
+
+        print("Logits", context_encoded_representation.size(),target_representation.size())
         logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                               target_representation,
                                               self._encoder_cosine)
