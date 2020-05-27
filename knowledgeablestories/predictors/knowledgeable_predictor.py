@@ -452,7 +452,9 @@ class KnowledgeablePredictor(Predictor):
             if "sentences" not in parent:
                 parent["sentences"] = []
 
-            # if self._model._fusion_dense is None:
+            # Get the encoding for the last sentence only.
+            passages_encoded = torch.unsqueeze(passages_encoded[-1],dim=0)
+
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
             # print(parent, input_tokens, generated_sequences)
