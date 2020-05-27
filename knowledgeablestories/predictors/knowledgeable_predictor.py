@@ -649,8 +649,8 @@ class KnowledgeablePredictor(Predictor):
 
             print(gen_seq.keys())
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
-            encoded_passages = gen_seq["encoded_passages_tensor"]
-            print("Encoded Passages", encoded_passages.size())
+            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"][i],dim=0)
+            print("Encoded Passages", encoded_passages.size(), context_representation.size())
 
             if torch.cuda.is_available():
                 context_representation = context_representation.cuda()
@@ -660,7 +660,7 @@ class KnowledgeablePredictor(Predictor):
 
             l1 = self._l1_distance(context_representation, encoded_passages)
             l2 = self._l2_distance(context_representation, encoded_passages)
-            dot_product = (context_representation.expand_as(encoded_passages) * encoded_passages).sum(-1)
+            dot_product = torch.squeeze(context_representation,dim=0).dot(torch.squeeze(encoded_passages,dim=0))
 
             context_sentiment = parent["sentiment"]
             sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
