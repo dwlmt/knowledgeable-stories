@@ -30,7 +30,7 @@ def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
 
-@Predictor.register('know_stories')
+@Predictor.register('tdvae_cloze')
 class KnowledgeablePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
