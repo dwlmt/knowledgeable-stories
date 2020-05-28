@@ -193,7 +193,38 @@ class KnowledgeablePredictor(Predictor):
 
                 all_processed_stories.append(all_processed_sentences)
 
+            keys_dict = {}
+            story_prediction_list = []
+            for story in all_processed_stories:
 
+                pred_dict = {}
+
+                for sent in story:
+                    prediction_metric = sent["prediction_metrics"]
+
+                    for k_pred, k_val in prediction_metric:
+
+                        if k_pred not in keys_dict:
+                            keys_dict[k_pred]= ""
+
+                        if k_pred not in pred_dict:
+                            pred_dict[k_pred] = 0.0
+
+                        pred_dict[k_pred] += k_val
+
+                story_prediction_list.append(pred_dict)
+
+            inputs["aggregated_prediction_metrics"] = story_prediction_list
+
+            correct = story_prediction_list[0]
+            incorrect_list = story_prediction_list[1:]
+            correct_dict = {}
+            for k in keys_dict:
+                if correct[k] <= min(i[k] for i in incorrect_list):
+                    correct_dict[k] = 1
+                else:
+                    correct_dict[k] = 0
+            inputs["accuracy"] = correct_dict
 
             return inputs
 
