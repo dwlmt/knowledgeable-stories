@@ -156,6 +156,7 @@ class KnowledgeablePredictor(Predictor):
 
                         context_text = mutated_story_sentences[0:mut_rand]
                         context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
+                        print("Mutate random", mut_rand, context_text, context_tokens)
                         generated_sentence = self.generate_sentences(context_tokens, 1)[0]
                         mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
                         mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
