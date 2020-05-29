@@ -240,6 +240,7 @@ class KnowledgeablePredictor(Predictor):
             reference_points[i]["tdvae_z1"] = curr_z1[i][0]
             reference_points[i]["passages_encoded"] = curr_passages[i]
             reference_points[i]["sentences_encoded"] = curr_sentences[i]
+            print("Sentence reference points", curr_sentences[i].size())
 
         for s in sentence_batch:
             s["prediction_metrics"] = {}
