@@ -77,6 +77,9 @@ class CmuAbstractMovieReader(DatasetReader):
 
                 text_sentences = self.convert_text_to_sentences(line["text"])
 
+                if len(text_sentences) == 0:
+                    continue
+
                 absolute_positions = [(r + 1) for r in range(len(text_sentences))]
                 relative_positions = [(p / float(len(text_sentences))) for p in absolute_positions]
 
@@ -179,8 +182,12 @@ class CmuMovieHierarchyReader(CmuAbstractMovieReader):
 
         fields["passages"] = text_field_list
 
-        fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
-        fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+        if len(text_dict["relative_positions"]) > 0:
+            fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
+
+        if len(text_dict["sentiment"]) > 0:
+            fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+
         fields["passages_storytype"] = type_to_labels_field(2, len(story_text))
 
         fields["metadata"] = MetadataField(text_dict)

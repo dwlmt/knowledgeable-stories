@@ -191,8 +191,12 @@ class CbtHierarchyReader(CbtAbstractReader):
 
         fields["passages"] = text_field_list
 
-        fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
-        fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+        if len(text_dict["relative_positions"]) > 0:
+            fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
+
+        if len(text_dict["sentiment"]) > 0:
+            fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+
         fields["passages_storytype"] = type_to_labels_field(3, len(story_text))
 
         fields["metadata"] = MetadataField(text_dict)

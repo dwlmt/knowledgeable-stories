@@ -170,8 +170,8 @@ class MultifileHierarchyReader(MultifileAbstractReader):
 
         fields["passages"] = text_field_list
 
-        #fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
-        fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+        if len(text_dict["sentiment"]) > 0:
+            fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
 
         label_text = self._types_label
         fields["passages_storytype"] = type_to_labels_field(label_text, len(story_text))

@@ -82,6 +82,10 @@ class WritingPromptsAbstractReader(DatasetReader):
                     row["batch_row_num"] = batch_row_num
 
                     text_sentences = self.convert_text_to_sentences(line)
+
+                    if len(text_sentences) == 0:
+                        continue
+
                     absolute_positions = [(r + 1) for r in range(len(text_sentences))]
                     relative_positions = [(p / float(len(text_sentences))) for p in absolute_positions]
 
@@ -91,6 +95,10 @@ class WritingPromptsAbstractReader(DatasetReader):
                                                                                             self._batch_size * self._slide,
                                                                                             1))),
                                                                                     fillvalue="<|endoftext|>"))):
+
+                        if len(sentence_batch) == 0:
+                            continue
+
                         row["story_text"] = sentence_batch
                         row["absolute_positions"] = absolute_positions[i: i + len(sentence_batch)]
                         row["relative_positions"] = relative_positions[i: i + len(sentence_batch)]
@@ -183,8 +191,12 @@ class WritingPromptsHierarchyReader(WritingPromptsAbstractReader):
         fields["passages"] = text_field_list
         # print(story_text, text_field_list)
 
-        fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
-        fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+        if len(text_dict["relative_positions"]) > 0:
+            fields["passages_relative_positions"] = position_to_labels_field(text_dict["relative_positions"])
+
+        if len(text_dict["sentiment"]) > 0:
+            fields["passages_sentiment"] = sentiment_to_labels_field(text_dict["sentiment"])
+
         fields["passages_storytype"] = type_to_labels_field(0, len(story_text))
 
         fields["metadata"] = MetadataField(text_dict)
