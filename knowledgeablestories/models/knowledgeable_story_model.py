@@ -304,7 +304,7 @@ class KnowledgeableStoriesModel(Model):
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences_cat, loss, output, prediction_mode)
 
-                output["sentences_encoded"] = encoded_sentences
+                output["sentences_encoded"] = encoded_sentences_cat
                 output["lm_encoded"] = lm_output
                 output["lm_mask"] = lm_mask
                 output["tokens"] = passages["tokens"]
