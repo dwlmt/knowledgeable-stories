@@ -201,7 +201,9 @@ class KnowledgeablePredictor(Predictor):
                 for sent in story:
                     prediction_metric = sent["prediction_metrics"]
 
-                    for k_pred, k_val in prediction_metric:
+                    print(prediction_metric)
+
+                    for k_pred, k_val in prediction_metric.items():
 
                         if k_pred not in keys_dict:
                             keys_dict[k_pred]= ""
@@ -209,7 +211,6 @@ class KnowledgeablePredictor(Predictor):
                         if k_pred not in pred_dict:
                             pred_dict[k_pred] = 0.0
 
-                        print(k_pred, k_val)
                         try:
                             pred_dict[k_pred] += float(k_val)
                         except:
