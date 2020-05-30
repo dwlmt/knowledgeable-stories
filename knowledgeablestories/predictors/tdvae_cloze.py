@@ -203,18 +203,21 @@ class KnowledgeablePredictor(Predictor):
 
                     print(prediction_metric)
 
-                    for k_pred, k_val in prediction_metric.items():
+                    for k_pred, val in prediction_metric.items():
 
-                        if k_pred not in keys_dict:
-                            keys_dict[k_pred]= ""
+                        for k_metric, val_pred in val.items():
 
-                        if k_pred not in pred_dict:
-                            pred_dict[k_pred] = 0.0
+                            key = f"{k_pred}.{k_metric}"
+                            if key not in keys_dict:
+                                keys_dict[key]= ""
 
-                        try:
-                            pred_dict[k_pred] += float(k_val)
-                        except:
-                            pass
+                            if key not in pred_dict:
+                                pred_dict[key] = 0.0
+
+                            try:
+                                pred_dict[key] += float(val_pred)
+                            except:
+                                pass
 
                 story_prediction_list.append(pred_dict)
 
