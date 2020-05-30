@@ -209,7 +209,11 @@ class KnowledgeablePredictor(Predictor):
                         if k_pred not in pred_dict:
                             pred_dict[k_pred] = 0.0
 
-                        pred_dict[k_pred] += k_val
+                        print(k_pred, k_val)
+                        try:
+                            pred_dict[k_pred] += float(k_val)
+                        except:
+                            pass
 
                 story_prediction_list.append(pred_dict)
 
@@ -368,7 +372,7 @@ class KnowledgeablePredictor(Predictor):
 
 
     def _vader_polarity(self, sentence_batch):
-        sentiment_polarity = [100.0 * float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
+        sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
                               sentence_batch]
         for s, p in zip(sentence_batch, sentiment_polarity):
             s["sentiment"] = p
