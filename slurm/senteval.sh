@@ -90,9 +90,9 @@ cd "${EXP_ROOT}" # helps AllenNLP behave
 mkdir -p ${SERIAL_DIR}
 mkdir -p ${CACHE_DIR}
 
-export OUTPUT_FILE=${SERIAL_DIR}/senteval.json
+export OUTPUT_FILE="${SERIAL_DIR}/senteval.json"
 export PATH_TO_SENTEVAL="$HOME/git/SentEval/"
-export PATH_TO_SENTEVAL_DATA=$HOME/git/SentEval/data/"
+export PATH_TO_SENTEVAL_DATA="$HOME/git/SentEval/data/"
 
 echo "============"
 echo "Python Task========"
