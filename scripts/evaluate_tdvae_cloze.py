@@ -39,7 +39,7 @@ class EvalTdvaeCloze(object):
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(["metric", "accuracy"])
 
-            for k, v in accuracy_dict:
+            for k, v in accuracy_dict.items():
                 csv_writer.writerow([k, v])
 
 
