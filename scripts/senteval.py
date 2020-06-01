@@ -37,7 +37,7 @@ def batcher(params, batch):
 
 
 # Set params for SentEval
-params_senteval = {'task_path': os.getenv("PATH_TO_SENTEVAL", default="$HOME/git/SentEval/data/"), 'usepytorch': True, 'kfold': 5}
+params_senteval = {'task_path': os.getenv("PATH_TO_SENTEVAL_DATA", default="$HOME/git/SentEval/data/"), 'usepytorch': True, 'kfold': 5}
 params_senteval['classifier'] = {'nhid': 0, 'optim': 'rmsprop', 'batch_size': 64,
                                  'tenacity': 3, 'epoch_size': 2}
 
