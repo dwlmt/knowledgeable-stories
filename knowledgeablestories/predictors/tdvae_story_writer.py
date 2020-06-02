@@ -215,7 +215,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                             generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
                             #print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                            dist = self._l2_distance(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                            dist = 1.0 - self._cosine_similarity(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
                                                      torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
                             # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
 
