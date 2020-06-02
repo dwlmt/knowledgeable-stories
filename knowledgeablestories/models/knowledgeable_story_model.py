@@ -794,14 +794,14 @@ class KnowledgeableStoriesModel(Model):
 
         return output_dict
 
-    def calculate_logits(self, embeddings_one, embeddings_two, cosine):
+    def calculate_logits(self, embeddings_one, embeddings_two, cosine=False):
+
+        if cosine:
+            embeddings_one = torch.norm(embeddings_one, p=2, dim=-1, keepdim=True)
+            embeddings_two = torch.norm(embeddings_two, p=2, dim=-1, keepdim=True)
 
         logits = torch.matmul(embeddings_one,
                               torch.t(embeddings_two))
-
-        if cosine:
-            logits /= (torch.norm(embeddings_one, p=2, dim=-1, keepdim=True) * torch.norm(embeddings_two, p=2, dim=-1,
-                                                                                          keepdim=True)) + 1e8
 
         return logits
 

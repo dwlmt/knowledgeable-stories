@@ -83,7 +83,7 @@ class KnowledgeablePredictor(Predictor):
         self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
-        self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="False"))
+        self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="True"))
         self._prediction_temp = float(os.getenv("PREDICTOR_TEMP", default=1.0))
 
         self._num_levels_rollout = int(os.getenv("PREDICTOR_NUM_LEVELS_ROLLOUT", default=1))
