@@ -37,7 +37,7 @@ class Decoder(nn.Module):
             in_dim = hidden_size
             self.multiple_layers = False
         else:
-            in_dim = hidden_size[0]
+            in_dim = hidden_sizes[0]
             self.multiple_layers = True
 
         self.fc1 = nn.Linear(z_size, in_dim)
@@ -47,7 +47,7 @@ class Decoder(nn.Module):
         else:
             layers = []
 
-            for h_dim in hidden_size:
+            for h_dim in hidden_sizes:
                 layers.append(
                     nn.Sequential(
                         nn.Linear(in_features=in_dim, out_features=h_dim),
