@@ -121,7 +121,9 @@ class KnowledgeablePredictor(Predictor):
         self._override_lm = parse_bool(os.getenv("PREDICTOR_OVERRIDE_LM", default="False"))
 
         self._neg_examples = int(os.getenv("NEGATIVE_EXAMPLES_PER_STORY", default=1))
-        self._neg_examples_num_mutated = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_SENTENCES", default=3))
+        self._neg_examples_num_mutated = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_SENTENCES", default=1))
+
+        self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
 
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
@@ -146,18 +148,29 @@ class KnowledgeablePredictor(Predictor):
             all_processed_stories = []
 
             if self._neg_examples > 0:
+
                 for j in range(self._neg_examples):
                     mutated_story_sentences = copy.deepcopy(original_sentences)
 
-                    for k in range(self._neg_examples_num_mutated):
-                        mut_rand = randint(1, len(mutated_story_sentences) - 1)
+                    if self._neg_examples_num_mutated is not None and self._neg_examples_num_mutated > 0:
+                        for k in range(self._neg_examples_num_mutated):
+                            mut_rand = randint(1, len(mutated_story_sentences) - 1)
 
-                        context_text = mutated_story_sentences[0:mut_rand]
-                        context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
-                        print("Mutate random", mut_rand, context_text, context_tokens)
-                        generated_sentence = self.generate_sentences(context_tokens, 1)[0]
-                        mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
-                        mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
+                            context_text = mutated_story_sentences[0:mut_rand]
+                            context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
+                            #print("Mutate random", mut_rand, context_text, context_tokens)
+                            generated_sentence = self.generate_sentences(context_tokens, 1)[0]
+                            mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
+                            mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
+
+                    if self._neg_examples_num_swapped is not None and self._neg_examples_num_swapped > 0:
+                        for k in range(self._neg_examples_num_swapped):
+                            swap_a_idx = randint(0, len(mutated_story_sentences))
+                            swap_b_idx = randint(0, len(mutated_story_sentences))
+
+                            orig_b = mutated_story_sentences[swap_b_idx]
+                            mutated_story_sentences[swap_b_idx] = mutated_story_sentences[swap_a_idx]
+                            mutated_story_sentences[swap_a_idx] = orig_b
 
                     story_sentences.append(mutated_story_sentences)
 
