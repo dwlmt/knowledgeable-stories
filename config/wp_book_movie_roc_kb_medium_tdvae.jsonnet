@@ -31,7 +31,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "writing_prompts_hierarchy": {
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
             },
             "roc_lm": {
                 "type": "roc_lm",
@@ -51,7 +51,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "cmu_movie_hierarchy": {
                 "type": "cmu_movie_hierarchy",
                 "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
             },
              "cmu_book_lm": {
                 "type": "cmu_book_lm",
@@ -63,7 +63,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "cmu_book_hierarchy": {
                 "type": "cmu_book_hierarchy",
                 "lazy": true,
-            "batch_size" : 200,
+            "batch_size" : 100,
             },
             "atomic_lm" : {
                 "type": "atomic"
@@ -282,7 +282,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "belief_size": 1024,
          "z_posterior_size": 1024,
          "num_layers": 5,
-         "samples_per_seq": 200,
+         "samples_per_seq": 100,
          "t_diff_min": 1,
          "t_diff_max": 5,
          "d_block_hidden_size": 320,
@@ -302,7 +302,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
-    "model_save_interval": 7200.0,
+    "model_save_interval": 7100.0,
     "num_serialized_models_to_keep": 2,
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
