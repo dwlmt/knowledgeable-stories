@@ -61,10 +61,11 @@ class Decoder(nn.Module):
         self.fc3 = nn.Linear(in_dim, x_size)
 
     def forward(self, z):
-        t = torch.tanh(self.fc1(z))
         if not self.multiple_layers:
+            t = torch.tanh(self.fc1(z))
             t = torch.tanh(self.fc2(t))
         else:
+            t = torch.selu(self.fc1(z))
             t = self.fc2(t)
         p = torch.sigmoid(self.fc3(t))
         return p

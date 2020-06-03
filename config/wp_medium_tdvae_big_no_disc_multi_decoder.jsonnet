@@ -144,7 +144,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "t_diff_min": 1,
          "t_diff_max": 8,
          "d_block_hidden_size": 512,
-         "decoder_hidden_size": [4096, 2048, 2048],
+         "decoder_hidden_size": [4096, 2048],
     },
     "sentence_autoencoder": {
         "input_dim": 2048,
