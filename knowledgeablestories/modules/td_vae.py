@@ -32,13 +32,40 @@ class Decoder(nn.Module):
     """
     def __init__(self, z_size, hidden_size, x_size):
         super().__init__()
-        self.fc1 = nn.Linear(z_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, x_size)
+
+
+        if not isinstance(hidden_size,(list,tuple)):
+            in_dim = hidden_size
+            self.multiple_layers = False
+        else:
+            in_dim = hidden_size[0]
+            self.multiple_layers = True
+
+        self.fc1 = nn.Linear(z_size, in_dim)
+
+        if not isinstance(hidden_size,(list,tuple)):
+            self.fc2 = nn.Linear(in_dim, in_dim)
+        else:
+            layers = []
+
+            for h_dim in hidden_size:
+                layers.append(
+                    nn.Sequential(
+                        nn.Linear(in_features=in_dim, out_features=h_dim),
+                        nn.SELU(),
+                    )
+                )
+                in_dim = h_dim
+            self.fc2 = nn.Sequential(layers)
+
+        self.fc3 = nn.Linear(in_dim, x_size)
 
     def forward(self, z):
         t = torch.tanh(self.fc1(z))
-        t = torch.tanh(self.fc2(t))
+        if not self.multiple_layers:
+            t = torch.tanh(self.fc2(t))
+        else:
+            t = self.fc2(t)
         p = torch.sigmoid(self.fc3(t))
         return p
 
