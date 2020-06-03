@@ -30,11 +30,10 @@ class DBlock(nn.Module):
 class Decoder(nn.Module):
     """ The decoder layer converting state to observation.
     """
-    def __init__(self, z_size, hidden_size, x_size):
+    def __init__(self, z_size, hidden_size, hidden_sizes, x_size):
         super().__init__()
 
-
-        if not isinstance(hidden_size,(list,tuple)):
+        if len(hidden_sizes) == 0:
             in_dim = hidden_size
             self.multiple_layers = False
         else:
@@ -43,7 +42,7 @@ class Decoder(nn.Module):
 
         self.fc1 = nn.Linear(z_size, in_dim)
 
-        if not isinstance(hidden_size,(list,tuple)):
+        if len(hidden_sizes) == 0:
             self.fc2 = nn.Linear(in_dim, in_dim)
         else:
             layers = []
@@ -81,6 +80,7 @@ class TDVAE(nn.Module, FromParams):
                  num_layers: int = 2,
                  samples_per_seq: int = 200,
                  decoder_hidden_size: int = 512,
+                 decoder_hidden_sizes = [],
                  d_block_hidden_size: int = 256,
                  t_diff_min: int = 1,
                  t_diff_max: int = 6,
@@ -114,7 +114,7 @@ class TDVAE(nn.Module, FromParams):
             for layer in range(num_layers)])
 
         # state to observation
-        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, x_size)
+        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size,decoder_hidden_sizes, x_size)
 
     def forward(self, x, mask=None):
 
