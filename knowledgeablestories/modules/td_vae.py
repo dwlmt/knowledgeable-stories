@@ -56,7 +56,7 @@ class Decoder(nn.Module):
                     )
                 )
                 in_dim = h_dim
-            self.fc2 = nn.Sequential(layers)
+            self.fc2 = nn.Sequential(*layers)
 
         self.fc3 = nn.Linear(in_dim, x_size)
 
