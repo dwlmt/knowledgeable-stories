@@ -10,7 +10,7 @@ import os
 import sys
 
 # Set PATHs
-PATH_TO_SENTEVAL = os.path.dirname(os.getenv("PATH_TO_SENTEVAL", default="$HOME/git/SentEval/"))
+PATH_TO_SENTEVAL = os.path.dirname(os.getenv("PATH_TO_SENTEVAL", default="/home/s1569885/git/SentEval/"))
 PATH_TO_DATA = os.path.join(PATH_TO_SENTEVAL, 'data')
 
 sys.path.insert(0, PATH_TO_SENTEVAL)
