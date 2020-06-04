@@ -13,7 +13,7 @@ class ConvertSentEval(object):
         with open(source) as reader:
             with jsonlines.open(target, mode='w') as writer:
                 for line in reader:
-                    writer.write({"text": line})
+                    writer.write({"text": line.strip('\n')})
 
 if __name__ == '__main__':
     fire.Fire(ConvertSentEval)
