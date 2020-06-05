@@ -97,7 +97,7 @@ export PATH_TO_SENTEVAL_DATA="$HOME/git/SentEval/data/"
 echo "============"
 echo "Python Task========"
 
-python senteval.py
+python $PATH_TO_SENTEVAL/examples/senteval_eval_saved.py --embeddings $BATCH_FILE_PATH > ${SERIAL_DIR}/senteval_results.json
 
 echo "============"
 echo "ALLENNLP Task finished"
