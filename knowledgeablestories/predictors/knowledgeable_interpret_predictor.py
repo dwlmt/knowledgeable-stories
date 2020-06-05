@@ -105,10 +105,7 @@ class KnowledgeableInterpretPredictor(Predictor):
 
     def convert_output_to_tensors(self, output_dict):
         cached_dict = {}
-        for field in ["tokens",
-                      "passage_autoencoded_mu", "passage_autoencoded_var",
-                      "passage_autoencoded_diff_mu", "passage_autoencoded_diff_var",
-                      "sentence_autoencoded_mu", "sentence_autoencoded_var"
+        for field in ["tokens", "sentences_encoded", "sentence_autoencoded_mu", "sentence_autoencoded_var"
                       ]:
             if field in output_dict:
                 if "mask" in field:
@@ -160,6 +157,15 @@ class KnowledgeableInterpretPredictor(Predictor):
         sentences = json_dict["sentences"]
         sentences_text = [s["text"] for s in sentences]
         sentences_num = [s["sentence_num"] for s in sentences]
+
+        add_end_to_sentences = []
+        for sent in sentences_text:
+
+            if "<|endofsentence|>" not in sent:
+                sent += " <|endofsentence|>"
+            add_end_to_sentences.append(sent)
+
+        sentences_text = add_end_to_sentences
 
         text_field_list = []
         for tokens, num in zip(sentences_text, sentences_num):
