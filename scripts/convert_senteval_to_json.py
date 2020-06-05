@@ -22,7 +22,7 @@ class ConvertSentEval(object):
 
                     sentences = []
 
-                    for j, sentence in enumerate(sentences):
+                    for j, sentence in enumerate(batch):
                         sentences.append({"sentence_num": j,"text": sentence.strip('\n')})
 
                     story_dict["sentences"] = sentences
