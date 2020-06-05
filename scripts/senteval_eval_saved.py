@@ -23,7 +23,7 @@ def main():
                         level=logging.DEBUG)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('embeddings',
+    parser.add_argument('--embeddings',
                         help='Path to JSON vectors file.')
     parser.add_argument('--dim-size', default=2048, type=int,
                         help='size of the default dimension size.')
