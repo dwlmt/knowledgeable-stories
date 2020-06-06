@@ -30,6 +30,7 @@ class DBlock(nn.Module):
 class Decoder(nn.Module):
     """ The decoder layer converting state to observation.
     """
+
     def __init__(self, z_size, hidden_size, hidden_sizes, x_size):
         super().__init__()
 
@@ -73,6 +74,7 @@ class Decoder(nn.Module):
 class TDVAE(nn.Module, FromParams):
     """ The full TD-VAE model with jumpy prediction.
     """
+
     def __init__(self, x_size,
                  input_size: int = 1024,
                  belief_size: int = 1024,
@@ -80,17 +82,25 @@ class TDVAE(nn.Module, FromParams):
                  num_layers: int = 2,
                  samples_per_seq: int = 200,
                  decoder_hidden_size: int = 512,
-                 decoder_hidden_sizes = [],
+                 decoder_hidden_sizes=[],
                  d_block_hidden_size: int = 256,
                  t_diff_min: int = 1,
                  t_diff_max: int = 6,
-                 min_length: int = 3):
+                 min_length: int = 3,
+                 prediction_loss_weight: float = 1.0,
+                 kl_loss_weight: float = 1.0,
+                 recon_loss_weight: float = 1.0,
+                 ):
         super().__init__()
         self.num_layers = num_layers
         self.samples_per_seq = int(os.getenv("TDVAE_SAMPLES_PER_SEQ", default=samples_per_seq))
         self.t_diff_min = t_diff_min
         self.t_diff_max = t_diff_max
         self.min_length = min_length
+
+        self._prediction_loss_weight = prediction_loss_weight
+        self._kl_loss_weight = kl_loss_weight
+        self._recon_loss_weight = recon_loss_weight
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
@@ -114,7 +124,7 @@ class TDVAE(nn.Module, FromParams):
             for layer in range(num_layers)])
 
         # state to observation
-        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size,decoder_hidden_sizes, x_size)
+        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, decoder_hidden_sizes, x_size)
 
     def forward(self, x, mask=None):
 
@@ -387,7 +397,8 @@ class TDVAE(nn.Module, FromParams):
         bce_optimal = F.binary_cross_entropy(x2, x2, reduction='sum').detach() / batch_size
         bce_diff = bce - bce_optimal
 
-        loss = bce_diff + kl_div_qs_pb + kl_predict_qb_pt
+        loss = (bce_diff * self._recon_loss_weight) + (kl_div_qs_pb * self._kl_loss_weight) + (
+                    kl_predict_qb_pt * self._prediction_loss_weight)
 
         return loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, bce_optimal
 
@@ -403,6 +414,7 @@ def reparameterize_gaussian(mu, logvar, sample, return_eps=False):
         return ret, eps
     else:
         return ret
+
 
 def gaussian_log_prob(mu, logvar, x):
     '''Batched log probability log p(x) computation.'''
