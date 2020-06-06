@@ -3,8 +3,8 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:3
-#SBATCH --mem=20g  # Memory
+#SBATCH --gres=gpu:1
+#SBATCH --mem=64g  # Memory
 #SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 #SBATCH --mail-type=all          # send email on job start, end and fail
 #SBATCH --mail-user=david.wilmot@ed.ac.uk
