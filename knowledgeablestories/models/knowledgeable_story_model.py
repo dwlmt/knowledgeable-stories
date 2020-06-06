@@ -742,6 +742,7 @@ class KnowledgeableStoriesModel(Model):
         source_encoded = source_encoded.clone() * mask_expanded
         target_encoded = target_encoded.clone() * mask_expanded
 
+        print("Encoded views", source_encoded.size(), target_encoded.size())
         source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
         target_encoded_flat = target_encoded.view(batch_size * sentence_num, feature_size)
 
