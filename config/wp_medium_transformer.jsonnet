@@ -138,7 +138,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "negative_slope": 0.1
     },
     "passage_autoencoder": {
-        "input_dim": 2024,
+        "input_dim": 2048,
         "embedding_dim": 64,
         "hidden_dims": [512, 256, 128],
         "negative_slope": 0.1
