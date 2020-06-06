@@ -729,6 +729,9 @@ class KnowledgeableStoriesModel(Model):
     def _calculate_disc_loss(self, source_encoded, target_encoded, mask=None, offsets=[1, 2, 3],
                              scales=[10.0, 1.0, 1.0], label_smoothing=0.0, level_name="passage", exclude_self=True):
 
+        source_encoded = source_encoded.contiguous()
+        target_encoded = target_encoded.contiguous()
+
         output_dict = {}
         loss = torch.tensor(0.0).to(source_encoded.device)
 
