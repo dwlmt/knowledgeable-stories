@@ -25,6 +25,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--embeddings',
                         help='Path to JSON vectors file.')
+    parser.add_argument('--output-file',
+                        help='Write output to file.')
     parser.add_argument('--dim-size', default=2048, type=int,
                         help='size of the default dimension size.')
     parser.add_argument('--embedding-name', default="sentences_encoded", type=str,
@@ -89,8 +91,14 @@ def main():
                           'Length', 'WordContent', 'Depth', 'TopConstituents', 'BigramShift', 'Tense',
                           'SubjNumber', 'ObjNumber', 'OddManOut', 'CoordinationInversion']
 
+    class NumpyEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            return json.JSONEncoder.default(self, obj)
+
     results = se.eval(transfer_tasks)
-    json.dump(results, sys.stdout, skipkeys=True)
+    json.dump(results, args.output_file, cls=NumpyEncoder)
     sys.stdout.write('\n')
 
 
