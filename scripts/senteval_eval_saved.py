@@ -75,16 +75,19 @@ def main():
 
         return embeddings
 
-
     params_senteval = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 5}
     params_senteval['classifier'] = {'nhid': 0, 'optim': 'rmsprop', 'batch_size': 128,
-                            'tenacity': 3, 'epoch_size': 2}
+                                     'tenacity': 3, 'epoch_size': 2}
 
     se = senteval.engine.SE(params_senteval, batcher, prepare)
     if args.tasks is not None:
         transfer_tasks = args.tasks.split(',')
     else:
-        transfer_tasks = se.list_tasks
+        transfer_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',  # 'SNLI',
+                          'SICKEntailment', 'SICKRelatedness', 'STSBenchmark', 'ImageCaptionRetrieval',
+                          'STS12', 'STS13', 'STS14', 'STS15', 'STS16',
+                          'Length', 'WordContent', 'Depth', 'TopConstituents', 'BigramShift', 'Tense',
+                          'SubjNumber', 'ObjNumber', 'OddManOut', 'CoordinationInversion']
 
     results = se.eval(transfer_tasks)
     json.dump(results, sys.stdout, skipkeys=True)
