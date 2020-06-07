@@ -98,9 +98,10 @@ def main():
             return json.JSONEncoder.default(self, obj)
 
     results = se.eval(transfer_tasks)
-    json.dump(results, args.output_file, cls=NumpyEncoder)
-    sys.stdout.write('\n')
+    with open(args.output_file, 'w') as outfile:
+        json.dump(results, outfile , cls=NumpyEncoder)
 
+    sys.stdout.write('\n')
 
 if __name__ == '__main__':
     main()
