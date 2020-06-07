@@ -361,6 +361,18 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+        "roc_lm": {},
+        "roc_hierarchy": {},
+        "cmu_book_lm": {},
+        "cmu_book_hierarchy": {},
+        "cmu_movie_lm": {},
+        "cmu_movie_hierarchy": {},
+        "atomic_lm": {},
+        "swag_know_lm": {},
+        "cbt_lm": {},
+        "cbt_hierarchy": {},
+        "multifile_lm": {},
+        "multifile_hierarchy": {},
     },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
