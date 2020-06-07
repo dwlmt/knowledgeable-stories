@@ -383,7 +383,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 5,
+        "num_layers": 4,
         "num_attention_heads": 16,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
@@ -398,7 +398,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 5,
+        "num_layers": 4,
         "positional_encoding": "embedding",
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
@@ -407,7 +407,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "passage_seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 2048,
-        "num_layers": 5,
+        "num_layers": 4,
         "positional_encoding": "embedding",
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
