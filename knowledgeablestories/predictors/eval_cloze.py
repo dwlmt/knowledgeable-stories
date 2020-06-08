@@ -30,8 +30,8 @@ def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
 
 
-@Predictor.register('tdvae_cloze')
-class KnowledgeablePredictor(Predictor):
+@Predictor.register('eval_cloze')
+class EvalClozePredictor(Predictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
 
@@ -57,7 +57,7 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         # Whether is a TD-VAE model
-        self._tdvae = parse_bool(os.getenv("TDVAE", default="False"))
+        self._tdvae = parse_bool(os.getenv("TDVAE", default="True"))
 
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
@@ -193,8 +193,9 @@ class KnowledgeablePredictor(Predictor):
 
                     cached_dict = self.convert_output_to_tensors(output_dict)
 
-                    self._surprise_tdvae_metrics(sentence_batch, cached_dict)
-                    self._suspense_tdvae_metrics(sentence_batch, cached_dict)
+                    if self._tdvae:
+                        self._surprise_tdvae_metrics(sentence_batch, cached_dict)
+                        self._suspense_tdvae_metrics(sentence_batch, cached_dict)
 
                     all_processed_sentences.extend(sentence_batch)
 
@@ -247,6 +248,7 @@ class KnowledgeablePredictor(Predictor):
             inputs["accuracy"] = correct_dict
 
             return inputs
+
 
     def _surprise_tdvae_metrics(self, sentence_batch, cached_dict):
 
