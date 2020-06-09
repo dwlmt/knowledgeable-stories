@@ -1004,7 +1004,7 @@ class KnowledgeablePredictor(Predictor):
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         def gen_sentence(input_ids, cur_len):
-            while cur_len < max_length:
+            while cur_len < max_length - 1:
 
                 outputs = self._model._lm_model.transformer(input_ids)
 
