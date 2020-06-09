@@ -1004,6 +1004,7 @@ class KnowledgeablePredictor(Predictor):
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         def gen_sentence(input_ids, cur_len):
+            print("Length", cur_len)
             while cur_len < max_length - 1:
 
                 outputs = self._model._lm_model.transformer(input_ids)
@@ -1043,7 +1044,7 @@ class KnowledgeablePredictor(Predictor):
 
                 # add token and increase length by one
                 input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
-                cur_len = cur_len + 1
+                cur_len = len(input_ids)
 
                 for eos in eos_token_ids:
 
