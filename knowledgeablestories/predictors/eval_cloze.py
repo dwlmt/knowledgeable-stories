@@ -196,6 +196,8 @@ class EvalClozePredictor(Predictor):
                     if self._tdvae:
                         self._surprise_tdvae_metrics(sentence_batch, cached_dict)
                         self._suspense_tdvae_metrics(sentence_batch, cached_dict)
+                    else:
+                        self._next_step_metrics(sentence_batch, cached_dict)
 
                     all_processed_sentences.extend(sentence_batch)
 
@@ -249,6 +251,82 @@ class EvalClozePredictor(Predictor):
 
             return inputs
 
+    def _next_step_metrics(self, sentence_batch, cached_dict):
+
+        curr_passages = cached_dict['passages_encoded']
+        curr_sentences = cached_dict["sentences_encoded"]
+
+        reference_points = [{} for i in range(len(sentence_batch))]
+        for i, sentence in enumerate(sentence_batch):
+
+            reference_points[i]["passages_encoded"] = curr_passages[i]
+            reference_points[i]["sentences_encoded"] = curr_sentences[i]
+
+        for s in sentence_batch:
+            s["prediction_metrics"] = {}
+
+        for i, sentence in enumerate(sentence_batch):
+
+            def surprise_distance_metrics(name, x, y):
+                res_dict = {}
+
+                if len(x.size()) < 2:
+                    x = torch.unsqueeze(x, dim=0)
+                    y = torch.unsqueeze(y, dim=0)
+
+                if len(y.size()) < len(x.size()):
+                    y = torch.unsqueeze(y, dim=0).expand_as(x)
+
+                print(name, x.size(), y.size())
+                l1_dist = self._l1_distance(x, y)
+                l2_dist = self._l2_distance(x, y)
+                cosine_dist = 1.0 - self._cosine_similarity(x, y)
+                dot_product = (x * y).sum(-1)
+
+                if len(l1_dist.size()) < 1:
+                    res_dict[f"{name}_l1_dist"] = l1_dist.item()
+                    res_dict[f"{name}_l2_dist"] = l2_dist.item()
+                    res_dict[f"{name}_cosine_dist"] = cosine_dist.item()
+                    res_dict[f"{name}_dot_product"] = dot_product.item()
+                else:
+                    for i in range(l1_dist.size(0)):
+                        res_dict[f"{name}_{i}_l1_dist"] = l1_dist[i].item()
+                        res_dict[f"{name}_{i}_l2_dist"] = l2_dist[i].item()
+                        res_dict[f"{name}_{i}_cosine_dist"] = cosine_dist[i].item()
+
+                        res_dict[f"{name}_{i}_dot_product"] = dot_product[i].item()
+
+                return res_dict
+
+            p = curr_passages[i]
+
+            j = 1
+
+            if len(reference_points) > i + j:
+
+                if f"-{j}" not in sentence_batch[i + j]["prediction_metrics"]:
+                    sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = {}
+
+                res_dict = sentence_batch[i + j]["prediction_metrics"][f"-{j}"]
+
+                if "sentences_encoded" in reference_points[i + j]:
+                    dist_dict = surprise_distance_metrics("next_step_surprise", p,
+                                                          reference_points[i + j]["sentences_encoded"])
+                    res_dict = {**res_dict, **dist_dict}
+
+                if i + j < len(sentence_batch):
+                    sentence_batch[i + j]["prediction_metrics"][f"-{j}"] = res_dict
+
+            if f"-1" not in sentence["prediction_metrics"]:
+                sentence["prediction_metrics"][f"-1"] = {}
+
+            res_dict = sentence["prediction_metrics"][f"-{1}"]
+
+            if len(reference_points) > i + 1 and "passages_encoded" in reference_points[i + 1]:
+                dist_dict = surprise_distance_metrics("tdvae_surprise_belief", reference_points[i]["passages_encoded"],
+                                                      reference_points[i + 1]["passages_encoded"])
+                res_dict = {**res_dict, **dist_dict}
+                sentence["prediction_metrics"][f"-1"] = res_dict
 
     def _surprise_tdvae_metrics(self, sentence_batch, cached_dict):
 
