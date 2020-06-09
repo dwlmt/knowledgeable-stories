@@ -71,6 +71,7 @@ class KnowledgeablePredictor(Predictor):
         self._vader_analyzer = SentimentIntensityAnalyzer()
 
         self._random_test_vector = parse_bool(os.getenv("RANDOM_TEST_VECTOR", default="False"))
+        self._shuffle_sentences = parse_bool(os.getenv("SHUFFLE_SENTENCES", default="False"))
 
         # Whether is a TD-VAE model
         self._tdvae = parse_bool(os.getenv("TDVAE", default="False"))
@@ -1004,6 +1005,7 @@ class KnowledgeablePredictor(Predictor):
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         def gen_sentence(input_ids, cur_len):
+            print("Input Ids", input_ids)
             print("Length", cur_len)
             while cur_len < max_length - 1:
 
