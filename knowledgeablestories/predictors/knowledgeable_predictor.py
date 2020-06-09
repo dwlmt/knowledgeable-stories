@@ -13,7 +13,7 @@ from allennlp.models import Model
 from allennlp.predictors.predictor import Predictor
 from overrides import overrides
 from scipy.stats import wasserstein_distance
-from torch import nn
+from torch import nn, random
 from torch.distributions import Categorical
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -153,6 +153,11 @@ class KnowledgeablePredictor(Predictor):
                 raise ValueError("'text' or 'sentences' must be provided.")
 
             self._split_sentences_if_required(inputs)
+
+            if self._shuffle_sentences:
+                shuffled = copy.deepcopy(inputs["sentences"])
+                random.shuffle(shuffled)
+                inputs["sentences"] = shuffled
 
             original_sentences = inputs["sentences"]
             total_story_len = len(inputs["sentences"])
