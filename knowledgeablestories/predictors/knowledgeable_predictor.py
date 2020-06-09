@@ -1042,12 +1042,11 @@ class KnowledgeablePredictor(Predictor):
                 probs = F.softmax(next_token_logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
 
-
                 tokens_to_add = next_token
 
                 # add token and increase length by one
                 input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
-                cur_len = len(input_ids)
+                cur_len = len(input_ids[0])
 
                 for eos in eos_token_ids:
 
