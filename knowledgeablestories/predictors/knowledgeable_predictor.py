@@ -1009,6 +1009,7 @@ class KnowledgeablePredictor(Predictor):
             print("Length", cur_len)
             while cur_len < max_length - 1:
 
+                print("Input Ids", input_ids, len(input_ids))
                 outputs = self._model._lm_model.transformer(input_ids)
 
                 next_token_hidden = outputs[0][-1, :]
