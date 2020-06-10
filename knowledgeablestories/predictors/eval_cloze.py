@@ -179,6 +179,28 @@ class EvalClozePredictor(Predictor):
             for i, sentences in enumerate(story_sentences):
                 all_processed_sentences = []
 
+                def perplexity_score(sentences):
+
+                    with torch.no_grad():
+                        tokenize_input = self._tokenizer.tokenize(sentences)
+                        tensor_input = torch.tensor([self._tokenizer.convert_tokens_to_ids(tokenize_input)])
+                        perplexity_sum_total = 0.0
+                        num_of_batches = 0
+                        print("Tensor Input", tensor_input)
+                        for tensor_input_batch in torch.split(tensor_input, 1024):
+                            batch_loss = self._model._lm_model(tensor_input_batch, lm_labels=tensor_input_batch)
+                            perplexity_sum_total += torch.exp_(batch_loss)
+
+                            num_of_batches += 1
+
+                        return perplexity_sum_total
+
+                perplexity = perplexity_score(sentences)
+                sentences[0]["prediction_metrics"] = {}
+                sentences[0]["prediction_metrics"]["lm_perplexity"] = perplexity
+
+                print("Perplexity",perplexity)
+
                 for sentence_batch in list(more_itertools.chunked(sentences, self._split_batch_size)):
 
                     copied_inputs = copy.deepcopy(inputs)
