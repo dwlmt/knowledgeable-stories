@@ -182,6 +182,7 @@ class EvalClozePredictor(Predictor):
                 def perplexity_score(sentences):
 
                     with torch.no_grad():
+                        print(sentences)
                         tokenize_input = self._tokenizer.tokenize(sentences)
                         tensor_input = torch.tensor([self._tokenizer.convert_tokens_to_ids(tokenize_input)])
                         perplexity_sum_total = 0.0
