@@ -196,7 +196,9 @@ class EvalClozePredictor(Predictor):
 
                         return perplexity_sum_total
 
-                perplexity = perplexity_score(sentences)
+                sentence_text = [s["text"] for s in sentences]
+                sentence_text_flat = " ".join(sentence_text)
+                perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
                 sentences[0]["prediction_metrics"]["lm_perplexity"] = perplexity
 
