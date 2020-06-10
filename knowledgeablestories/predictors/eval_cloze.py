@@ -184,7 +184,7 @@ class EvalClozePredictor(Predictor):
                     with torch.no_grad():
                         print(sentences)
                         tokenize_input = self._tokenizer.tokenize(sentences)
-                        tensor_input = torch.tensor([self._tokenizer._tokenizer.convert_tokens_to_ids(tokenize_input)])
+                        tensor_input = torch.tensor([self._token_indexers["tokens"].tokens_to_indices(tokenize_input)])
                         perplexity_sum_total = 0.0
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
