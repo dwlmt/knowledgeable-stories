@@ -165,8 +165,8 @@ class EvalClozePredictor(Predictor):
 
                     if self._neg_examples_num_swapped is not None and self._neg_examples_num_swapped > 0:
                         for k in range(self._neg_examples_num_swapped):
-                            swap_a_idx = randint(0, len(mutated_story_sentences))
-                            swap_b_idx = randint(0, len(mutated_story_sentences))
+                            swap_a_idx = randint(0, len(mutated_story_sentences) - 1)
+                            swap_b_idx = randint(0, len(mutated_story_sentences) - 1)
 
                             orig_b = mutated_story_sentences[swap_b_idx]
                             mutated_story_sentences[swap_b_idx] = mutated_story_sentences[swap_a_idx]
