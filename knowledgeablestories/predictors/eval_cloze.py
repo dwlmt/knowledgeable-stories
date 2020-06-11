@@ -211,7 +211,8 @@ class EvalClozePredictor(Predictor):
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
-                sentences[0]["prediction_metrics"]["lm_perplexity"] = perplexity
+                sentences[0]["prediction_metrics"][-1] = {}
+                sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
 
                 print("Perplexity",perplexity)
 
