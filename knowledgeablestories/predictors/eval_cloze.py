@@ -181,6 +181,7 @@ class EvalClozePredictor(Predictor):
 
                 def perplexity_score(sentences):
 
+                    print("Sentences",sentences)
                     with torch.no_grad():
                         tokenize_input =  self._tokenizer._tokenizer.decode(sentences)#self._tokenizer.tokenize(sentences)
 
