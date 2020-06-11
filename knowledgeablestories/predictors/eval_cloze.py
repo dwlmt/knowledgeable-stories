@@ -186,7 +186,7 @@ class EvalClozePredictor(Predictor):
                         tokenize_input =  self._tokenizer._tokenizer.encode(sentences)
                         print(tokenize_input)
 
-                        tensor_input = tokenize_input#self._tokenizer._tokenizer.decode(sentences)
+                        tensor_input = torch.tensor(tokenize_input)#self._tokenizer._tokenizer.decode(sentences)
 
                         if self._model._lm_device is not None:
                             tensor_input = tensor_input.to(self._model._lm_device)
