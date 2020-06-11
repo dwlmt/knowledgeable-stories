@@ -183,7 +183,7 @@ class EvalClozePredictor(Predictor):
 
                     print("Sentences",sentences)
                     with torch.no_grad():
-                        tokenize_input =  self._tokenizer.tokenize(sentences)
+                        tokenize_input =  self._tokenizer._tokenizer.encode_plus(sentences)["input_ids"]
                         print(tokenize_input)
 
                         tensor_input = tokenize_input#self._tokenizer._tokenizer.decode(sentences)
