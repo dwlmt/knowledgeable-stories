@@ -181,10 +181,10 @@ class EvalClozePredictor(Predictor):
 
                 def perplexity_score(sentences):
 
-                    print("Sentences",sentences)
+                    #print("Sentences",sentences)
                     with torch.no_grad():
                         tokenize_input =  self._tokenizer._tokenizer.encode(sentences)
-                        print(tokenize_input)
+                        #print(tokenize_input)
 
                         tensor_input = torch.tensor(tokenize_input)#self._tokenizer._tokenizer.decode(sentences)
 
@@ -195,13 +195,13 @@ class EvalClozePredictor(Predictor):
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
                         for tensor_input_batch in torch.split(tensor_input, 1024):
-                            print(tensor_input_batch)
+                            #print(tensor_input_batch)
                             tensor_input_batch = torch.tensor(tensor_input_batch)
-                            print(tensor_input_batch)
-                            batch_loss = self._model._lm_model(tensor_input_batch, labels=tensor_input_batch)
-                            print(batch_loss)
-                            print(len(batch_loss))
-                            perplexity_sum_total += torch.exp_(batch_loss)
+                            #print(tensor_input_batch)
+                            batch_loss = self._model._lm_model(tensor_input_batch, labels=tensor_input_batch)[0]
+                            #print(batch_loss)
+                            #print(len(batch_loss))
+                            perplexity_sum_total += torch.exp_(batch_loss).item()
 
                             num_of_batches += 1
 
