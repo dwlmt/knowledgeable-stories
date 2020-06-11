@@ -292,6 +292,9 @@ class EvalClozePredictor(Predictor):
         curr_passages = cached_dict['passages_encoded']
         curr_sentences = cached_dict["sentences_encoded"]
 
+        if self._model._passage_dense is not None:
+            curr_sentences = self._model._passage_dense(curr_sentences)
+
         reference_points = [{} for i in range(len(sentence_batch))]
         for i, sentence in enumerate(sentence_batch):
 
