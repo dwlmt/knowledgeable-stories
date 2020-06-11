@@ -186,7 +186,7 @@ class EvalClozePredictor(Predictor):
                         tokenize_input =  self._tokenizer.tokenize(sentences)
                         print(tokenize_input)
 
-                        tensor_input = self._tokenizer._tokenizer.decode(sentences)
+                        tensor_input = tokenize_input#self._tokenizer._tokenizer.decode(sentences)
                         perplexity_sum_total = 0.0
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
