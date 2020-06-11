@@ -303,7 +303,8 @@ class EvalClozePredictor(Predictor):
             reference_points[i]["sentences_encoded"] = curr_sentences[i]
 
         for s in sentence_batch:
-            s["prediction_metrics"] = {}
+            if "prediction_metrics" not in s:
+                s["prediction_metrics"] = {}
 
         for i, sentence in enumerate(sentence_batch):
 
@@ -384,7 +385,8 @@ class EvalClozePredictor(Predictor):
             print("Sentence reference points", curr_sentences[i].size())
 
         for s in sentence_batch:
-            s["prediction_metrics"] = {}
+            if "prediction_metrics" not in s:
+                s["prediction_metrics"] = {}
 
         for i, sentence in enumerate(sentence_batch):
 
