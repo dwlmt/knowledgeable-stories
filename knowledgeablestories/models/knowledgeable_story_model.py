@@ -362,9 +362,9 @@ class KnowledgeableStoriesModel(Model):
                     loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
 
-                    if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
-                        self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
-                                                             passages_encoded, lm_mask)
+                    #if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
+                    #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
+                    #                                         passages_encoded, lm_mask)
 
                 if self._passage_tdvae is not None:
 
