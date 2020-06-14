@@ -975,8 +975,8 @@ class KnowledgeableStoriesModel(Model):
 
             gen_config = self._generation_config
             output_sequences, log_probs = self._generate_no_beam_search(
-                previous_tokens_tensor,
                 do_sample=True,
+                input_ids=previous_tokens_tensor,
                 min_length=gen_config["min_length"],
                 max_length=gen_config["max_length"],
                 temperature=gen_config["temperature"],
@@ -1094,7 +1094,7 @@ class KnowledgeableStoriesModel(Model):
         while cur_len < max_length:
             model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past, attention_mask=attention_mask)
 
-            outputs = self(**model_inputs)
+            outputs = self._lm_model(**model_inputs)
             next_token_logits = outputs[0][:, -1, :]
 
             # if model has past, then set the past variable to speed up decoding
