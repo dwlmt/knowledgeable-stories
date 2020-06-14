@@ -305,15 +305,17 @@ class KnowledgeableStoriesModel(Model):
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
-                                                                                          encoded_sentences_2,
-                                                                                          mask=passage_mask,
-                                                                                          offsets=self._sent_offsets,
-                                                                                          scales=self._sent_scales,
-                                                                                          label_smoothing=self._label_smoothing,
-                                                                                          level_name="sentence")
+                    if not self._reinforce:
 
-                    loss += sentence_disc_loss
+                        sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
+                                                                                              encoded_sentences_2,
+                                                                                              mask=passage_mask,
+                                                                                              offsets=self._sent_offsets,
+                                                                                              scales=self._sent_scales,
+                                                                                              label_smoothing=self._label_smoothing,
+                                                                                              level_name="sentence")
+
+                        loss += sentence_disc_loss
 
                     self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
@@ -350,114 +352,115 @@ class KnowledgeableStoriesModel(Model):
                     loss += reinforce_loss
                     self._metrics["reinforce_loss"](reinforce_loss)
 
+                else:
 
-                if self._passage_seq2seq_encoder != None:
+                    if self._passage_seq2seq_encoder != None:
 
-                    passages_encoded, passages_mask = \
-                        self.encode_passages(encoded_sentences_cat, passage_mask)
+                        passages_encoded, passages_mask = \
+                            self.encode_passages(encoded_sentences_cat, passage_mask)
 
-                    if self._passage_dense is not None:
-                        encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
+                        if self._passage_dense is not None:
+                            encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
 
-                    if "passage_disc_loss" in self._loss_weights:
-                        if self._sentence_disc:
-                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                            encoded_sentences_cat,
-                                                                                            mask=passage_mask,
-                                                                                            offsets=self._passage_offsets,
-                                                                                            scales=self._passage_scales,
-                                                                                            label_smoothing=self._label_smoothing,
-                                                                                            level_name="passage",
-                                                                                            exclude_self=True)
+                        if "passage_disc_loss" in self._loss_weights:
+                            if self._sentence_disc:
+                                passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                                encoded_sentences_cat,
+                                                                                                mask=passage_mask,
+                                                                                                offsets=self._passage_offsets,
+                                                                                                scales=self._passage_scales,
+                                                                                                label_smoothing=self._label_smoothing,
+                                                                                                level_name="passage",
+                                                                                                exclude_self=True)
 
-                            output = {**output, **disc_output_dict}
+                                output = {**output, **disc_output_dict}
 
-                            loss += passage_disc_loss
+                                loss += passage_disc_loss
 
-                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                        else:
+                                self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                            else:
 
-                            passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                            passages_encoded,
-                                                                                            mask=passage_mask,
-                                                                                            offsets=self._passage_offsets,
-                                                                                            scales=self._passage_scales,
-                                                                                            label_smoothing=self._label_smoothing,
-                                                                                            level_name="passage",
-                                                                                            exclude_self=True)
+                                passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                                passages_encoded,
+                                                                                                mask=passage_mask,
+                                                                                                offsets=self._passage_offsets,
+                                                                                                scales=self._passage_scales,
+                                                                                                label_smoothing=self._label_smoothing,
+                                                                                                level_name="passage",
+                                                                                                exclude_self=True)
 
-                            loss += passage_disc_loss
+                                loss += passage_disc_loss
 
-                            self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                                self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                            loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
-                                                                passages_encoded)
+                                loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                                    passages_encoded)
 
-                    if prediction_mode:
-                        output["passages_encoded"] = passages_encoded
+                        if prediction_mode:
+                            output["passages_encoded"] = passages_encoded
 
-                        passages_encoded_difference = self.calc_diff_vector(passages_encoded)
-                        output["passages_encoded_diff"] = passages_encoded_difference
+                            passages_encoded_difference = self.calc_diff_vector(passages_encoded)
+                            output["passages_encoded_diff"] = passages_encoded_difference
 
-                        output["passages_mask"] = passages_mask
+                            output["passages_mask"] = passages_mask
 
-                    loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
+                        loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
 
-                    #if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
-                    #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
-                    #                                         passages_encoded, lm_mask)
+                        #if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
+                        #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
+                        #                                         passages_encoded, lm_mask)
 
-                if self._passage_tdvae is not None:
+                    if self._passage_tdvae is not None:
 
-                    encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
+                        encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
 
-                    orig_device = None
-                    if self._tdvae_device:
-                        orig_device = encoded_sentences_cat.device
-                        encoded_sentences_cat = encoded_sentences_cat.to(self._tdvae_device)
-                        passage_mask = passage_mask.to(self._tdvae_device)
+                        orig_device = None
+                        if self._tdvae_device:
+                            orig_device = encoded_sentences_cat.device
+                            encoded_sentences_cat = encoded_sentences_cat.to(self._tdvae_device)
+                            passage_mask = passage_mask.to(self._tdvae_device)
 
-                    tdvae_return = self._passage_tdvae(encoded_sentences_cat, mask=passage_mask)
+                        tdvae_return = self._passage_tdvae(encoded_sentences_cat, mask=passage_mask)
 
-                    if tdvae_return is not None:
+                        if tdvae_return is not None:
 
-                        total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
-                            tdvae_return)
+                            total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, _ = self._passage_tdvae.loss_function(
+                                tdvae_return)
 
-                        if orig_device:
-                            encoded_sentences_cat = encoded_sentences_cat.to(orig_device)
-                            passage_mask = passage_mask.to(orig_device)
-                            total_loss = total_loss.to(orig_device)
-                            kl_div_qs_pb = kl_div_qs_pb.to(orig_device)
-                            bce_diff = bce_diff.to(orig_device)
-                            kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
+                            if orig_device:
+                                encoded_sentences_cat = encoded_sentences_cat.to(orig_device)
+                                passage_mask = passage_mask.to(orig_device)
+                                total_loss = total_loss.to(orig_device)
+                                kl_div_qs_pb = kl_div_qs_pb.to(orig_device)
+                                bce_diff = bce_diff.to(orig_device)
+                                kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
 
-                        loss += total_loss * self._loss_weights["tdvae_loss"]
+                            loss += total_loss * self._loss_weights["tdvae_loss"]
 
-                        self._metrics["tdvae_loss"](total_loss)
-                        self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
-                        self._metrics["tdvae_recon_loss"](bce_diff)
-                        self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
+                            self._metrics["tdvae_loss"](total_loss)
+                            self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
+                            self._metrics["tdvae_recon_loss"](bce_diff)
+                            self._metrics["tdvae_predict_loss"](kl_predict_qb_pt)
 
-                    if prediction_mode:
-                        rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                            encoded_sentences_cat, do_sample=False)
-                        tdvae_output = {}
-                        tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
-                        tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
-                        tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
-                        tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
-                        print(f"TDVAE Keys: {tdvae_output.keys()}")
-
-                        if self._sampled:
+                        if prediction_mode:
                             rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
-                                encoded_sentences_cat, do_sample=True)
-                            tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
-                            tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
-                            tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
+                                encoded_sentences_cat, do_sample=False)
+                            tdvae_output = {}
+                            tdvae_output["tdvae_rollout_x"] = torch.unsqueeze(rollout_x, dim=0)
+                            tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
+                            tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
+                            tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
+                            print(f"TDVAE Keys: {tdvae_output.keys()}")
 
-                        output = {**output, **tdvae_output}
+                            if self._sampled:
+                                rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
+                                    encoded_sentences_cat, do_sample=True)
+                                tdvae_output["tdvae_rollout_sampled_x"] = torch.unsqueeze(rollout_x, dim=0)
+                                tdvae_output["tdvae_rollout_sampled_z2"] = torch.unsqueeze(rollout_z2, dim=0)
+                                tdvae_output["tdvae_sampled_z1"] = torch.unsqueeze(z1, dim=0)
+
+                            output = {**output, **tdvae_output}
 
         # Argument based training is for training specific relations just on the text without hierarchichal structure.
         if arguments != None and "lm_loss" in self._loss_weights:
