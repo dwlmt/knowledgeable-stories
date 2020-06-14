@@ -6,6 +6,8 @@ from typing import List, Dict, Optional, Any
 import more_itertools
 import torch
 from allennlp.data import Vocabulary
+from allennlp.data.token_indexers import PretrainedTransformerIndexer
+from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
@@ -15,6 +17,7 @@ from torch import nn
 from torch.nn import CrossEntropyLoss
 from transformers.modeling_auto import AutoModelWithLMHead
 
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
@@ -214,6 +217,15 @@ class KnowledgeableStoriesModel(Model):
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
         eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
+
+        lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
+        self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
+
+        # Add the relations as new tokens.
+        self._tokenizer._tokenizer.add_tokens(token_tags)
+
+        self._token_indexers = {
+            "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
 
         eos_text_token_ids = []
         for t in eos_tokens.split():
