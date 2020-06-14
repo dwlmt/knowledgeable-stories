@@ -274,7 +274,7 @@ class KnowledgeableStoriesModel(Model):
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
-                if "sentence_disc_loss" in self._loss_weights and (
+                if "sentence_disc_loss" in self._loss_weights and not self._reinforce and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
@@ -499,7 +499,7 @@ class KnowledgeableStoriesModel(Model):
             gen_index = context_index + 1
 
             print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
-            previous_tokens = passages["tokens"][context_index][passage_mask[context_index]].tolist()
+            previous_tokens = passages["tokens"][0][context_index][passage_mask[context_index]].tolist()
 
             sentences = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
             print(sentences)
