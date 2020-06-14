@@ -947,8 +947,8 @@ class KnowledgeableStoriesModel(Model):
 
             output_sequences = self.generate_text(previous_tokens_tensor,
                                                          num_of_sequences=min(
-                                                             self._gen_num_of_sequences - len(generated_sequences),
-                                                             self._gen_max_per_batch),
+                                                             gen_num_of_sequences - len(generated_sequences),
+                                                             gen_num_of_sequences),
                                                          override_gen_config=self._generation_config)
 
             if len(output_sequences.shape) > 2:
