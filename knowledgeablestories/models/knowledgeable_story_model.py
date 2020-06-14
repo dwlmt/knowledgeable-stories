@@ -976,7 +976,6 @@ class KnowledgeableStoriesModel(Model):
             gen_config = self._generation_config
             output_sequences, log_probs = self._generate_no_beam_search(
                 input_ids=previous_tokens_tensor,
-                cur_len=len(previous_tokens_tensor),
                 min_length=gen_config["min_length"],
                 max_length=gen_config["max_length"],
                 temperature=gen_config["temperature"],
@@ -984,7 +983,9 @@ class KnowledgeableStoriesModel(Model):
                 top_p=gen_config["top_p"],
                 eos_token_id=self._eos_token_ids[0],
                 pad_token_id=0,
-                trace_log_probs=True)
+                trace_log_probs=True,
+                batch_size=gen_num_of_sequences,
+            )
 
             print(output_sequences, log_probs)
 
@@ -1065,7 +1066,6 @@ class KnowledgeableStoriesModel(Model):
     def _generate_no_beam_search(
             self,
             input_ids,
-            cur_len,
             max_length,
             min_length,
             trace_log_probs,
@@ -1076,16 +1076,19 @@ class KnowledgeableStoriesModel(Model):
             pad_token_id,
             eos_token_id,
             batch_size,
-            encoder_outputs,
-            attention_mask,
     ):
         """ This is based on the uncom
         """
 
+        attention_mask = input_ids.ne(pad_token_id).long()
+
         unfinished_sents = input_ids.new(batch_size).fill_(1)
         sent_lengths = input_ids.new(batch_size).fill_(max_length)
 
-        past = encoder_outputs  # defined for encoder-decoder models, None for decoder-only models
+        encoder_outputs = None
+        cur_len = input_ids.shape[-1]
+
+        past = None  # defined for encoder-decoder models, None for decoder-only models
 
         log_probs = []
 
