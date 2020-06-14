@@ -493,7 +493,7 @@ class KnowledgeableStoriesModel(Model):
 
         num_of_sentences = torch.sum(passage_mask, dim=-1).item()
 
-        for i in enumerate(num_positions):
+        for i in range(num_positions):
 
             context_index = random.randint(0, num_of_sentences - 2)
             gen_index = context_index + 1
