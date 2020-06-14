@@ -976,6 +976,7 @@ class KnowledgeableStoriesModel(Model):
             gen_config = self._generation_config
             output_sequences, log_probs = self._generate_no_beam_search(
                 input_ids=previous_tokens_tensor,
+                do_sample=True,
                 min_length=gen_config["min_length"],
                 max_length=gen_config["max_length"],
                 temperature=gen_config["temperature"],
