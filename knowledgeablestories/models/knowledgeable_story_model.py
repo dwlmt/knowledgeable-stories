@@ -963,8 +963,8 @@ class KnowledgeableStoriesModel(Model):
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
-        if torch.cuda.is_available():
-            previous_tokens_tensor = previous_tokens_tensor.cuda()
+
+        previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
 
         generated_sequences = []
         retries = 0
@@ -975,8 +975,8 @@ class KnowledgeableStoriesModel(Model):
 
             gen_config = self._generation_config
             output_sequences, log_probs = self._generate_no_beam_search(
-                do_sample=True,
                 input_ids=previous_tokens_tensor,
+                do_sample=True,
                 min_length=gen_config["min_length"],
                 max_length=gen_config["max_length"],
                 temperature=gen_config["temperature"],
