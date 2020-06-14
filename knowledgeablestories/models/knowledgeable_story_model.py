@@ -216,7 +216,7 @@ class KnowledgeableStoriesModel(Model):
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
-        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
+        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
 
         eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
 
@@ -977,7 +977,7 @@ class KnowledgeableStoriesModel(Model):
                 input_ids=previous_tokens_tensor,
                 do_sample=True,
                 min_length=gen_config["min_length"],
-                max_length=gen_config["max_length"],
+                max_length=128,
                 temperature=gen_config["temperature"],
                 top_k=gen_config["top_k"],
                 top_p=gen_config["top_p"],
