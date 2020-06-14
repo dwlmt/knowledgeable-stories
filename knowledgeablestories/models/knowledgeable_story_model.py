@@ -274,21 +274,23 @@ class KnowledgeableStoriesModel(Model):
 
                 encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
-                if "sentence_disc_loss" in self._loss_weights and not self._reinforce and (
+                if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
-                                                                                          encoded_sentences_2,
-                                                                                          mask=passage_mask,
-                                                                                          offsets=self._sent_offsets,
-                                                                                          scales=self._sent_scales,
-                                                                                          label_smoothing=self._label_smoothing,
-                                                                                          level_name="sentence")
+                    if not self._reinforce:
 
-                    loss += sentence_disc_loss
+                        sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
+                                                                                              encoded_sentences_2,
+                                                                                              mask=passage_mask,
+                                                                                              offsets=self._sent_offsets,
+                                                                                              scales=self._sent_scales,
+                                                                                              label_smoothing=self._label_smoothing,
+                                                                                              level_name="sentence")
 
-                    self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
+                        loss += sentence_disc_loss
+
+                        self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
 
                     encoded_sentences_cat = torch.cat((encoded_sentences, encoded_sentences_2), dim=-1)
                 else:
