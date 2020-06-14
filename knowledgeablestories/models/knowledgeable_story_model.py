@@ -975,7 +975,7 @@ class KnowledgeableStoriesModel(Model):
 
             gen_config = self._generation_config
             output_sequences, log_probs = self._generate_no_beam_search(
-                input_ids=previous_tokens_tensor,
+                previous_tokens_tensor,
                 do_sample=True,
                 min_length=gen_config["min_length"],
                 max_length=gen_config["max_length"],
@@ -1064,8 +1064,7 @@ class KnowledgeableStoriesModel(Model):
 
         return output_sequences
 
-    def _generate_no_beam_search(
-            self,
+    def _generate_no_beam_search(self,
             input_ids,
             max_length,
             min_length,
@@ -1086,7 +1085,6 @@ class KnowledgeableStoriesModel(Model):
         unfinished_sents = input_ids.new(batch_size).fill_(1)
         sent_lengths = input_ids.new(batch_size).fill_(max_length)
 
-        encoder_outputs = None
         cur_len = input_ids.shape[-1]
 
         past = None  # defined for encoder-decoder models, None for decoder-only models
