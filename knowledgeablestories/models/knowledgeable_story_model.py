@@ -1190,11 +1190,6 @@ class KnowledgeableStoriesModel(Model):
 
         if trace_log_probs:
             log_probs = torch.cat(log_probs, dim=-1)  # batch_size x seq_len
-            # For tokens that came after the EOS token, mask their log_prob
-            for idx, ex in enumerate(decoded):
-                if eos_token_id in decoded:
-                    eos_idx = torch.where(ex.eq(eos_token_id))[0].min()
-                    log_probs[idx, eos_idx + 1:] = -1e5
             return decoded, log_probs
 
         return decoded
