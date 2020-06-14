@@ -214,7 +214,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
-        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=10))
+        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
@@ -231,10 +231,9 @@ class KnowledgeableStoriesModel(Model):
         self._token_indexers = {
             "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
 
-        eos_text_token_ids = []
+        eos_text_token_ids = [764]
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        eos_text_token_ids += [764]
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
@@ -985,7 +984,7 @@ class KnowledgeableStoriesModel(Model):
                 eos_token_id=self._eos_token_ids[0],
                 pad_token_id=0,
                 trace_log_probs=True,
-                batch_size=gen_num_of_sequences,
+                num_return_sequences=gen_num_of_sequences,
             )
 
             print(output_sequences, log_probs)
@@ -1065,27 +1064,48 @@ class KnowledgeableStoriesModel(Model):
         return output_sequences
 
     def _generate_no_beam_search(self,
-            input_ids,
-            max_length,
-            min_length,
-            trace_log_probs,
-            do_sample,
-            temperature,
-            top_k,
-            top_p,
-            pad_token_id,
-            eos_token_id,
-            batch_size,
-    ):
+                                 input_ids,
+                                 max_length,
+                                 min_length,
+                                 trace_log_probs,
+                                 do_sample,
+                                 temperature,
+                                 top_k,
+                                 top_p,
+                                 pad_token_id,
+                                 eos_token_id,
+                                 num_return_sequences,
+                                 ):
         """ This is based on the uncom
         """
 
-        attention_mask = input_ids.ne(pad_token_id).long()
+        torch.set_grad_enabled(trace_log_probs)
 
-        unfinished_sents = input_ids.new(batch_size).fill_(1)
-        sent_lengths = input_ids.new(batch_size).fill_(max_length)
+        attention_mask = input_ids.ne(pad_token_id).long()
+        batch_size = 1
+        num_beams = 1
+
+        unfinished_sents = input_ids.new(num_return_sequences).fill_(1)
+        sent_lengths = input_ids.new(num_return_sequences).fill_(max_length)
+
+        effective_batch_size = num_return_sequences
+        effective_batch_mult = num_return_sequences
 
         cur_len = input_ids.shape[-1]
+
+        if num_return_sequences > 1:
+            input_ids_len = input_ids.shape[-1]
+            input_ids = input_ids.unsqueeze(1).expand(batch_size, effective_batch_mult * num_beams, input_ids_len)
+            attention_mask = attention_mask.unsqueeze(1).expand(
+                batch_size, effective_batch_mult * num_beams, input_ids_len
+            )
+
+            input_ids = input_ids.contiguous().view(
+                effective_batch_size * num_beams, input_ids_len
+            )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
+            attention_mask = attention_mask.contiguous().view(
+                effective_batch_size * num_beams, input_ids_len
+            )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
 
         past = None  # defined for encoder-decoder models, None for decoder-only models
 
@@ -1158,7 +1178,7 @@ class KnowledgeableStoriesModel(Model):
         if sent_lengths.min().item() != sent_lengths.max().item():
             assert pad_token_id is not None, "`Pad_token_id` has to be defined if batches have different lengths"
             # finished sents are filled with pad_token
-            decoded = input_ids.new(batch_size, sent_lengths.max().item()).fill_(pad_token_id)
+            decoded = input_ids.new(num_return_sequences, sent_lengths.max().item()).fill_(pad_token_id)
         else:
             decoded = input_ids
 
