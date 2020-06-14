@@ -501,7 +501,7 @@ class KnowledgeableStoriesModel(Model):
             gen_index = context_index + 1
 
             print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
-            previous_tokens = passages["tokens"][0][context_index][passage_mask[context_index]].tolist()
+            previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
             sentences = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
             print(sentences)
