@@ -213,6 +213,16 @@ class KnowledgeableStoriesModel(Model):
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
+        eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
+
+        eos_text_token_ids = []
+        for t in eos_tokens.split():
+            eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        eos_text_token_ids += [764]
+
+        self._eos_token_ids = eos_text_token_ids
+        self._keep_eos_ids = eos_text_token_ids
+
         if initializer is not None:
             initializer(self)
 
