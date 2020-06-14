@@ -218,6 +218,8 @@ class KnowledgeableStoriesModel(Model):
 
         eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
 
+        self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=4))
+
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
         self._tokenizer = PretrainedTransformerTokenizer(model_name=lm_model_name, do_lowercase=False)
 
