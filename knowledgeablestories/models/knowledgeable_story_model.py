@@ -211,6 +211,8 @@ class KnowledgeableStoriesModel(Model):
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=10))
 
+        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
+
         if initializer is not None:
             initializer(self)
 
