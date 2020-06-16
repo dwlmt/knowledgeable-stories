@@ -231,9 +231,10 @@ class KnowledgeableStoriesModel(Model):
         self._token_indexers = {
             "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
 
-        eos_text_token_ids = [764]
+        eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+        eos_text_token_ids += [764]
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
