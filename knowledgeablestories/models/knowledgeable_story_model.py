@@ -969,6 +969,8 @@ class KnowledgeableStoriesModel(Model):
         previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
 
         generated_sequences = []
+        sequences_tensor_list = []
+        log_probs_tensor_list = []
         retries = 0
 
         while len(generated_sequences) < gen_num_of_sequences and gen_num_of_sequences_max_retry > retries:
@@ -987,14 +989,14 @@ class KnowledgeableStoriesModel(Model):
                 eos_token_id=self._eos_token_ids[0],
                 pad_token_id=0,
                 trace_log_probs=True,
-                num_return_sequences=gen_num_of_sequences,
+                num_return_sequences=1,
             )
 
             print(output_sequences, log_probs)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
-            for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
+            for generated_sequence_idx, (generated_sequence, log_prob) in enumerate(zip(output_sequences, log_probs)):
                 generated_sequence = generated_sequence.tolist()
                 # Remove the prompt.
 
@@ -1027,6 +1029,11 @@ class KnowledgeableStoriesModel(Model):
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+
+                            sequences_tensor_list.append(generated_sequence)
+                            log_probs_tensor_list.append(log_prob)
+
+        print(sequences_tensor_list, log_probs_tensor_list)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
