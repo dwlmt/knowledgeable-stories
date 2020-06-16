@@ -990,12 +990,13 @@ class KnowledgeableStoriesModel(Model):
                 eos_token_ids=self._eos_token_ids,
                 pad_token_id=0,
                 trace_log_probs=True,
-                num_return_sequences=1,
+                num_return_sequences=gen_num_of_sequences,
             )
 
             print(output_sequences, log_probs)
 
-            log_probs = torch.sum(log_prob, -1)
+            if len(log_probs.size() == 1):
+                log_probs = torch.unsqueeze(log_probs, dim=0)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
@@ -1034,7 +1035,7 @@ class KnowledgeableStoriesModel(Model):
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
                             sequences_tensor_list.append(generated_sequence)
-                            log_probs_tensor_list.append(log_prob)
+                            log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
 
         print(sequences_tensor_list, log_probs_tensor_list)
 
@@ -1168,7 +1169,6 @@ class KnowledgeableStoriesModel(Model):
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
 
             if eos_token_ids is not None:
-
                 eos_in_sents = torch.zeros_like(tokens_to_add)
                 for eos in eos_token_ids:
                     int_sents = eos_in_sents == eos
