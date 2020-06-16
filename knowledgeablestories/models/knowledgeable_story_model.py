@@ -987,7 +987,7 @@ class KnowledgeableStoriesModel(Model):
                 temperature=gen_config["temperature"],
                 top_k=gen_config["top_k"],
                 top_p=gen_config["top_p"],
-                eos_token_id=self._eos_token_ids[0],
+                eos_token_ids=self._eos_token_ids,
                 pad_token_id=0,
                 trace_log_probs=True,
                 num_return_sequences=1,
@@ -1086,7 +1086,7 @@ class KnowledgeableStoriesModel(Model):
                                  top_k,
                                  top_p,
                                  pad_token_id,
-                                 eos_token_id,
+                                 eos_token_ids,
                                  num_return_sequences,
                                  ):
         """ This is based on the uncom
@@ -1135,8 +1135,8 @@ class KnowledgeableStoriesModel(Model):
                 past = outputs[1]
 
             # set eos token prob to zero if min_length is not reached
-            if eos_token_id is not None and cur_len < min_length:
-                next_token_logits[:, eos_token_id] = -float("inf")
+            if eos_token_ids is not None and cur_len < min_length:
+                next_token_logits[:, eos_token_ids] = -float("inf")
 
             if do_sample:
                 # Temperature (higher temperature => more likely to sample low probability tokens)
@@ -1159,7 +1159,7 @@ class KnowledgeableStoriesModel(Model):
                 next_token = torch.argmax(next_token_logits, dim=-1)
 
             # update generations and finished sentences
-            if eos_token_id is not None:
+            if eos_token_ids is not None:
                 # pad finished sentences if eos_token_id exist
                 tokens_to_add = next_token * unfinished_sents + (pad_token_id) * (1 - unfinished_sents)
             else:
@@ -1167,8 +1167,8 @@ class KnowledgeableStoriesModel(Model):
 
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
 
-            if eos_token_id is not None:
-                eos_in_sents = tokens_to_add == eos_token_id
+            if eos_token_ids is not None:
+                eos_in_sents = tokens_to_add in eos_token_ids
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
                 sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len + 1)
