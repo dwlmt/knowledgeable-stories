@@ -1168,7 +1168,14 @@ class KnowledgeableStoriesModel(Model):
             input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
 
             if eos_token_ids is not None:
-                eos_in_sents = tokens_to_add in eos_token_ids
+
+                eos_in_sents = torch.zeros_like(tokens_to_add)
+                for eos in eos_token_ids:
+                    int_sents = eos_in_sents == eos
+                    eos_in_sents += int_sents
+
+                eos_in_sents = eos_in_sents > 0
+
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
                 sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len + 1)
