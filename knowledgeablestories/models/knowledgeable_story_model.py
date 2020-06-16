@@ -533,8 +533,8 @@ class KnowledgeableStoriesModel(Model):
             print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
             previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
-            sentences = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
-            print(sentences)
+            sentences,  sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
+            print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
         return loss
 
@@ -994,6 +994,8 @@ class KnowledgeableStoriesModel(Model):
 
             print(output_sequences, log_probs)
 
+            log_probs = torch.sum(log_prob, -1)
+
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
             for generated_sequence_idx, (generated_sequence, log_prob) in enumerate(zip(output_sequences, log_probs)):
@@ -1036,7 +1038,7 @@ class KnowledgeableStoriesModel(Model):
         print(sequences_tensor_list, log_probs_tensor_list)
 
         # print(f"Generated: {generated_sequences}")
-        return generated_sequences
+        return generated_sequences, sequences_tensor_list, log_probs_tensor_list
 
     def generate_text(self, existing_tokens, num_of_sequences=10, override_gen_config=None):
 
