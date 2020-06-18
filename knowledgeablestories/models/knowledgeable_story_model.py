@@ -11,7 +11,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.models import Model
 from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
-from allennlp.nn.util import get_final_encoder_states, masked_log_softmax
+from allennlp.nn.util import get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
 from torch import nn
 from torch.distributions import Categorical
@@ -535,7 +535,8 @@ class KnowledgeableStoriesModel(Model):
             previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
             sentences,  sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
-            print(sentences, sequences_tensor_list, log_probs_tensor_list)
+            logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
+            #print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
         return loss
 
