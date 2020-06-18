@@ -16,6 +16,7 @@ from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Ave
 from torch import nn
 from torch.distributions import Categorical
 from torch.nn import CrossEntropyLoss
+from torch.nn.utils.rnn import pad_sequence
 from transformers import top_k_top_p_filtering
 from transformers.modeling_auto import AutoModelWithLMHead
 
@@ -966,23 +967,12 @@ class KnowledgeableStoriesModel(Model):
     def _encode_representations(self, generated_sequences, batch_size):
         encoded_sentences_list = []
 
+        generated_sequences = pad_sequence(generated_sequences)
+
         for generated_sequence_batch in more_itertools.chunked(generated_sequences, batch_size):
 
-            def lengths(x):
-                if isinstance(x, list):
-                    yield len(x)
-                    for y in x:
-                        yield from lengths(y)
-
-            def pad(seq, target_length, padding=None):
-                length = len(seq)
-                seq.extend([padding] * (target_length - length))
-                return seq
-
             sentence_tokens = generated_sequence_batch
-            sentence_tokens_max_length = max(lengths(sentence_tokens))
 
-            sentence_tokens = [pad(s, sentence_tokens_max_length, padding=0) for s in sentence_tokens]
             sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
 
             lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
