@@ -1018,7 +1018,7 @@ class KnowledgeableStoriesModel(Model):
                 num_return_sequences=gen_num_of_sequences,
             )
 
-            print(output_sequences, log_probs)
+            #print(output_sequences, log_probs)
 
             output_sequences = output_sequences.to(0)
 
@@ -1047,6 +1047,8 @@ class KnowledgeableStoriesModel(Model):
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+
+                            logger.info(generated_text, generated_sequence, log_prob)
 
                             sequences_tensor_list.append(generated_sequence)
                             log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
