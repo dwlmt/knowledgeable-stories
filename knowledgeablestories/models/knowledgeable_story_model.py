@@ -979,7 +979,7 @@ class KnowledgeableStoriesModel(Model):
                 seq.extend([padding] * (target_length - length))
                 return seq
 
-            sentence_tokens = [s["tokens"] for s in generated_sequence_batch]
+            sentence_tokens = generated_sequence_batch
             sentence_tokens_max_length = max(lengths(sentence_tokens))
 
             if sentence_tokens_max_length < 3:
