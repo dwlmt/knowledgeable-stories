@@ -1068,7 +1068,7 @@ class KnowledgeableStoriesModel(Model):
                 eos_token_ids=self._eos_token_ids,
                 pad_token_id=0,
                 trace_log_probs=True,
-                num_return_sequences=gen_num_of_sequences,
+                num_return_sequences=1,
             )
 
             print(output_sequences, log_probs)
