@@ -1013,18 +1013,21 @@ class KnowledgeableStoriesModel(Model):
                 top_k=gen_config["top_k"],
                 top_p=gen_config["top_p"],
                 eos_token_ids=self._eos_token_ids,
-                pad_token_id=END_OF_SENTENCE_TOKEN_ID,
+                pad_token_id=0,
                 trace_log_probs=True,
                 num_return_sequences=gen_num_of_sequences,
             )
 
             print(output_sequences, log_probs)
 
+            output_sequences = output_sequences.to(0)
+
             if len(log_probs.size()) == 1:
                 log_probs = torch.unsqueeze(log_probs, dim=0)
 
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
+
             for generated_sequence_idx, (generated_sequence, log_prob) in enumerate(zip(output_sequences, log_probs)):
 
                 generated_sequence = generated_sequence[len(flat_previous_tokens):]
@@ -1147,27 +1150,21 @@ class KnowledgeableStoriesModel(Model):
 
             # set eos token prob to zero if min_length is not reached
             if eos_token_ids is not None and cur_len < min_length:
-                next_token_logits[:, eos_token_ids] = -float("inf")
+                for eos in eos_token_ids:
+                    next_token_logits[:, eos] = -float("inf")
 
-            if do_sample:
-                # Temperature (higher temperature => more likely to sample low probability tokens)
-                if temperature != 1.0:
-                    next_token_logits = next_token_logits / temperature
-                # Top-p/top-k filtering
-                next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
-                # Sample and trace log probs
-                catdist = Categorical(logits=next_token_logits)
-                next_token = catdist.sample()
-                # probs = F.softmax(next_token_logits, dim=-1)
-                # next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
+            # Temperature (higher temperature => more likely to sample low probability tokens)
+            if temperature != 1.0:
+                next_token_logits = next_token_logits / temperature
+            # Top-p/top-k filtering
+            next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
+            # Sample and trace log probs
+            catdist = Categorical(logits=next_token_logits)
+            next_token = catdist.sample()
 
-                if trace_log_probs:
-                    log_prob = catdist.log_prob(next_token)
-                    log_probs.append(log_prob)
-
-            else:
-                # Greedy decoding
-                next_token = torch.argmax(next_token_logits, dim=-1)
+            if trace_log_probs:
+                log_prob = catdist.log_prob(next_token)
+                log_probs.append(log_prob)
 
             # update generations and finished sentences
             if eos_token_ids is not None:
@@ -1195,12 +1192,6 @@ class KnowledgeableStoriesModel(Model):
             # stop when there is a </s> in each sentence, or if we exceed the maximul length
             if unfinished_sents.max() == 0:
                 break
-
-            # extend attention_mask for new generated input if only decoder
-            if self._lm_model.config.is_encoder_decoder is False:
-                attention_mask = torch.cat(
-                    [attention_mask, attention_mask.new_ones((attention_mask.shape[0], 1))], dim=-1
-                )
 
             cur_len = cur_len + 1
 
