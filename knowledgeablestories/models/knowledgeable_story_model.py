@@ -307,7 +307,6 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
                     if not self._reinforce:
-
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -324,16 +323,18 @@ class KnowledgeableStoriesModel(Model):
                 else:
                     encoded_sentences_cat = encoded_sentences
 
-
-                if not self._cat_minus or (self._sentence_2_seq2seq_encoder is None and self._sentence_2_seq2vec_encoder is None):
+                if not self._cat_minus or (
+                        self._sentence_2_seq2seq_encoder is None and self._sentence_2_seq2vec_encoder is None):
                     encoded_sentences_pred = encoded_sentences_cat
                 else:
-                    encoded_sentences_pred = torch.cat((encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
+                    encoded_sentences_pred = torch.cat(
+                        (encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
 
                 loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
                                                             passages_relative_positions, loss)
 
-                loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment, loss)
+                loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment,
+                                                             loss)
 
                 loss = self.storytype_prediction_if_required(encoded_sentences_pred, passage_mask, passages_storytype,
                                                              loss)
@@ -407,8 +408,7 @@ class KnowledgeableStoriesModel(Model):
 
                         loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
-
-                        #if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
+                        # if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
                         #                                         passages_encoded, lm_mask)
 
@@ -506,7 +506,6 @@ class KnowledgeableStoriesModel(Model):
                         num_of_sequences = self._dataset_config[dataset_name]["generate_text"]
                         generated_text = self.generate_text(premises["tokens"], num_of_sequences)
 
-
                         prem_tokens = premises["tokens"]
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
@@ -527,31 +526,31 @@ class KnowledgeableStoriesModel(Model):
         num_of_sentences = torch.sum(passage_mask, dim=-1).item()
 
         for i in range(num_positions):
-
             context_index = random.randint(0, num_of_sentences - 2)
             gen_index = context_index + 1
 
             print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
             previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
-            sentences,  sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
+            sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
+                previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
             logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
 
-            encoded_sentences_generated = self._encode_representations( sequences_tensor_list,  num_of_sentences)
+            encoded_sentences_generated = self._encode_representations(sequences_tensor_list, num_of_sentences)
             logger.info(encoded_sentences_generated)
-            #logger.info(encoded_sentences_generated.size())
-            #encoded_sentences_generated = encoded_sentences_generated.detach()
+            # logger.info(encoded_sentences_generated.size())
+            # encoded_sentences_generated = encoded_sentences_generated.detach()
 
             logger.info(encoded_sentences_generated.size())
 
-            #print(sentences, sequences_tensor_list, log_probs_tensor_list)
+            # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
         return loss
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
 
-            #print(encoded_sentences.size(), passages_relative_positions.size())
+            # print(encoded_sentences.size(), passages_relative_positions.size())
             masked_encoded_sentences = encoded_sentences[passage_mask.bool()]
             masked_predictions = passages_relative_positions[
                 passage_mask.bool()[:, : passages_relative_positions.size(-1)]].long()
@@ -561,7 +560,7 @@ class KnowledgeableStoriesModel(Model):
             if len(position_pred.size()) == 3:
                 position_pred = position_pred.view(position_pred.size(0) * position_pred.size(1), position_pred.size(2))
 
-            #print("Pos sizes", position_pred.size(), masked_predictions.size())
+            # print("Pos sizes", position_pred.size(), masked_predictions.size())
             pos_loss = self._cross_entropy_loss(position_pred, masked_predictions)
             loss += pos_loss
             self._metrics["position_loss"](pos_loss)
@@ -574,10 +573,10 @@ class KnowledgeableStoriesModel(Model):
             sentiment_pred = self._sentiment_dense(masked_encoded_sentences)
 
             if len(sentiment_pred.size()) == 3:
-                sentiment_pred = sentiment_pred.view(sentiment_pred.size(0) * sentiment_pred.size(1), sentiment_pred.size(2))
+                sentiment_pred = sentiment_pred.view(sentiment_pred.size(0) * sentiment_pred.size(1),
+                                                     sentiment_pred.size(2))
 
-
-            #print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
+            # print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(sentiment_pred, masked_predictions)
             loss += sent_loss
             self._metrics["sentiment_loss"](sent_loss)
@@ -592,7 +591,7 @@ class KnowledgeableStoriesModel(Model):
             if len(dataset_pred.size()) == 3:
                 dataset_pred = dataset_pred.view(dataset_pred.size(0) * dataset_pred.size(1), dataset_pred.size(2))
 
-            #print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
+            # print("Sent sizes", sentiment_pred.size(), masked_predictions.size())
             sent_loss = self._cross_entropy_loss(dataset_pred, masked_predictions)
             loss += sent_loss
             self._metrics["storytype_loss"](sent_loss)
@@ -767,7 +766,7 @@ class KnowledgeableStoriesModel(Model):
         else:
             self._lm_model = self._lm_model.to(text_tokens.device)
 
-        #print("LM sizes", text_tokens.size(), text_mask.size())
+        # print("LM sizes", text_tokens.size(), text_mask.size())
         if self._lm_name != "openai-gpt":
             lm_output = self._lm_model.transformer(text_tokens, attention_mask=text_mask.to(text_tokens.device))
         else:
@@ -822,7 +821,7 @@ class KnowledgeableStoriesModel(Model):
         source_encoded = source_encoded.clone() * mask_expanded
         target_encoded = target_encoded.clone() * mask_expanded
 
-        #print("Encoded views", source_encoded.size(), target_encoded.size())
+        # print("Encoded views", source_encoded.size(), target_encoded.size())
         source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
         target_encoded_flat = target_encoded.view(batch_size * sentence_num, feature_size)
 
@@ -1000,7 +999,7 @@ class KnowledgeableStoriesModel(Model):
 
         return encoded_sentences_tensor
 
-    def generate_sentences(self, previous_tokens, gen_num_of_sequences = 10,  gen_num_of_sequences_max_retry = 100):
+    def generate_sentences(self, previous_tokens, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
@@ -1052,7 +1051,8 @@ class KnowledgeableStoriesModel(Model):
                 if generated_sequence[0] not in self._eos_token_ids:
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        generated_sequence = torch.cat((generated_sequence, torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device)))
+                        generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
+                            torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
@@ -1153,7 +1153,8 @@ class KnowledgeableStoriesModel(Model):
         log_probs = []
 
         while cur_len < max_length:
-            model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past, attention_mask=attention_mask)
+            model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
+                                                                        attention_mask=attention_mask)
 
             outputs = self._lm_model(**model_inputs)
             next_token_logits = outputs[0][:, -1, :]
