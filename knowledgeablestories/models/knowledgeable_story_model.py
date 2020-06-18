@@ -539,7 +539,7 @@ class KnowledgeableStoriesModel(Model):
 
             encoded_sentences_generated = self._encode_representations( sequences_tensor_list,  num_of_sentences)
             logger.info(encoded_sentences_generated)
-            logger.info(encoded_sentences_generated.size())
+            #logger.info(encoded_sentences_generated.size())
             #encoded_sentences_generated = encoded_sentences_generated.detach()
 
             logger.info(encoded_sentences_generated.size())
@@ -967,7 +967,6 @@ class KnowledgeableStoriesModel(Model):
     def _encode_representations(self, generated_sequences, batch_size):
         encoded_sentences_list = []
 
-        first_size = None
         for generated_sequence_batch in more_itertools.chunked(generated_sequences, batch_size):
 
             def lengths(x):
@@ -984,19 +983,10 @@ class KnowledgeableStoriesModel(Model):
             sentence_tokens = generated_sequence_batch
             sentence_tokens_max_length = max(lengths(sentence_tokens))
 
-            if sentence_tokens_max_length < 3:
-                return None, None, None
-
             sentence_tokens = [pad(s, sentence_tokens_max_length, padding=0) for s in sentence_tokens]
             sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
 
-            if torch.cuda.is_available():
-                sentence_tokens_tensor = sentence_tokens_tensor.cuda()
-
             lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
-
-            if lm_hidden_state.numel() < 1:
-                return None, None, None
 
             encoded_sentences_batch = self.encode_sentences(lm_hidden_state, lm_mask)
 
@@ -1004,31 +994,7 @@ class KnowledgeableStoriesModel(Model):
                 encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
                 encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
 
-            if self._random_test_vector:
-                encoded_sentences_batch = torch.rand_like(encoded_sentences_batch)
-
-            existing_sentences_expanded = torch.unsqueeze(existing_sentences_encoded, dim=0).expand(
-                encoded_sentences_batch.size(0),
-                existing_sentences_encoded.size(0),
-                existing_sentences_encoded.size(1)).clone()
-
-            if torch.cuda.is_available():
-                existing_sentences_expanded = existing_sentences_expanded.cuda()
-                existing_sentences_encoded = existing_sentences_encoded.cuda()
-                encoded_sentences_batch = encoded_sentences_batch.cuda()
-
-            if not first_size:
-                first_size = encoded_sentences_batch.size()
-            elif encoded_sentences_batch.size() != first_size:
-                blank_encoded = torch.zeros(first_size).float()
-                blank_encoded[0: encoded_sentences_batch.size(0), :] = encoded_sentences_batch
-                encoded_sentences_batch = blank_encoded
-
-            encoded_sentences_list.append(encoded_sentences_batch.cpu())
-
-
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
-
 
         return encoded_sentences_tensor
 
@@ -1078,10 +1044,8 @@ class KnowledgeableStoriesModel(Model):
             if len(output_sequences.shape) > 2:
                 output_sequences.squeeze_()
             for generated_sequence_idx, (generated_sequence, log_prob) in enumerate(zip(output_sequences, log_probs)):
-                generated_sequence = generated_sequence.tolist()
-                # Remove the prompt.
 
-                generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
+                generated_sequence = generated_sequence[len(flat_previous_tokens):]
 
                 if generated_sequence[0] not in self._eos_token_ids:
 
