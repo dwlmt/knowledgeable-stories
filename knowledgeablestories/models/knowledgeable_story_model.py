@@ -537,7 +537,7 @@ class KnowledgeableStoriesModel(Model):
                 previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
             logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
 
-            encoded_sentences_generated = self._encode_representations(sequences_tensor_list, num_of_sentences)
+            encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
             logger.info(encoded_sentences_generated)
             # logger.info(encoded_sentences_generated.size())
             # encoded_sentences_generated = encoded_sentences_generated.detach()
@@ -964,12 +964,9 @@ class KnowledgeableStoriesModel(Model):
 
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
-    def _encode_representations(self, generated_sequences, batch_size):
+    def _encode_representations(self, generated_sequences):
 
-        generated_sequences = pad_sequence(generated_sequences)
-
-
-        sentence_tokens_tensor = torch.LongTensor(generated_sequences)
+        sentence_tokens_tensor = pad_sequence(generated_sequences)
 
         logger.info(sentence_tokens_tensor)
         logger.info(sentence_tokens_tensor.size())
