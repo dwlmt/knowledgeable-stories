@@ -1051,22 +1051,8 @@ class KnowledgeableStoriesModel(Model):
 
                 if generated_sequence[0] not in self._eos_token_ids:
 
-                    # Truncate the generated sentence.
-                    first_index = self._generation_config["max_length"]
-                    for end_token in self._eos_token_ids:
-                        try:
-                            if end_token not in self._keep_eos_ids:
-                                first_index = min(generated_sequence.index(end_token), first_index)
-                            else:
-                                first_index = min(generated_sequence.index(end_token) + 1, first_index)
-                        except ValueError:
-                            pass
-
-                        if first_index < self._generation_config["max_length"]:
-                            generated_sequence = generated_sequence[: first_index]
-
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                        generated_sequence = torch.cat((generated_sequence, END_OF_SENTENCE_TOKEN_ID))
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
