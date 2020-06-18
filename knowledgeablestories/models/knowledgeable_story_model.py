@@ -214,7 +214,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=5))
-        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
+        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
 
@@ -991,7 +991,7 @@ class KnowledgeableStoriesModel(Model):
                 eos_token_ids=self._eos_token_ids,
                 pad_token_id=0,
                 trace_log_probs=True,
-                num_return_sequences=gen_num_of_sequences,
+                num_return_sequences=1,
             )
 
             print(output_sequences, log_probs)
