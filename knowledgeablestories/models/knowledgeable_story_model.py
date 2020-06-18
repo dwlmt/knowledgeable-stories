@@ -1055,7 +1055,8 @@ class KnowledgeableStoriesModel(Model):
                             torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
+                        print(generated_sequence)
+                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
 
