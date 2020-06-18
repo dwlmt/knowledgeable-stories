@@ -234,7 +234,7 @@ class KnowledgeableStoriesModel(Model):
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        eos_text_token_ids += [764]
+        eos_text_token_ids += [764, 0]
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
