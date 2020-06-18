@@ -538,7 +538,9 @@ class KnowledgeableStoriesModel(Model):
             logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
 
             encoded_sentences_generated = self._encode_representations( sequences_tensor_list,  num_of_sentences)
-            encoded_sentences_generated = encoded_sentences_generated.detach()
+            logger.info(encoded_sentences_generated)
+            logger.info(encoded_sentences_generated.size())
+            #encoded_sentences_generated = encoded_sentences_generated.detach()
 
             logger.info(encoded_sentences_generated.size())
 
@@ -1026,10 +1028,7 @@ class KnowledgeableStoriesModel(Model):
 
 
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
-        # encoded_sentences_tensor = torch.rand_like(encoded_sentences_tensor).float().to(encoded_sentences_tensor.device)
 
-        encoded_sentences_tensor.view(encoded_sentences_tensor.size(0) * encoded_sentences_tensor.size(1),
-                                      encoded_sentences_tensor.size(2))
 
         return encoded_sentences_tensor
 
@@ -1115,7 +1114,7 @@ class KnowledgeableStoriesModel(Model):
                             sequences_tensor_list.append(generated_sequence)
                             log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
 
-        print(sequences_tensor_list, log_probs_tensor_list)
+        logger.info(sequences_tensor_list, log_probs_tensor_list)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
