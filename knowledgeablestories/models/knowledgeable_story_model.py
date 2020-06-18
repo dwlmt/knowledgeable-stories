@@ -1052,7 +1052,7 @@ class KnowledgeableStoriesModel(Model):
                 if generated_sequence[0] not in self._eos_token_ids:
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        generated_sequence = torch.cat((generated_sequence, END_OF_SENTENCE_TOKEN_ID))
+                        generated_sequence = torch.cat((generated_sequence, torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device)))
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
