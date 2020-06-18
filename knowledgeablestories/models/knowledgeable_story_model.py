@@ -965,29 +965,25 @@ class KnowledgeableStoriesModel(Model):
                 self._metrics[f"{dataset_name}_cloze_accuracy"](is_correct)
 
     def _encode_representations(self, generated_sequences, batch_size):
-        encoded_sentences_list = []
 
         generated_sequences = pad_sequence(generated_sequences)
 
-        for generated_sequence_batch in more_itertools.chunked(generated_sequences, batch_size):
 
-            sentence_tokens = generated_sequence_batch
+        sentence_tokens_tensor = torch.LongTensor(generated_sequences)
 
-            sentence_tokens_tensor = torch.LongTensor(sentence_tokens)
+        logger.info(sentence_tokens_tensor)
+        logger.info(sentence_tokens_tensor.size())
 
-            lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
+        lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
 
-            encoded_sentences_batch = self.encode_sentences(lm_hidden_state, lm_mask)
+        encoded_sentences_batch = self.encode_sentences(lm_hidden_state, lm_mask)
 
-            if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
-                encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
-                encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+        if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
+            encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
+            encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
 
-            encoded_sentences_list.append(encoded_sentences_batch)
 
-        encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
-
-        return encoded_sentences_tensor
+        return encoded_sentences_batch
 
     def generate_sentences(self, previous_tokens, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
 
