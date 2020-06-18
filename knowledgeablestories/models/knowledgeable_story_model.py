@@ -994,6 +994,8 @@ class KnowledgeableStoriesModel(Model):
                 encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
                 encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
 
+            encoded_sentences_list.append(encoded_sentences_batch)
+
         encoded_sentences_tensor = torch.stack(encoded_sentences_list, dim=0)
 
         return encoded_sentences_tensor
