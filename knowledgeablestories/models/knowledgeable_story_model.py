@@ -1099,8 +1099,8 @@ class KnowledgeableStoriesModel(Model):
                         if first_index < self._generation_config["max_length"]:
                             generated_sequence = generated_sequence[: first_index]
 
-                        if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                    if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
+                        generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
@@ -1113,8 +1113,6 @@ class KnowledgeableStoriesModel(Model):
 
                             sequences_tensor_list.append(generated_sequence)
                             log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
-
-        logger.info(sequences_tensor_list, log_probs_tensor_list)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list

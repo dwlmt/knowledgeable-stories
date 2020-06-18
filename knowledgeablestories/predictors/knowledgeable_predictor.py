@@ -957,8 +957,8 @@ class KnowledgeablePredictor(Predictor):
                         if first_index < self._generation_config["max_length"]:
                             generated_sequence = generated_sequence[: first_index]
 
-                        if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                    if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
+                        generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
