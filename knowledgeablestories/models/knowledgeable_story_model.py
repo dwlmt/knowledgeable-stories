@@ -214,7 +214,7 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=1))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
@@ -538,9 +538,9 @@ class KnowledgeableStoriesModel(Model):
             logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
 
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
-            logger.info(encoded_sentences_generated)
-            # logger.info(encoded_sentences_generated.size())
-            # encoded_sentences_generated = encoded_sentences_generated.detach()
+
+            logger.info(encoded_sentences_generated.size())
+            encoded_sentences_generated = encoded_sentences_generated.detach()
 
             logger.info(encoded_sentences_generated.size())
 
@@ -968,7 +968,6 @@ class KnowledgeableStoriesModel(Model):
 
         sentence_tokens_tensor = pad_sequence(generated_sequences)
 
-        logger.info(sentence_tokens_tensor)
         logger.info(sentence_tokens_tensor.size())
 
         lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
@@ -978,7 +977,6 @@ class KnowledgeableStoriesModel(Model):
         if self._sentence_2_seq2vec_encoder is not None or self._sentence_2_seq2seq_encoder is not None:
             encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
             encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
-
 
         return encoded_sentences_batch
 
@@ -1038,7 +1036,7 @@ class KnowledgeableStoriesModel(Model):
                             torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
-                        print(generated_sequence)
+                        logger.info(generated_sequence)
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
