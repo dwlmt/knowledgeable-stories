@@ -517,7 +517,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _reinforce_finetune(self, passages, passage_mask, encoded_sentences):
 
-        encoded_sentences = encoded_sentences.detach()
+        encoded_sentences = encoded_sentences.detach().cpu()
 
         loss = torch.tensor(0.0).to(encoded_sentences.device)
 
@@ -540,7 +540,7 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
 
             #logger.info(encoded_sentences_generated.size())
-            encoded_sentences_generated = encoded_sentences_generated.detach()
+            encoded_sentences_generated = encoded_sentences_generated.detach().cpu()
 
             logger.info(encoded_sentences_generated.size())
 
