@@ -13,7 +13,6 @@ from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
-from rouge import Rouge
 from torch import nn
 from torch.distributions import Categorical
 from torch.nn import CrossEntropyLoss
