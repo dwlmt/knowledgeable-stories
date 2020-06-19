@@ -351,6 +351,12 @@ class KnowledgeableStoriesModel(Model):
                 output["tokens"] = passages["tokens"]
 
                 if self._reinforce:
+                    lm_output = lm_output.detach().cpu()
+                    lm_mask = lm_mask.detach().cpu()
+                    encoded_sentences = encoded_sentences.detach().cpu()
+                    encoded_sentences_cat = encoded_sentences_cat.detach().cpu()
+                    passages["tokens"] = passages["tokens"].detach().cpu()
+
                     reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
                     loss += reinforce_loss
                     self._metrics["reinforce_loss"](reinforce_loss)
@@ -516,9 +522,6 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def _reinforce_finetune(self, passages, passage_mask, encoded_sentences):
-
-        encoded_sentences = encoded_sentences.detach().cpu()
-        passages["tokens"] = passages["tokens"].detach().cpu()
 
         loss = torch.tensor(0.0).to(encoded_sentences.device)
 
