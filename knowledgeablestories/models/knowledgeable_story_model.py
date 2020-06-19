@@ -239,7 +239,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._keep_token_ids = eos_text_token_ids
 
-        self._eos_token_ids += eos_text_token_ids[50256]
+        self._eos_token_ids = eos_text_token_ids + [50256]
 
 
 
