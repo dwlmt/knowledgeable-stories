@@ -529,12 +529,16 @@ class KnowledgeableStoriesModel(Model):
 
     def _reinforce_finetune(self, passages, passage_mask, encoded_sentences):
 
+        encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
+
         loss = torch.tensor(0.0).to(encoded_sentences.device)
 
         num_to_sample = self._reinforce_num_sequences
         num_positions = self._reinforce_num_positions
 
         num_of_sentences = torch.sum(passage_mask, dim=-1).item()
+
+        encoded_sentences = encoded_sentences[0:num_of_sentences]
 
         for i in range(num_positions):
             context_index = random.randint(0, num_of_sentences - 2)
@@ -992,7 +996,10 @@ class KnowledgeableStoriesModel(Model):
 
     def _encode_representations(self, generated_sequences):
 
-        sentence_tokens_tensor = pad_sequence(generated_sequences)
+        if len(generated_sequences.size()) == 2:
+            generated_sequences = torch.unsqueeze(generated_sequences, dim=0)
+
+        sentence_tokens_tensor = pad_sequence(generated_sequences, batch_first=True)
 
         logger.info(sentence_tokens_tensor.size())
 
@@ -1003,6 +1010,8 @@ class KnowledgeableStoriesModel(Model):
         if self._sentence_2_seq2vec_encoder is not None or self._sentence_2_seq2seq_encoder is not None:
             encoded_sentences_batch_2 = self.encode_sentences_2(lm_hidden_state, lm_mask)
             encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+
+        print("Encoded Sentences Batch", encoded_sentences_batch.size())
 
         return encoded_sentences_batch
 
