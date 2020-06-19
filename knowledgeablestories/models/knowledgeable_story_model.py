@@ -561,10 +561,13 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
             gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
             baseline_reward = self.reward_function(encoded_sentences, torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences))
+            mean_baseline_reward = torch.mean(baseline_reward)
 
-            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor_list)
+            log_probs_tensor = torch.stack(log_probs_tensor_list)
 
-            rl_loss = -( gen_reward - torch.mean(baseline_reward)) * torch.stack(log_probs_tensor_list)
+            logger.info("Reward", gen_reward, mean_baseline_reward, log_probs_tensor)
+
+            rl_loss = -( gen_reward - mean_baseline_reward) * log_probs_tensor
 
             loss += rl_loss
 
