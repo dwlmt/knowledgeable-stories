@@ -569,7 +569,7 @@ class KnowledgeableStoriesModel(Model):
 
             rl_loss = -( gen_reward - mean_baseline_reward) * log_probs_tensor
 
-            loss += rl_loss
+            loss += torch.mean(rl_loss)
 
             # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
