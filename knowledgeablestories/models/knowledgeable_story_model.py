@@ -215,7 +215,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=1))
-        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
+        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=3))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
 
@@ -238,7 +238,7 @@ class KnowledgeableStoriesModel(Model):
         eos_text_token_ids += [764]
 
         self._eos_token_ids = eos_text_token_ids
-        self._keep_eos_ids = eos_text_token_ids
+
 
         if initializer is not None:
             initializer(self)
@@ -1071,7 +1071,8 @@ class KnowledgeableStoriesModel(Model):
                             #logger.info(generated_text, generated_sequence, log_prob)
 
                             sequences_tensor_list.append(generated_sequence)
-                            log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
+                            logger.info("Log probs size",log_prob.size())
+                            log_probs_tensor_list.append(log_prob[0:len(generated_sequence)], -1)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
