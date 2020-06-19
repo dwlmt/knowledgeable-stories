@@ -535,11 +535,11 @@ class KnowledgeableStoriesModel(Model):
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
                 previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
-            #logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
+            print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
 
-            logger.info(encoded_sentences_generated.size())
+            #logger.info(encoded_sentences_generated.size())
             encoded_sentences_generated = encoded_sentences_generated.detach()
 
             logger.info(encoded_sentences_generated.size())
@@ -1039,7 +1039,7 @@ class KnowledgeableStoriesModel(Model):
                             torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
-                        logger.info(generated_sequence)
+                        #logger.info(generated_sequence)
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
@@ -1048,7 +1048,7 @@ class KnowledgeableStoriesModel(Model):
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-                            logger.info(generated_text, generated_sequence, log_prob)
+                            #logger.info(generated_text, generated_sequence, log_prob)
 
                             sequences_tensor_list.append(generated_sequence)
                             log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)], -1))
@@ -1164,7 +1164,7 @@ class KnowledgeableStoriesModel(Model):
             catdist = Categorical(logits=next_token_logits)
             next_token = catdist.sample()
 
-            logger.info("Next token", next_token)
+            #logger.info("Next token", next_token)
 
             if trace_log_probs:
                 log_prob = catdist.log_prob(next_token)
@@ -1187,7 +1187,7 @@ class KnowledgeableStoriesModel(Model):
 
                 eos_in_sents = eos_in_sents > 0
 
-                logger.info("EOS in sents", eos)
+                #logger.info("EOS in sents", eos)
 
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
