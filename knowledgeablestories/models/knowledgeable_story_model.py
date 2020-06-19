@@ -219,8 +219,6 @@ class KnowledgeableStoriesModel(Model):
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
 
-        eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
-
         self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=4))
 
         lm_model_name = str(os.getenv("LM_MODEL_NAME", default="gpt2"))
@@ -232,12 +230,20 @@ class KnowledgeableStoriesModel(Model):
         self._token_indexers = {
             "tokens": PretrainedTransformerIndexer(model_name=lm_model_name, do_lowercase=False)}
 
+        eos_tokens = str(os.getenv("EOS_TOKENS", default=". <|endofsentence|> .. ..."))
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
+
         eos_text_token_ids += [764]
 
-        self._eos_token_ids = eos_text_token_ids
+        self._keep_token_ids = eos_text_token_ids
+
+        self._eos_token_ids += eos_text_token_ids[50256]
+
+
+
+
 
 
         if initializer is not None:
@@ -546,7 +552,7 @@ class KnowledgeableStoriesModel(Model):
             #logger.info(encoded_sentences_generated.size())
             encoded_sentences_generated = encoded_sentences_generated.detach().cpu()
 
-            logger.info(encoded_sentences_generated.size())
+            print(encoded_sentences_generated.size(), encoded_sentences.size(), log_probs_tensor_list)
 
             encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
             gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
