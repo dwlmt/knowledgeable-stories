@@ -996,9 +996,6 @@ class KnowledgeableStoriesModel(Model):
 
     def _encode_representations(self, generated_sequences):
 
-        if len(generated_sequences.size()) == 2:
-            generated_sequences = torch.unsqueeze(generated_sequences, dim=0)
-
         sentence_tokens_tensor = pad_sequence(generated_sequences, batch_first=True)
 
         logger.info(sentence_tokens_tensor.size())
