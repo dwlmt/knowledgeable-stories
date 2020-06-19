@@ -1072,7 +1072,7 @@ class KnowledgeableStoriesModel(Model):
 
                             sequences_tensor_list.append(generated_sequence)
                             logger.info("Log probs size",log_prob.size())
-                            log_probs_tensor_list.append(log_prob[0:len(generated_sequence)], -1)
+                            log_probs_tensor_list.append(log_prob[0:len(generated_sequence)])
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
