@@ -535,7 +535,7 @@ class KnowledgeableStoriesModel(Model):
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
                 previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
-            logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
+            #logger.info(sentences, sequences_tensor_list, log_probs_tensor_list)
 
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
 
@@ -1164,6 +1164,8 @@ class KnowledgeableStoriesModel(Model):
             catdist = Categorical(logits=next_token_logits)
             next_token = catdist.sample()
 
+            print("Next token", next_token)
+
             if trace_log_probs:
                 log_prob = catdist.log_prob(next_token)
                 log_probs.append(log_prob)
@@ -1184,6 +1186,8 @@ class KnowledgeableStoriesModel(Model):
                     eos_in_sents += int_sents
 
                 eos_in_sents = eos_in_sents > 0
+
+                print("EOS in sents", eos)
 
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
