@@ -235,7 +235,7 @@ class KnowledgeableStoriesModel(Model):
         eos_text_token_ids = []
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
-        eos_text_token_ids += [764, 0]
+        eos_text_token_ids += [764]
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
@@ -1013,7 +1013,7 @@ class KnowledgeableStoriesModel(Model):
                 top_k=gen_config["top_k"],
                 top_p=gen_config["top_p"],
                 eos_token_ids=self._eos_token_ids,
-                pad_token_id=0,
+                pad_token_id=50256,
                 trace_log_probs=True,
                 num_return_sequences=1,
             )
