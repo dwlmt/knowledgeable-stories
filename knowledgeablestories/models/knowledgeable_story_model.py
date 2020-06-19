@@ -540,7 +540,7 @@ class KnowledgeableStoriesModel(Model):
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
                 previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
-            print(sentences, sequences_tensor_list, log_probs_tensor_list)
+            logger.info(sentences)
 
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
 
