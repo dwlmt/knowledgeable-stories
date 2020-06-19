@@ -1164,7 +1164,7 @@ class KnowledgeableStoriesModel(Model):
             catdist = Categorical(logits=next_token_logits)
             next_token = catdist.sample()
 
-            print("Next token", next_token)
+            logger.info("Next token", next_token)
 
             if trace_log_probs:
                 log_prob = catdist.log_prob(next_token)
@@ -1187,7 +1187,7 @@ class KnowledgeableStoriesModel(Model):
 
                 eos_in_sents = eos_in_sents > 0
 
-                print("EOS in sents", eos)
+                logger.info("EOS in sents", eos)
 
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
