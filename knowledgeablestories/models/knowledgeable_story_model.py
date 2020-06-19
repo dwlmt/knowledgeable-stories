@@ -13,6 +13,7 @@ from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
+from rouge import Rouge
 from torch import nn
 from torch.distributions import Categorical
 from torch.nn import CrossEntropyLoss
@@ -548,9 +549,26 @@ class KnowledgeableStoriesModel(Model):
 
             logger.info(encoded_sentences_generated.size())
 
+            encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
+            gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
+            baseline_reward = self.reward_function(encoded_sentences, encoded_sentences_expanded)
+
+            logger.info("Reward", gen_reward, baseline_reward)
+
+            rl_loss = -( gen_reward - baseline_reward) * torch.stack(log_probs_tensor_list)
+
+            loss += rl_loss
+
             # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
+
+
         return loss
+
+    def reward_function(self, generated_sents, original_sents):
+        cosine_similarity = self._cosine_similarity(generated_sents, original_sents)
+
+        return torch.mean(cosine_similarity)
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
