@@ -360,7 +360,7 @@ class KnowledgeableStoriesModel(Model):
                     lm_output = lm_output.detach().cpu()
                     lm_mask = lm_mask.detach().cpu()
                     encoded_sentences = encoded_sentences.detach().cpu()
-                    encoded_sentences_cat = encoded_sentences_cat.detach()
+                    encoded_sentences_cat = encoded_sentences_cat.detach().cpu()
                     passages["tokens"] = passages["tokens"].detach().cpu()
 
                     reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
@@ -531,9 +531,7 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
-        loss = torch.tensor(0.0).to(encoded_sentences.device)
-
-        encoded_sentences = encoded_sentences.cpu()
+        loss = torch.tensor(0.0).to(0)
 
         num_to_sample = self._reinforce_num_sequences
         num_positions = self._reinforce_num_positions
@@ -565,7 +563,7 @@ class KnowledgeableStoriesModel(Model):
             baseline_reward = self.reward_function(encoded_sentences, torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences))
             mean_baseline_reward = torch.mean(baseline_reward)
 
-            log_probs_tensor = torch.stack(log_probs_tensor_list)
+            log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
             logger.info("Reward", gen_reward, mean_baseline_reward, log_probs_tensor)
 
