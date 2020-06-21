@@ -559,7 +559,7 @@ class KnowledgeableStoriesModel(Model):
 
             with torch.no_grad():
 
-                sequences_tensor = pad_sequence(sequences_tensor_list, batch_first=True).cuda(0)
+                sequences_tensor = pad_sequence(sequences_tensor_list, batch_first=True).cuda(2)
                 encoded_sentences_generated = self._encode_representations(sequences_tensor)
                 encoded_sentences_baseline = self._encode_representations(torch.stack(baseline_sequences_tensor_list))
 
@@ -578,7 +578,7 @@ class KnowledgeableStoriesModel(Model):
 
             print("Reward", gen_reward, baseline_reward, log_probs_tensor)
 
-            rl_loss = -( gen_reward.to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
+            rl_loss = -( gen_reward.to(log_probs_tensor.device).to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
             loss += torch.sum(rl_loss)
 
@@ -589,8 +589,9 @@ class KnowledgeableStoriesModel(Model):
         return loss
 
     def reward_function(self, generated_sents, original_sents):
-        cosine_similarity = self._cosine_similarity(generated_sents, original_sents)
-        return cosine_similarity
+        #reward = self._cosine_similarity(generated_sents, original_sents)
+        reward = torch.sum(generated_sents * original_sents, dim=-1)
+        return reward
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
         if self._position_dense is not None and "position_loss" in self._loss_weights and passages_relative_positions is not None:
