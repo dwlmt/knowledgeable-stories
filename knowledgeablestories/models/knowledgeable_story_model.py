@@ -216,7 +216,7 @@ class KnowledgeableStoriesModel(Model):
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=2))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
-        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
+        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=923))
 
         self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=4))
 
