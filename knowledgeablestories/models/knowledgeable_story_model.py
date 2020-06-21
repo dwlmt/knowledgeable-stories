@@ -213,7 +213,7 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=2))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=5))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=923))
@@ -555,7 +555,7 @@ class KnowledgeableStoriesModel(Model):
             baseline_sentences, baseline_sequences_tensor_list, _ = self.generate_sentences(
                 previous_tokens=previous_tokens, trace_log_probs=False, gen_num_of_sequences=1)
 
-            print(baseline_sentences)
+            logger.info(baseline_sentences)
 
             with torch.no_grad():
 
