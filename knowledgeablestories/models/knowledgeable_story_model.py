@@ -1117,7 +1117,7 @@ class KnowledgeableStoriesModel(Model):
                     sequences_tensor_list.append(generated_sequence)
                     if log_prob is not None:
                         print("Log probs size",log_prob.size())
-                        log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
+                        log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
