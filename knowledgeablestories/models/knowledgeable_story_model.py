@@ -1255,7 +1255,7 @@ class KnowledgeableStoriesModel(Model):
 
                 eos_in_sents = eos_in_sents > 0
 
-                print("EOS in sents", eos)
+                print("EOS in sents", eos_in_sents)
 
                 # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                 is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
