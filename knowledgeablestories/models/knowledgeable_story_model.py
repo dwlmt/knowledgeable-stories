@@ -1173,124 +1173,124 @@ class KnowledgeableStoriesModel(Model):
         """ This is based on the uncom
         """
 
-        torch.set_grad_enabled(trace_log_probs)
+        with torch.set_grad_enabled(trace_log_probs):
 
-        attention_mask = input_ids.ne(pad_token_id).long()
-        batch_size = 1
-        num_beams = 1
+            attention_mask = input_ids.ne(pad_token_id).long()
+            batch_size = 1
+            num_beams = 1
 
-        unfinished_sents = input_ids.new(num_return_sequences).fill_(1)
-        sent_lengths = input_ids.new(num_return_sequences).fill_(max_length)
+            unfinished_sents = input_ids.new(num_return_sequences).fill_(1)
+            sent_lengths = input_ids.new(num_return_sequences).fill_(max_length)
 
-        effective_batch_size = num_return_sequences
-        effective_batch_mult = num_return_sequences
+            effective_batch_size = num_return_sequences
+            effective_batch_mult = num_return_sequences
 
-        cur_len = input_ids.shape[-1]
+            cur_len = input_ids.shape[-1]
 
-        if num_return_sequences > 1:
-            input_ids_len = input_ids.shape[-1]
-            input_ids = input_ids.unsqueeze(1).expand(batch_size, effective_batch_mult * num_beams, input_ids_len)
-            attention_mask = attention_mask.unsqueeze(1).expand(
-                batch_size, effective_batch_mult * num_beams, input_ids_len
-            )
+            if num_return_sequences > 1:
+                input_ids_len = input_ids.shape[-1]
+                input_ids = input_ids.unsqueeze(1).expand(batch_size, effective_batch_mult * num_beams, input_ids_len)
+                attention_mask = attention_mask.unsqueeze(1).expand(
+                    batch_size, effective_batch_mult * num_beams, input_ids_len
+                )
 
-            input_ids = input_ids.contiguous().view(
-                effective_batch_size * num_beams, input_ids_len
-            )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
-            attention_mask = attention_mask.contiguous().view(
-                effective_batch_size * num_beams, input_ids_len
-            )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
+                input_ids = input_ids.contiguous().view(
+                    effective_batch_size * num_beams, input_ids_len
+                )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
+                attention_mask = attention_mask.contiguous().view(
+                    effective_batch_size * num_beams, input_ids_len
+                )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
 
-        past = None  # defined for encoder-decoder models, None for decoder-only models
+            past = None  # defined for encoder-decoder models, None for decoder-only models
 
-        log_probs = []
+            log_probs = []
 
-        while cur_len < max_length:
-            model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
-                                                                        attention_mask=attention_mask)
+            while cur_len < max_length:
+                model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
+                                                                            attention_mask=attention_mask)
 
-            outputs = self._lm_model(**model_inputs)
-            next_token_logits = outputs[0][:, -1, :]
+                outputs = self._lm_model(**model_inputs)
+                next_token_logits = outputs[0][:, -1, :]
 
-            # if model has past, then set the past variable to speed up decoding
-            if self._lm_model._do_output_past(outputs):
-                past = outputs[1]
+                # if model has past, then set the past variable to speed up decoding
+                if self._lm_model._do_output_past(outputs):
+                    past = outputs[1]
 
-            # set eos token prob to zero if min_length is not reached
-            if eos_token_ids is not None and cur_len < min_length:
-                for eos in eos_token_ids:
-                    next_token_logits[:, eos] = -float("inf")
+                # set eos token prob to zero if min_length is not reached
+                if eos_token_ids is not None and cur_len < min_length:
+                    for eos in eos_token_ids:
+                        next_token_logits[:, eos] = -float("inf")
 
-            if do_sample:
-                # Temperature (higher temperature => more likely to sample low probability tokens)
-                if temperature != 1.0:
-                    next_token_logits = next_token_logits / temperature
-                # Top-p/top-k filtering
-                next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
-                # Sample and trace log probs
-                catdist = Categorical(logits=next_token_logits)
-                next_token = catdist.sample()
+                if do_sample:
+                    # Temperature (higher temperature => more likely to sample low probability tokens)
+                    if temperature != 1.0:
+                        next_token_logits = next_token_logits / temperature
+                    # Top-p/top-k filtering
+                    next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k, top_p=top_p)
+                    # Sample and trace log probs
+                    catdist = Categorical(logits=next_token_logits)
+                    next_token = catdist.sample()
+                else:
+
+                    next_token = torch.argmax(next_token_logits, dim=-1)
+
+                #logger.info("Next token", next_token)
+
+                if trace_log_probs:
+                    log_prob = catdist.log_prob(next_token)
+                    log_probs.append(log_prob)
+
+                # update generations and finished sentences
+                if eos_token_ids is not None:
+                    # pad finished sentences if eos_token_id exist
+                    tokens_to_add = next_token * unfinished_sents + (pad_token_id) * (1 - unfinished_sents)
+                else:
+                    tokens_to_add = next_token
+
+                print("Tokens to add", tokens_to_add)
+
+                input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
+
+                if eos_token_ids is not None:
+                    eos_in_sents = torch.zeros_like(tokens_to_add)
+                    for eos in eos_token_ids:
+                        int_sents = tokens_to_add == eos
+                        eos_in_sents += int_sents
+
+                    eos_in_sents = eos_in_sents > 0
+
+                    print("EOS in sents", eos_in_sents)
+
+                    # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
+                    is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
+                    sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len + 1)
+                    # unfinished_sents is set to zero if eos in sentence
+                    unfinished_sents.mul_((~eos_in_sents).long())
+
+                    print("Unfinished sents", unfinished_sents)
+
+                # stop when there is a </s> in each sentence, or if we exceed the maximul length
+                if unfinished_sents.max() == 0:
+                    break
+
+                cur_len = cur_len + 1
+
+            # if there are different sentences lengths in the batch, some batches have to be padded
+            if sent_lengths.min().item() != sent_lengths.max().item():
+                assert pad_token_id is not None, "`Pad_token_id` has to be defined if batches have different lengths"
+                # finished sents are filled with pad_token
+                decoded = input_ids.new(num_return_sequences, sent_lengths.max().item()).fill_(pad_token_id)
             else:
+                decoded = input_ids
 
-                next_token = torch.argmax(next_token_logits, dim=-1)
-
-            #logger.info("Next token", next_token)
+            for hypo_idx, hypo in enumerate(input_ids):
+                decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
 
             if trace_log_probs:
-                log_prob = catdist.log_prob(next_token)
-                log_probs.append(log_prob)
+                log_probs = torch.cat(log_probs, dim=-1)  # batch_size x seq_len
+                return decoded, log_probs
 
-            # update generations and finished sentences
-            if eos_token_ids is not None:
-                # pad finished sentences if eos_token_id exist
-                tokens_to_add = next_token * unfinished_sents + (pad_token_id) * (1 - unfinished_sents)
-            else:
-                tokens_to_add = next_token
-
-            print("Tokens to add", tokens_to_add)
-
-            input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
-
-            if eos_token_ids is not None:
-                eos_in_sents = torch.zeros_like(tokens_to_add)
-                for eos in eos_token_ids:
-                    int_sents = tokens_to_add == eos
-                    eos_in_sents += int_sents
-
-                eos_in_sents = eos_in_sents > 0
-
-                print("EOS in sents", eos_in_sents)
-
-                # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
-                is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
-                sent_lengths.masked_fill_(is_sents_unfinished_and_token_to_add_is_eos, cur_len + 1)
-                # unfinished_sents is set to zero if eos in sentence
-                unfinished_sents.mul_((~eos_in_sents).long())
-
-                print("Unfinished sents", unfinished_sents)
-
-            # stop when there is a </s> in each sentence, or if we exceed the maximul length
-            if unfinished_sents.max() == 0:
-                break
-
-            cur_len = cur_len + 1
-
-        # if there are different sentences lengths in the batch, some batches have to be padded
-        if sent_lengths.min().item() != sent_lengths.max().item():
-            assert pad_token_id is not None, "`Pad_token_id` has to be defined if batches have different lengths"
-            # finished sents are filled with pad_token
-            decoded = input_ids.new(num_return_sequences, sent_lengths.max().item()).fill_(pad_token_id)
-        else:
-            decoded = input_ids
-
-        for hypo_idx, hypo in enumerate(input_ids):
-            decoded[hypo_idx, : sent_lengths[hypo_idx]] = hypo[: sent_lengths[hypo_idx]]
-
-        if trace_log_probs:
-            log_probs = torch.cat(log_probs, dim=-1)  # batch_size x seq_len
-            return decoded, log_probs
-
-        return decoded
+            return decoded
 
     def _bleu_score_if_required(self, dataset_name, prem, conclusions, generated_text):
         if "bleu" in self._dataset_config[dataset_name] and self._dataset_config[dataset_name]["bleu"] == True:
