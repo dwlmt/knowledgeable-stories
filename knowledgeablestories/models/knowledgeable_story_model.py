@@ -1075,7 +1075,7 @@ class KnowledgeableStoriesModel(Model):
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
-                log_probs = None
+                log_probs = torch.zeros(output_sequences.size(0), output_sequences.size(1), 1).detach()
 
             #print(output_sequences, log_probs)
 
@@ -1111,7 +1111,7 @@ class KnowledgeableStoriesModel(Model):
 
                             sequences_tensor_list.append(generated_sequence)
                             if log_prob is not None:
-                                logger.info("Log probs size",log_prob.size())
+                                print("Log probs size",log_prob.size())
                                 log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
