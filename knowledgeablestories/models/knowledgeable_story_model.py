@@ -30,7 +30,6 @@ END_OF_SENTENCE_TOKEN_ID = 50257
 
 torch.autograd.set_detect_anomaly(True)
 
-
 @Model.register("know_stories")
 class KnowledgeableStoriesModel(Model):
 
@@ -1250,7 +1249,7 @@ class KnowledgeableStoriesModel(Model):
             if eos_token_ids is not None:
                 eos_in_sents = torch.zeros_like(tokens_to_add)
                 for eos in eos_token_ids:
-                    int_sents = eos_in_sents == eos
+                    int_sents = tokens_to_add == eos
                     eos_in_sents += int_sents
 
                 eos_in_sents = eos_in_sents > 0
