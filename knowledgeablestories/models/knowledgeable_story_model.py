@@ -584,8 +584,6 @@ class KnowledgeableStoriesModel(Model):
 
             # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
-
-
         return loss
 
     def reward_function(self, generated_sents, original_sents):
