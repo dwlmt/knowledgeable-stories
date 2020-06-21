@@ -213,8 +213,8 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=3))
-        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=5))
+        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=64))
 
@@ -563,6 +563,7 @@ class KnowledgeableStoriesModel(Model):
             print(baseline_sentences)
 
             with torch.no_grad():
+                print(sequences_tensor_list, baseline_sequences_tensor_list)
                 encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
                 encoded_sentences_baseline = self._encode_representations(baseline_sequences_tensor_list)
 
@@ -583,7 +584,7 @@ class KnowledgeableStoriesModel(Model):
 
             rl_loss = -( gen_reward.to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
-            loss += torch.mean(rl_loss)
+            loss += torch.sum(rl_loss)
 
             # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
@@ -1120,7 +1121,7 @@ class KnowledgeableStoriesModel(Model):
                             sequences_tensor_list.append(generated_sequence)
                             if log_prob is not None:
                                 print("Log probs size",log_prob.size())
-                                log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
+                                log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
