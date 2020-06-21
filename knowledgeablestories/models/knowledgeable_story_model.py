@@ -1031,6 +1031,9 @@ class KnowledgeableStoriesModel(Model):
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
+            if flat_previous_tokens[-1] != END_OF_SENTENCE_TOKEN_ID:
+                flat_previous_tokens = flat_previous_tokens + [END_OF_SENTENCE_TOKEN_ID]
+
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
 
         previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
