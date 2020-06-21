@@ -1016,7 +1016,7 @@ class KnowledgeableStoriesModel(Model):
         if len(generated_sequences) > 1:
             sentence_tokens_tensor = pad_sequence(generated_sequences, batch_first=True)
         else:
-            sentence_tokens_tensor = generated_sequences
+            sentence_tokens_tensor = torch.stack(generated_sequences)
 
         lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
 
