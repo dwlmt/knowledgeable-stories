@@ -1106,23 +1106,14 @@ class KnowledgeableStoriesModel(Model):
                                                                        clean_up_tokenization_spaces=True,
                                                                        skip_special_tokens=True)
 
-                    eos_in_sents = torch.zeros_like(generated_sequence)
-                    for eos in self._eos_token_ids:
-                        int_sents = generated_sequence == eos
-                        eos_in_sents += int_sents
+                    generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
-                    not_eos = torch.sum(eos_in_sents < 0)
+                    #logger.info(generated_text, generated_sequence, log_prob)
 
-                    if not_eos >= gen_config["min_length"] or trace_log_probs:
-
-                        generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
-
-                        #logger.info(generated_text, generated_sequence, log_prob)
-
-                        sequences_tensor_list.append(generated_sequence)
-                        if log_prob is not None:
-                            print("Log probs size",log_prob.size())
-                            log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
+                    sequences_tensor_list.append(generated_sequence)
+                    if log_prob is not None:
+                        print("Log probs size",log_prob.size())
+                        log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
