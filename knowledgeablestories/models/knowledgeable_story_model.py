@@ -1081,7 +1081,7 @@ class KnowledgeableStoriesModel(Model):
 
             output_sequences = output_sequences.to(0)
 
-            if len(log_probs.size()) == 1:
+            if log_probs is not None and len(log_probs.size()) == 1:
                 log_probs = torch.unsqueeze(log_probs, dim=0)
 
             if len(output_sequences.shape) > 2:
