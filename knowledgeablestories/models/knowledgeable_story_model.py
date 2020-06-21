@@ -240,7 +240,7 @@ class KnowledgeableStoriesModel(Model):
         self._eos_token_ids = eos_text_token_ids + [50256]
 
         bad_words_ids = []
-        bad_words = str(os.getenv("EOS_TOKENS", default="* \n "))
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
         for t in bad_words.split():
             bad_words_ids.extend(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids = bad_words_ids
