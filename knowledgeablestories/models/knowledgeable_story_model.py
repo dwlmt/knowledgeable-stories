@@ -91,7 +91,7 @@ class KnowledgeableStoriesModel(Model):
                              "hierarchy_accuracy_top_k": [1, 5]}
 
         if generation_config is None:
-            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.90, "min_length": 3,
+            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.90, "min_length": 4,
                                  "max_length": 100, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": END_OF_TEXT_TOKEN_IDS[0],
                                  "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": None}
@@ -1056,7 +1056,7 @@ class KnowledgeableStoriesModel(Model):
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
-                    pad_token_id=50256,
+                    pad_token_id=0,
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
