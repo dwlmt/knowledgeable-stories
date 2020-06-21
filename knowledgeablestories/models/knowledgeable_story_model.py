@@ -19,6 +19,7 @@ from torch.nn import CrossEntropyLoss
 from torch.nn.utils.rnn import pad_sequence
 from transformers import top_k_top_p_filtering
 from transformers.modeling_auto import AutoModelWithLMHead
+from transformers.modeling_utils import calc_banned_bad_words_ids
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -213,10 +214,10 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=3))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=2))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
-        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=923))
+        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
         self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=4))
 
@@ -235,10 +236,14 @@ class KnowledgeableStoriesModel(Model):
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
 
         eos_text_token_ids += [764]
-
         self._keep_token_ids = eos_text_token_ids
-
         self._eos_token_ids = eos_text_token_ids + [50256]
+
+        bad_word_ids = []
+        bad_words = str(os.getenv("EOS_TOKENS", default="* \n "))
+        for t in bad_words.split():
+            bad_word_ids.extend(self._tokenizer._tokenizer.encode(t, add_prefix_space=True))
+        self._bad_word_ids = bad_word_ids
 
         if initializer is not None:
             initializer(self)
@@ -1051,12 +1056,13 @@ class KnowledgeableStoriesModel(Model):
                     input_ids=previous_tokens_tensor,
                     do_sample=do_sample,
                     min_length=gen_config["min_length"],
-                    max_length=1024,
+                    max_length=988,
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
+                    bad_words_ids=self._bad_words_ids,
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
@@ -1071,6 +1077,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
+                    bad_words_ids=self._bad_words_ids,
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
@@ -1161,6 +1168,7 @@ class KnowledgeableStoriesModel(Model):
                                  top_p,
                                  pad_token_id,
                                  eos_token_ids,
+                                 bad_words_ids,
                                  num_return_sequences,
                                  ):
         """ This is based on the uncom
@@ -1208,6 +1216,13 @@ class KnowledgeableStoriesModel(Model):
                 # if model has past, then set the past variable to speed up decoding
                 if self._lm_model._do_output_past(outputs):
                     past = outputs[1]
+
+                if bad_words_ids is not None:
+                    # calculate a list of banned tokens according to bad words
+                    banned_tokens = calc_banned_bad_words_ids(input_ids, bad_words_ids)
+
+                    for batch_idx in range(batch_size):
+                        next_token_logits[batch_idx, banned_tokens[batch_idx]] = -float("inf")
 
                 # set eos token prob to zero if min_length is not reached
                 if eos_token_ids is not None and cur_len < min_length:
