@@ -242,7 +242,7 @@ class KnowledgeableStoriesModel(Model):
         bad_word_ids = []
         bad_words = str(os.getenv("EOS_TOKENS", default="* \n "))
         for t in bad_words.split():
-            bad_word_ids.extend(self._tokenizer._tokenizer.encode(t, add_prefix_space=True))
+            bad_word_ids.extend(self._tokenizer._tokenizer.encode(t))
         self._bad_word_ids = bad_word_ids
 
         if initializer is not None:
