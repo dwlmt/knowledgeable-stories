@@ -551,23 +551,27 @@ class KnowledgeableStoriesModel(Model):
                 previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
             logger.info(sentences)
 
+            baseline_sentences, baseline_sequences_tensor_list, _ = self.generate_sentences(
+                previous_tokens=previous_tokens, trace_log_probs=False, gen_num_of_sequences=1)
+
             encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
+            encoded_sentences_baseline = self._encode_representations(baseline_sequences_tensor_list)
 
             #logger.info(encoded_sentences_generated.size())
             encoded_sentences_generated = encoded_sentences_generated.detach().cpu()
+            encoded_sentences_baseline = encoded_sentences_baseline.detach().cpu()
 
-            print(encoded_sentences_generated.size(), encoded_sentences.size(), log_probs_tensor_list)
+            print(encoded_sentences_generated.size(), encoded_sentences_baseline.size(), encoded_sentences.size(), log_probs_tensor_list)
 
             encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
             gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
-            baseline_reward = self.reward_function(encoded_sentences, torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences))
-            mean_baseline_reward = torch.mean(baseline_reward)
+            baseline_reward = self.reward_function(encoded_sentences_baseline, encoded_sentences_expanded)
 
             log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
-            logger.info("Reward", gen_reward, mean_baseline_reward, log_probs_tensor)
+            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor)
 
-            rl_loss = -( gen_reward.to(log_probs_tensor.device) - mean_baseline_reward.to(log_probs_tensor.device)) * log_probs_tensor
+            rl_loss = -( gen_reward.to(log_probs_tensor.device) - baseline_reward.to(log_probs_tensor.device)) * log_probs_tensor
 
             loss += torch.mean(rl_loss)
 
@@ -1015,7 +1019,7 @@ class KnowledgeableStoriesModel(Model):
 
         return encoded_sentences_batch
 
-    def generate_sentences(self, previous_tokens, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
+    def generate_sentences(self, previous_tokens, do_sample=True, trace_log_probs=True, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
@@ -1039,19 +1043,36 @@ class KnowledgeableStoriesModel(Model):
             retries += 1
 
             gen_config = self._generation_config
-            output_sequences, log_probs = self._generate_no_beam_search(
-                input_ids=previous_tokens_tensor,
-                do_sample=True,
-                min_length=gen_config["min_length"],
-                max_length=128,
-                temperature=gen_config["temperature"],
-                top_k=gen_config["top_k"],
-                top_p=gen_config["top_p"],
-                eos_token_ids=self._eos_token_ids,
-                pad_token_id=50256,
-                trace_log_probs=True,
-                num_return_sequences=gen_num_of_sequences,
-            )
+
+            if trace_log_probs:
+                output_sequences, log_probs = self._generate_no_beam_search(
+                    input_ids=previous_tokens_tensor,
+                    do_sample=do_sample,
+                    min_length=gen_config["min_length"],
+                    max_length=128,
+                    temperature=gen_config["temperature"],
+                    top_k=gen_config["top_k"],
+                    top_p=gen_config["top_p"],
+                    eos_token_ids=self._eos_token_ids,
+                    pad_token_id=50256,
+                    trace_log_probs=trace_log_probs,
+                    num_return_sequences=gen_num_of_sequences,
+                )
+            else:
+                output_sequences = self._generate_no_beam_search(
+                    input_ids=previous_tokens_tensor,
+                    do_sample=do_sample,
+                    min_length=gen_config["min_length"],
+                    max_length=128,
+                    temperature=gen_config["temperature"],
+                    top_k=gen_config["top_k"],
+                    top_p=gen_config["top_p"],
+                    eos_token_ids=self._eos_token_ids,
+                    pad_token_id=50256,
+                    trace_log_probs=trace_log_probs,
+                    num_return_sequences=gen_num_of_sequences,
+                )
+                log_probs = None
 
             #print(output_sequences, log_probs)
 
@@ -1086,8 +1107,9 @@ class KnowledgeableStoriesModel(Model):
                             #logger.info(generated_text, generated_sequence, log_prob)
 
                             sequences_tensor_list.append(generated_sequence)
-                            logger.info("Log probs size",log_prob.size())
-                            log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
+                            if log_prob is not None:
+                                logger.info("Log probs size",log_prob.size())
+                                log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
