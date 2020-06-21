@@ -1240,7 +1240,7 @@ class KnowledgeableStoriesModel(Model):
                 else:
                     tokens_to_add = next_token
 
-                print("Tokens to add", tokens_to_add)
+                #print("Tokens to add", tokens_to_add)
 
                 input_ids = torch.cat([input_ids, tokens_to_add.unsqueeze(-1)], dim=-1)
 
@@ -1252,7 +1252,7 @@ class KnowledgeableStoriesModel(Model):
 
                     eos_in_sents = eos_in_sents > 0
 
-                    print("EOS in sents", eos_in_sents)
+                    #print("EOS in sents", eos_in_sents)
 
                     # if sentence is unfinished and the token to add is eos, sent_lengths is filled with current length
                     is_sents_unfinished_and_token_to_add_is_eos = unfinished_sents.mul(eos_in_sents.long()).bool()
@@ -1260,7 +1260,7 @@ class KnowledgeableStoriesModel(Model):
                     # unfinished_sents is set to zero if eos in sentence
                     unfinished_sents.mul_((~eos_in_sents).long())
 
-                    print("Unfinished sents", unfinished_sents)
+                    #print("Unfinished sents", unfinished_sents)
 
                 # stop when there is a </s> in each sentence, or if we exceed the maximul length
                 if unfinished_sents.max() == 0:
