@@ -308,11 +308,14 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
+                with torch.set_grad_enabled(self._reinforce and reinforce_bool):
+                    encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
-                    encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
+
+                    with torch.set_grad_enabled(self._reinforce and reinforce_bool):
+                        encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
                     if not (self._reinforce and reinforce_bool):
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
@@ -557,24 +560,28 @@ class KnowledgeableStoriesModel(Model):
             baseline_sentences, baseline_sequences_tensor_list, _ = self.generate_sentences(
                 previous_tokens=previous_tokens, trace_log_probs=False, gen_num_of_sequences=1)
 
-            encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
-            encoded_sentences_baseline = self._encode_representations(baseline_sequences_tensor_list)
+            print(baseline_sentences)
+
+            with torch.no_grad():
+                encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
+                encoded_sentences_baseline = self._encode_representations(baseline_sequences_tensor_list)
 
             #logger.info(encoded_sentences_generated.size())
-            encoded_sentences_generated = encoded_sentences_generated.detach().cpu()
-            encoded_sentences_baseline = encoded_sentences_baseline.detach().cpu()
+            encoded_sentences_generated = encoded_sentences_generated.cpu()
+            encoded_sentences_baseline = encoded_sentences_baseline.cpu()
 
             print(encoded_sentences_generated.size(), encoded_sentences_baseline.size(), encoded_sentences.size(), log_probs_tensor_list)
 
-            encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
-            gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
-            baseline_reward = self.reward_function(encoded_sentences_baseline, encoded_sentences_expanded)
+            with torch.no_grad():
+                encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
+                gen_reward = self.reward_function(encoded_sentences_generated, encoded_sentences_expanded)
+                baseline_reward = self.reward_function(encoded_sentences_baseline, encoded_sentences_expanded)
 
             log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
-            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor)
+            print("Reward", gen_reward, baseline_reward, log_probs_tensor)
 
-            rl_loss = -( gen_reward.to(log_probs_tensor.device) - baseline_reward.to(log_probs_tensor.device)) * log_probs_tensor
+            rl_loss = -( gen_reward.to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
             loss += torch.mean(rl_loss)
 
@@ -1007,8 +1014,6 @@ class KnowledgeableStoriesModel(Model):
     def _encode_representations(self, generated_sequences):
 
         sentence_tokens_tensor = pad_sequence(generated_sequences, batch_first=True)
-
-        logger.info(sentence_tokens_tensor.size())
 
         lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
 
