@@ -91,7 +91,7 @@ class KnowledgeableStoriesModel(Model):
                              "hierarchy_accuracy_top_k": [1, 5]}
 
         if generation_config is None:
-            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.90, "min_length": 4,
+            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.95, "min_length": 3,
                                  "max_length": 100, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": END_OF_TEXT_TOKEN_IDS[0],
                                  "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": None}
@@ -1106,14 +1106,23 @@ class KnowledgeableStoriesModel(Model):
                                                                        clean_up_tokenization_spaces=True,
                                                                        skip_special_tokens=True)
 
-                    generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+                    eos_in_sents = torch.zeros_like(generated_sequence)
+                    for eos in self._eos_token_ids:
+                        int_sents = generated_sequence == eos
+                        eos_in_sents += int_sents
 
-                    #logger.info(generated_text, generated_sequence, log_prob)
+                    not_eos = torch.sum(eos_in_sents < 0)
 
-                    sequences_tensor_list.append(generated_sequence)
-                    if log_prob is not None:
-                        print("Log probs size",log_prob.size())
-                        log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
+                    if not_eos >= gen_config["min_length"] or trace_log_probs:
+
+                        generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+
+                        #logger.info(generated_text, generated_sequence, log_prob)
+
+                        sequences_tensor_list.append(generated_sequence)
+                        if log_prob is not None:
+                            print("Log probs size",log_prob.size())
+                            log_probs_tensor_list.append(torch.mean(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
