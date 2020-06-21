@@ -1056,7 +1056,7 @@ class KnowledgeableStoriesModel(Model):
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
-                    pad_token_id=0,
+                    pad_token_id=50256,
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
