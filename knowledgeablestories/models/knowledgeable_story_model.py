@@ -549,7 +549,7 @@ class KnowledgeableStoriesModel(Model):
             previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
-                previous_tokens=previous_tokens, gen_num_of_sequences=num_to_sample)
+                previous_tokens=previous_tokens,  trace_log_probs=True, gen_num_of_sequences=num_to_sample)
             logger.info(sentences)
 
             baseline_sentences, baseline_sequences_tensor_list, _ = self.generate_sentences(
@@ -558,9 +558,10 @@ class KnowledgeableStoriesModel(Model):
             print(baseline_sentences)
 
             with torch.no_grad():
-                print(sequences_tensor_list, baseline_sequences_tensor_list)
-                encoded_sentences_generated = self._encode_representations(sequences_tensor_list)
-                encoded_sentences_baseline = self._encode_representations(baseline_sequences_tensor_list)
+
+                sequences_tensor = pad_sequence(sequences_tensor_list, batch_first=True).cuda(0)
+                encoded_sentences_generated = self._encode_representations(sequences_tensor)
+                encoded_sentences_baseline = self._encode_representations(torch.stack(baseline_sequences_tensor_list))
 
             #logger.info(encoded_sentences_generated.size())
             encoded_sentences_generated = encoded_sentences_generated.cpu()
@@ -1009,12 +1010,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _encode_representations(self, generated_sequences):
 
-        if len(generated_sequences) > 1:
-            sentence_tokens_tensor = pad_sequence(generated_sequences, batch_first=True)
-        else:
-            sentence_tokens_tensor = torch.stack(generated_sequences)
-
-        lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": sentence_tokens_tensor})
+        lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": generated_sequences})
 
         encoded_sentences_batch = self.encode_sentences(lm_hidden_state, lm_mask)
 
@@ -1026,7 +1022,7 @@ class KnowledgeableStoriesModel(Model):
 
         return encoded_sentences_batch
 
-    def generate_sentences(self, previous_tokens, do_sample=True, trace_log_probs=True, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
+    def generate_sentences(self, previous_tokens, do_sample=True, trace_log_probs=False, gen_num_of_sequences=10, gen_num_of_sequences_max_retry=100):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
