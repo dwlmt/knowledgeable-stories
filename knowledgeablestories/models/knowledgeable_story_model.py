@@ -289,6 +289,8 @@ class KnowledgeableStoriesModel(Model):
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
+        reinforce_bool = random.choice([True, False])
+
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
             loss = loss.cuda()
@@ -313,7 +315,7 @@ class KnowledgeableStoriesModel(Model):
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
                     encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    if not self._reinforce:
+                    if not (self._reinforce and reinforce_bool):
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -337,14 +339,16 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_pred = torch.cat(
                         (encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
 
-                loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
-                                                            passages_relative_positions, loss)
+                if not (self._reinforce and reinforce_bool):
 
-                loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment,
-                                                             loss)
+                    loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
+                                                                passages_relative_positions, loss)
 
-                loss = self.storytype_prediction_if_required(encoded_sentences_pred, passage_mask, passages_storytype,
-                                                             loss)
+                    loss = self.sentiment_prediction_if_required(encoded_sentences_pred, passage_mask, passages_sentiment,
+                                                                 loss)
+
+                    loss = self.storytype_prediction_if_required(encoded_sentences_pred, passage_mask, passages_storytype,
+                                                                 loss)
 
                 if self._sentence_detach:
                     encoded_sentences_cat = encoded_sentences_cat.detach()
@@ -356,7 +360,7 @@ class KnowledgeableStoriesModel(Model):
                 output["lm_mask"] = lm_mask
                 output["tokens"] = passages["tokens"]
 
-                if self._reinforce:
+                if self._reinforce and reinforce_bool:
                     lm_output = lm_output.detach().cpu()
                     lm_mask = lm_mask.detach().cpu()
                     encoded_sentences = encoded_sentences.detach().cpu()
