@@ -267,7 +267,7 @@ class KnowledgeableStoriesModel(Model):
                 self._lm_model.resize_token_embeddings(self._embedder_vocab_size)
 
             if self._lm_device is not None:
-                self._lm_model = self._lm_model.to(self._lm_device)
+                self._lm_model = self._lm_model.cpu()#.to(self._lm_device)
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
