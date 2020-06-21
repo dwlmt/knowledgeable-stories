@@ -550,12 +550,9 @@ class KnowledgeableStoriesModel(Model):
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
                 previous_tokens=previous_tokens,  trace_log_probs=True, gen_num_of_sequences=num_to_sample)
-            logger.info(sentences)
 
             baseline_sentences, baseline_sequences_tensor_list, _ = self.generate_sentences(
                 previous_tokens=previous_tokens, trace_log_probs=False, gen_num_of_sequences=1)
-
-            logger.info(baseline_sentences)
 
             with torch.no_grad():
 
@@ -576,7 +573,7 @@ class KnowledgeableStoriesModel(Model):
 
             log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
-            print("Reward", gen_reward, baseline_reward, log_probs_tensor)
+            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor, sentences, baseline_sentences)
 
             rl_loss = -( gen_reward.to(log_probs_tensor.device).to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
