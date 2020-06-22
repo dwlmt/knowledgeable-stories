@@ -214,7 +214,7 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=3))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=2))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
@@ -555,7 +555,7 @@ class KnowledgeableStoriesModel(Model):
             context_index = random.randint(0, num_of_sentences - 2)
             gen_index = context_index + 1
 
-            print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
+            #print(passages["tokens"].size(), passage_mask.size(), encoded_sentences.size())
             previous_tokens = passages["tokens"][0][context_index][passage_mask[0][context_index]].tolist()
 
             sentences, sequences_tensor_list, log_probs_tensor_list = self.generate_sentences(
@@ -574,7 +574,7 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences_generated = encoded_sentences_generated.cpu()
             encoded_sentences_baseline = encoded_sentences_baseline.cpu()
 
-            print(encoded_sentences_generated.size(), encoded_sentences_baseline.size(), encoded_sentences.size(), log_probs_tensor_list)
+            #print(encoded_sentences_generated.size(), encoded_sentences_baseline.size(), encoded_sentences.size(), log_probs_tensor_list)
 
             with torch.no_grad():
                 encoded_sentences_expanded = torch.unsqueeze(encoded_sentences[gen_index], dim=0).expand_as(encoded_sentences_generated)
