@@ -594,8 +594,8 @@ class KnowledgeableStoriesModel(Model):
         return loss
 
     def reward_function(self, generated_sents, original_sents):
-        reward = self._cosine_similarity(generated_sents, original_sents)
-        #reward = torch.sum(generated_sents * original_sents, dim=-1)
+        #reward = self._cosine_similarity(generated_sents, original_sents)
+        reward = torch.sum(generated_sents * original_sents, dim=-1)
         return reward
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
