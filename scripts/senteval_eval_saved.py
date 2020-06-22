@@ -89,8 +89,8 @@ def main():
     if args.tasks is not None:
         transfer_tasks = args.tasks.split(',')
     else:
-        transfer_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',  # 'SNLI',
-                          'SICKEntailment', 'SICKRelatedness', 'STSBenchmark', #'ImageCaptionRetrieval',
+        transfer_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',  'SNLI',
+                          'SICKEntailment', 'SICKRelatedness', 'STSBenchmark', 'ImageCaptionRetrieval',
                           'STS12', 'STS13', 'STS14', 'STS15', 'STS16',
                           'Length', 'WordContent', 'Depth', 'TopConstituents', 'BigramShift', 'Tense',
                           'SubjNumber', 'ObjNumber', 'OddManOut', 'CoordinationInversion']
