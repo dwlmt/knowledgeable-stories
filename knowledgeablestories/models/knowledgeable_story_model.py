@@ -214,7 +214,7 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=5))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
@@ -583,7 +583,7 @@ class KnowledgeableStoriesModel(Model):
 
             log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
-            print("Reward", gen_reward, baseline_reward, log_probs_tensor, sentences, baseline_sentences)
+            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor, sentences, baseline_sentences)
 
             rl_loss = -( gen_reward.to(log_probs_tensor.device).to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
