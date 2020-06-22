@@ -583,7 +583,7 @@ class KnowledgeableStoriesModel(Model):
 
             log_probs_tensor = torch.stack(log_probs_tensor_list).cuda(0)
 
-            logger.info("Reward", gen_reward, baseline_reward, log_probs_tensor, sentences, baseline_sentences)
+            print("Reward", gen_reward, baseline_reward, log_probs_tensor, sentences, baseline_sentences)
 
             rl_loss = -( gen_reward.to(log_probs_tensor.device).to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
