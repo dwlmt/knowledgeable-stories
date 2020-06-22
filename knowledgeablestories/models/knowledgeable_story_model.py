@@ -267,7 +267,7 @@ class KnowledgeableStoriesModel(Model):
                 self._lm_model.resize_token_embeddings(self._embedder_vocab_size)
 
             if self._lm_device is not None:
-                self._lm_model = self._lm_model.cpu()#.to(self._lm_device)
+                self._lm_model = self._lm_model.to(self._lm_device)
 
     def forward(self,
                 passages: Dict[str, torch.Tensor] = None,
@@ -367,6 +367,11 @@ class KnowledgeableStoriesModel(Model):
                     lm_mask = lm_mask.detach().cpu()
                     encoded_sentences = encoded_sentences.detach().cpu()
                     encoded_sentences_cat = encoded_sentences_cat.detach().cpu()
+
+                    del lm_output
+                    del lm_mask
+                    del encoded_sentences
+
                     passages["tokens"] = passages["tokens"].detach().cpu()
 
                     reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
