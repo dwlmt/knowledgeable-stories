@@ -214,8 +214,8 @@ class KnowledgeableStoriesModel(Model):
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
         self._reinforce = parse_bool(os.getenv("REINFORCE", default="False"))
-        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=2))
-        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=1))
+        self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=5))
+        self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
@@ -587,15 +587,15 @@ class KnowledgeableStoriesModel(Model):
 
             rl_loss = -( gen_reward.to(log_probs_tensor.device).to(log_probs_tensor.device).detach() - baseline_reward.to(log_probs_tensor.device).detach()) * log_probs_tensor
 
-            loss += torch.sum(rl_loss)
+            loss += torch.mean(rl_loss)
 
             # print(sentences, sequences_tensor_list, log_probs_tensor_list)
 
         return loss
 
     def reward_function(self, generated_sents, original_sents):
-        #reward = self._cosine_similarity(generated_sents, original_sents)
-        reward = torch.sum(generated_sents * original_sents, dim=-1)
+        reward = self._cosine_similarity(generated_sents, original_sents)
+        #reward = torch.sum(generated_sents * original_sents, dim=-1)
         return reward
 
     def position_prediction_if_required(self, encoded_sentences, passage_mask, passages_relative_positions, loss):
