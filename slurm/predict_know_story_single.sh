@@ -3,13 +3,11 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:1
-#SBATCH --mem=16g  # Memory
-#SBATCH --cpus-per-task=8  # number of cpus to use - there are 32 on each node.
-#SBATCH --mail-type=all          # send email on job start, end and fail
-#SBATCH --mail-user=david.wilmot@ed.ac.uk
+#SBATCH --gres=gpu:3
+#SBATCH --mem=24g  # Memory
+#SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
-# Set EXP_NAME and BATCH_FILE_PATH
+# Set EXP_BASE_NAME and BATCH_FILE_PATH
 
 echo "============"
 echo "Initialize Env ========"
@@ -28,11 +26,12 @@ echo ${dt}
 # Env variables
 export STUDENT_ID=${USER}
 
+# General training parameters
 export CLUSTER_HOME="/home/${STUDENT_ID}"
 export DATASET_SOURCE="${CLUSTER_HOME}/datasets/story_datasets/"
 export EMBEDDER_VOCAB_SIZE=50269
 export NUM_GPUS=1
-export NUM_CPUS=8
+export NUM_CPUS=12
 
 declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
 
