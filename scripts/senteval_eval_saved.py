@@ -48,16 +48,20 @@ def main():
 
     def prepare(params, samples):
         # Build the mapping from sentences to embeddings
-        sent2emb.clear()
 
-        with jsonlines.open(args.embeddings) as reader:
-            for batch in reader:
-                if "sentences" in batch:
-                    sentences = batch["sentences"]
+        if not len(sent2emb) > 0:
 
-                    for sentence in sentences:
-                        print(f"Load sentence embedding for {sentence['text']}")
-                        sent2emb[sentence["text"]] = np.array(sentence[args.embedding_name])
+            with jsonlines.open(args.embeddings) as reader:
+                for batch in reader:
+                    if "sentences" in batch:
+                        sentences = batch["sentences"]
+
+                        for sentence in sentences:
+                            print(f"Load sentence embedding for: {sentence['text']}")
+                            sent2emb[sentence["text"]] = np.array(sentence[args.embedding_name])
+
+        else:
+            print(f"Loaded sentences in dict: {len(sent2emb)}")
 
     def batcher(params, batch):
         embeddings_list = []
