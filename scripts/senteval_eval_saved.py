@@ -83,7 +83,7 @@ def main():
 
     params_senteval = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 5}
     params_senteval['classifier'] = {'nhid': 0, 'optim': 'rmsprop', 'batch_size': 128,
-                                     'tenacity': 3, 'epoch_size': 2}
+                                     'tenacity': 4, 'epoch_size': 3}
 
     se = senteval.engine.SE(params_senteval, batcher, prepare)
     if args.tasks is not None:
