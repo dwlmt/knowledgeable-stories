@@ -62,9 +62,6 @@ class EvalClozePredictor(Predictor):
         self._split_batch_size = int(os.getenv("PREDICTOR_SPLIT_BATCH_SIZE", default=100))
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
-        # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
-        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=101))
-        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
         self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="False"))
@@ -122,6 +119,7 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples = int(os.getenv("NEGATIVE_EXAMPLES_PER_STORY", default=1))
         self._neg_examples_num_mutated = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_SENTENCES", default=1))
+        self._neg_examples_num_block = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_BLOCK", default=1))
 
         self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
 
@@ -195,12 +193,13 @@ class EvalClozePredictor(Predictor):
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
                         for tensor_input_batch in torch.split(tensor_input, 1024):
-                            #print(tensor_input_batch)
+
                             tensor_input_batch = torch.tensor(tensor_input_batch)
                             #print(tensor_input_batch)
+
+                            print("Tensor Input Batch",tensor_input_batch, tensor_input_batch.device)
                             batch_loss = self._model._lm_model(tensor_input_batch, labels=tensor_input_batch)[0]
-                            #print(batch_loss)
-                            #print(len(batch_loss))
+
                             perplexity_sum_total += torch.exp_(batch_loss).item()
 
                             num_of_batches += 1
