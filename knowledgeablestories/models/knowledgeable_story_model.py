@@ -376,6 +376,7 @@ class KnowledgeableStoriesModel(Model):
 
                     reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
                     loss += reinforce_loss
+                    loss = loss.to(self._lm_device)
                     self._metrics["reinforce_loss"](reinforce_loss)
 
                 else:
@@ -542,7 +543,7 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
-        loss = torch.tensor(0.0).to(0)
+        loss = torch.tensor(0.0).to(self._lm_device)
 
         num_to_sample = self._reinforce_num_sequences
         num_positions = self._reinforce_num_positions
