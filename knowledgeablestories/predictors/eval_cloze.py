@@ -197,7 +197,8 @@ class EvalClozePredictor(Predictor):
                             tensor_input_batch = torch.tensor(tensor_input_batch)
                             #print(tensor_input_batch)
 
-                            print("Tensor Input Batch",tensor_input_batch, tensor_input_batch.device)
+                            #print("Tensor Input Batch",tensor_input_batch, tensor_input_batch.device)
+                            self._model._lm_model = self._model._lm_model.to(tensor_input_batch.device)
                             batch_loss = self._model._lm_model(tensor_input_batch, labels=tensor_input_batch)[0]
 
                             perplexity_sum_total += torch.exp_(batch_loss).item()
