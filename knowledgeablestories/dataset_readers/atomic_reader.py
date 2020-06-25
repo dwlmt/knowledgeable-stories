@@ -50,9 +50,9 @@ class AtomicDatasetReader(DatasetReader):
             conclusion_tokens = self._tokenizer.tokenize(t + "<|endofsentence|><|endoftext|>")
             conclusions.append(TextField(conclusion_tokens, token_indexers=self._token_indexers))
 
-            premises = self._tokenizer.tokenize(text_dict["event"] + "<|endofsentence|><|endoftext|>")
+            premises_tokens = self._tokenizer.tokenize(text_dict["event"] + "<|endofsentence|><|endoftext|>")
             premises.append(
-                TextField(tokens=premises,
+                TextField(tokens=premises_tokens,
                           token_indexers=self._token_indexers))
 
             relation = LabelField(label = text_dict["relation"], label_namespace = "atomic_labels")
