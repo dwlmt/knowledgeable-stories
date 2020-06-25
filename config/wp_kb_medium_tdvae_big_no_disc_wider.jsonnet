@@ -137,7 +137,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
-        "atomic": {}
+        "atomic": {},
         "snli": {}
     },
     "loss_weights" : {
