@@ -9,7 +9,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags, atomic_categories
 
 
 @DatasetReader.register("atomic")
@@ -36,6 +36,8 @@ class AtomicDatasetReader(DatasetReader):
         self._token_indexers = token_indexers or {
             "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
+
+        self._categories = atomic_categories
 
 
     def text_to_instance(self, text_dict) -> Instance:

@@ -7,7 +7,7 @@ token_tags += ["<|endofsentence|>"]
 token_tags += ["zBlank"]
 
 # These are all the atomic dataset values.
-'''
+
 atomic_categories = []
 atomic_categories += ["oEffect"]
 atomic_categories += ["oReact"]
@@ -19,10 +19,10 @@ atomic_categories += ["xNeed"]
 atomic_categories += ["xReact"]
 atomic_categories += ["xWant"]
 
-token_tags.extend(atomic_categories)
+#token_tags.extend(atomic_categories)
 
 #Use the Atomic labelling format but just add one generic tag.
 swag_categories = []
 swag_categories += ["oxNext"]
-'''
+
 #token_tags.extend(swag_categories)
