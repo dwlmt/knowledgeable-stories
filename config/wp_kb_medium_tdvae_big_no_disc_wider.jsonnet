@@ -38,11 +38,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "lazy": true,
             },
             "snli": {
-                "type": "snli",
+                "type": "snli_story",
                 "lazy": true,
             },
             "multinli": {
-                "type": "snli",
+                "type": "snli_story",
                 "lazy": true,
             },
 

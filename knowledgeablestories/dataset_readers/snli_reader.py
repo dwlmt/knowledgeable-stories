@@ -13,13 +13,12 @@ from jsonlines import jsonlines
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
-@DatasetReader.register("snli")
+@DatasetReader.register("snli_story")
 class SNLIDatasetReader(DatasetReader):
     """
     DatasetReader for SNLI.
 
     """
-
     def __init__(self,
                  lazy: bool = False,
                  dataset_name: str = "snli",
