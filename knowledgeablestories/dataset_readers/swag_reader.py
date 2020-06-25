@@ -8,7 +8,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
 @DatasetReader.register("swag_know_lm")
