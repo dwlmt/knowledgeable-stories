@@ -47,8 +47,8 @@ class AtomicDatasetReader(DatasetReader):
         premises = []
         relation_labels = []
         for t in text_dict["inference"]:
-            conclusion_tokens = self._tokenizer.tokenize(t)
-            conclusions.append(TextField(conclusion_tokens + "<|endofsentence|><|endoftext|>", token_indexers=self._token_indexers))
+            conclusion_tokens = self._tokenizer.tokenize(t + "<|endofsentence|><|endoftext|>")
+            conclusions.append(TextField(conclusion_tokens, token_indexers=self._token_indexers))
 
             premises = self._tokenizer.tokenize(text_dict["event"] + "<|endofsentence|><|endoftext|>")
             premises.append(
