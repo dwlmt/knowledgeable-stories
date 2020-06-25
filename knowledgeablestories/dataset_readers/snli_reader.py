@@ -38,7 +38,6 @@ class SNLIDatasetReader(DatasetReader):
             "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
-        self._categories = categories or atomic_categories
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
