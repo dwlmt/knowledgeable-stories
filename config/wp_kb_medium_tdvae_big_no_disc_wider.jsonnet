@@ -115,7 +115,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
         "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "snli": dataset_root + "/snli_1.0/snli_1.0_train.jsonl",
-        "multisnli": dataset_root + "/snli_1.0/multinli_1.0_train.jsonl",
+        "multinli": dataset_root + "/snli_1.0/multinli_1.0_train.jsonl",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
