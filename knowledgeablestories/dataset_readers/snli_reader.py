@@ -10,7 +10,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 from jsonlines import jsonlines
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
 @DatasetReader.register("snli")
