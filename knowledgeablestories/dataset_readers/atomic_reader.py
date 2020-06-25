@@ -80,21 +80,21 @@ class AtomicDatasetReader(DatasetReader):
                     cat_data_list = [n.strip() for n in cat_data_list]
 
                     if len(cat_data_list) > 0:
-                        relation_dict = {}
+                        example_dict = {}
 
                         targets = [x.replace('_', 'zBlank') for x in cat_data_list]
 
-                        relation_dict["dataset"] = "atomic_lm"
-                        relation_dict["event"] = row["event"].replace('___', 'zBlank')
-                        relation_dict["relation"] = cat
-                        relation_dict["inference"] = targets
-                        relation_dict["example_row_num"] = example_row_num
-                        relation_dict["orig_row_num"] = orig_row_num
-                        relation_dict["split"] = row["split"]
+                        example_dict["dataset"] = "atomic"
+                        example_dict["event"] = row["event"].replace('___', 'zBlank')
+                        example_dict["relation"] = cat
+                        example_dict["inference"] = targets
+                        example_dict["example_row_num"] = example_row_num
+                        example_dict["orig_row_num"] = orig_row_num
+                        example_dict["split"] = row["split"]
 
                         example_row_num += 1
 
-                        yield self.text_to_instance(relation_dict)
+                        yield self.text_to_instance(example_dict)
 
                     orig_row_num += 1
 

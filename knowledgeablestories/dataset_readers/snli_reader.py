@@ -53,21 +53,23 @@ class SNLIDatasetReader(DatasetReader):
 
         with jsonlines.open(file_path) as reader:
             example_row_num = 0
-            for obj in reader:
-                relation_dict = {}
+            for example in reader:
+                example_dict = {}
 
-                relation_dict["sentence1"] = obj["sentence1"]
-                relation_dict["sentence2"] = obj["sentence2"]
+                example_dict["gold_label"] = example["gold_label"]
 
-                relation_dict["gold_label"] = obj["gold_label"]
+                if  example_dict["gold_label"] == "-":
+                    # Skip, no agreement.
+                    continue
 
-                relation_dict["dataset"] = "snli"
-
-                relation_dict["example_row_num"] = example_row_num
+                example_dict["dataset"] = "snli"
+                example_dict["example_row_num"] = example_row_num
+                example_dict["sentence1"] = example["sentence1"]
+                example_dict["sentence2"] = example["sentence2"]
 
                 example_row_num += 1
 
-                yield self.text_to_instance(relation_dict)
+                yield self.text_to_instance(example_dict)
 
                 example_row_num += 1
 
