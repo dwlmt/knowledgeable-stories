@@ -3,13 +3,13 @@ import csv
 from typing import Dict, Iterator
 
 from allennlp.data import DatasetReader, TokenIndexer, Instance, Tokenizer
-from allennlp.data.fields import TextField, MetadataField, ListField
+from allennlp.data.fields import TextField, MetadataField, ListField, LabelField
 from allennlp.data.token_indexers import PretrainedTransformerIndexer
 # Categories for relations in the commonsense reasoning dataset.
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import atomic_categories, token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 
 @DatasetReader.register("atomic")
@@ -21,7 +21,7 @@ class AtomicDatasetReader(DatasetReader):
 
     def __init__(self,
                  lazy: bool = False,
-                 dataset_name: str = "atomic_lm",
+                 dataset_name: str = "atomic",
                  tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
                  ) -> None:
         super().__init__(lazy=lazy)
@@ -37,28 +37,29 @@ class AtomicDatasetReader(DatasetReader):
             "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
-        self._categories = categories or atomic_categories
 
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        fields["premises"] = TextField(self._tokenizer.tokenize(text_dict["event"] + " " + text_dict["relation"]),
-                                       token_indexers=self._token_indexers)
-
         conclusions = []
-        arguments = []
+        premises = []
+        relation_labels = []
         for t in text_dict["inference"]:
             conclusion_tokens = self._tokenizer.tokenize(t)
-            conclusions.append(TextField(conclusion_tokens, token_indexers=self._token_indexers))
+            conclusions.append(TextField(conclusion_tokens + "<|endofsentence|><|endoftext|>", token_indexers=self._token_indexers))
 
-            argument_tokens = self._tokenizer.tokenize("" + text_dict["event"] + " " + text_dict[
-                "relation"] + " " + t + "<|endofsentence|><|endoftext|>")
-            arguments.append(
-                TextField(tokens=argument_tokens,
+            premises = self._tokenizer.tokenize(text_dict["event"] + "<|endofsentence|><|endoftext|>")
+            premises.append(
+                TextField(tokens=premises,
                           token_indexers=self._token_indexers))
 
+            relation = LabelField(label = text_dict["relation"], label_namespace = "atomic_labels")
+
+            relation_labels.append(relation)
+
         fields["conclusions"] = ListField(conclusions)
-        fields["arguments"] = ListField(arguments)
+        fields["arguments"] = ListField(premises)
+        fields["relation_labels"] = ListField(relation_labels)
 
         fields["metadata"] = MetadataField(text_dict)
 

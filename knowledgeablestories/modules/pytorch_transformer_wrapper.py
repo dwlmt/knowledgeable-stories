@@ -6,7 +6,6 @@ from allennlp.nn.util import add_positional_features
 from overrides import overrides
 from torch import nn
 
-
 @Seq2SeqEncoder.register("pytorch_transformer")
 class PytorchTransformer(Seq2SeqEncoder):
     """
