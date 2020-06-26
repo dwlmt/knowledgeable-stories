@@ -42,9 +42,11 @@ class SNLIDatasetReader(DatasetReader):
         fields = {}
 
         fields["relation_labels"] = LabelField(snli_dict[text_dict["gold_label"]], skip_indexing=True)
-        fields["premises"] = TextField(tokens=text_dict["sentence1"],
+        premises_tokens = self._tokenizer.tokenize(text_dict["sentence1"] + "<|endofsentence|><|endoftext|>")
+        fields["premises"] = TextField(tokens=premises_tokens,
                                        token_indexers=self._token_indexers)
-        fields["conclusions"] = TextField(tokens=text_dict["sentencew"],
+        conclusions_tokens = self._tokenizer.tokenize(text_dict["sentence1"] + "<|endofsentence|><|endoftext|>")
+        fields["conclusions"] = TextField(tokens=conclusions_tokens,
         token_indexers = self._token_indexers)
 
         print(fields, text_dict)
