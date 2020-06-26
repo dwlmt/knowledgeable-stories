@@ -33,6 +33,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "batch_size" : 100,
                 "slide" : 1.0,
             },
+            "atomic": {
+                "type": "atomic_story",
+                "lazy": true,
+            },
             "snli": {
                 "type": "snli_story",
                 "lazy": true,
@@ -46,10 +50,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","snli","multinli"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": TRAINING_ITERATION_SIZE,
-   "sampling_rates": [2.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -60,6 +64,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "atomic": {
+            "type": "basic",
+            "batch_size": 1,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
@@ -75,10 +84,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","snli","multinli"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-   "sampling_rates": [2.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -89,6 +98,11 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "atomic": {
+            "type": "basic",
+            "batch_size": 1,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
@@ -105,14 +119,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "train_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
-        #"atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "snli": dataset_root + "/snli_1.0/snli_1.0_train.jsonl",
         "multinli": dataset_root + "/multinli_1.0/multinli_1.0_train.jsonl",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
-        #"atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "snli": dataset_root + "/snli_1.0/snli_1.0_dev.jsonl",
         "multinli": dataset_root + "/snli_1.0/multinli_1.0_dev.jsonl",
   },
