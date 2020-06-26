@@ -10,13 +10,13 @@ from allennlp.data import Vocabulary
 from allennlp.data.fields import TextField
 from allennlp.data.instance import Instance
 
-from knowledgeablestories.dataset_readers.atomic_reader import AtomicDatasetReader
+from knowledgeablestories.dataset_readers.atomic_reader import AtomicStoryDatasetReader
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
 
 class TestAtomicDatasetReader(AllenNlpTestCase):
     def test_read(self):
-        reader = AtomicDatasetReader()
+        reader = AtomicStoryDatasetReader()
         instances = reader.read(
             str(AllenNlpTestCase.MODULE_ROOT) + "/knowledgeablestories/tests/fixtures/data/atomic_small.csv"
         )
