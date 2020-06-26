@@ -31,7 +31,19 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "type": "writing_prompts_hierarchy",
                 "lazy": true,
             "batch_size" : 100,
-            }
+            },
+            "atomic": {
+                "type": "atomic_story",
+                "lazy": true,
+            },
+            "snli": {
+                "type": "snli_story",
+                "lazy": true,
+            },
+            "multinli": {
+                "type": "snli_story",
+                "lazy": true,
+            },
         },
   },
   "iterator": {
