@@ -68,14 +68,17 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        "atomic": {
             "type": "basic",
             "batch_size": 5,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
             "batch_size": 25,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
             "batch_size": 25,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
@@ -99,14 +102,17 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        "atomic": {
             "type": "basic",
             "batch_size": 5,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
             "batch_size": 25,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
             "batch_size": 25,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
