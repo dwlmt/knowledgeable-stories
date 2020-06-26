@@ -612,7 +612,7 @@ class KnowledgeableStoriesModel(Model):
                 previous_tokens=previous_tokens, trace_log_probs=False, gen_num_of_sequences=1)
 
             with torch.no_grad():
-                sequences_tensor = pad_sequence(sequences_tensor_list, batch_first=True).cuda(2)
+                sequences_tensor = pad_sequence(sequences_tensor_list, batch_first=True)
                 encoded_sentences_generated = self._encode_representations(sequences_tensor)
                 encoded_sentences_baseline = self._encode_representations(torch.stack(baseline_sequences_tensor_list))
 
@@ -1065,7 +1065,8 @@ class KnowledgeableStoriesModel(Model):
 
     def _encode_representations(self, generated_sequences, single=False):
 
-        lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": generated_sequences})
+        with torch.set_grad_enabled(self._lm_gradients_for_hierarchy and self.training):
+            lm_hidden_state, lm_mask = self.lm_mask_and_hidden_states({"tokens": generated_sequences})
 
         encoded_sentences_batch = self.encode_sentences(lm_hidden_state, lm_mask)
 
