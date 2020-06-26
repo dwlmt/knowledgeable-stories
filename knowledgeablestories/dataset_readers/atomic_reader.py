@@ -12,7 +12,7 @@ from allennlp.nn.util import logger
 from knowledgeablestories.dataset_readers.special_tokens import token_tags, atomic_categories, atomic_dict
 
 
-@DatasetReader.register("atomic")
+@DatasetReader.register("atomic_story")
 class AtomicDatasetReader(DatasetReader):
     """
     DatasetReader for Atomic reader dataset from https://github.com/atcbosselut/comet-commonsense

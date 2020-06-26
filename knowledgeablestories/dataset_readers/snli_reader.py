@@ -75,6 +75,4 @@ def _read(self, file_path: str) -> Iterator[Instance]:
 
             yield self.text_to_instance(example_dict)
 
-            example_row_num += 1
-
         logger.info(f'SNLI dataset {file_path} has  {example_row_num} examples.')

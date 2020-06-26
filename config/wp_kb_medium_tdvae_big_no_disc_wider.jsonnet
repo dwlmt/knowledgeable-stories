@@ -34,7 +34,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
                 "slide" : 1.0,
             },
             "atomic": {
-                "type": "atomic",
+                "type": "atomic_story",
                 "lazy": true,
             },
             "snli": {
