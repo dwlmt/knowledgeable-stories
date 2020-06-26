@@ -154,6 +154,20 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "atomic_loss": 1.0,
         "snli_loss": 1.0,
     },
+    "snli_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 3,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "atomic_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 9,
+        "activations": "linear",
+        "dropout": 0.0
+    },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
       "pooler": {
