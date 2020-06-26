@@ -34,13 +34,13 @@ export NUM_GPUS=1
 export NUM_CPUS=12
 
 export MAX_INSTANCES_IN_MEMORY=64
-export EPOCHS=4
+export EPOCHS=30
 export LR_RATE=0.01
 export MOMENTUM=0.9
-export PATIENCE=1
-export TRAINING_ITERATION_SIZE=50000
-export VALIDATION_ITERATION_SIZE=5000
-export LR_PATIENCE=0
+export PATIENCE=2
+export TRAINING_ITERATION_SIZE=10000
+export VALIDATION_ITERATION_SIZE=2000
+export LR_PATIENCE=1
 export LR_REDUCE_RATE=0.25
 
 declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
