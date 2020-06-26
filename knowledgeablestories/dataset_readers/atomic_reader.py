@@ -13,7 +13,7 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags, atom
 
 
 @DatasetReader.register("atomic_story")
-class AtomicDatasetReader(DatasetReader):
+class AtomicStoryDatasetReader(DatasetReader):
     """
     DatasetReader for Atomic reader dataset from https://github.com/atcbosselut/comet-commonsense
 
