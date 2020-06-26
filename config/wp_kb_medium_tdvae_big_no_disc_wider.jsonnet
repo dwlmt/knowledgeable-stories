@@ -67,17 +67,17 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        },
        "atomic": {
             "type": "basic",
-            "batch_size": 5,
+            "batch_size": 10,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
-            "batch_size": 10,
+            "batch_size": 20,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
-            "batch_size": 10,
+            "batch_size": 20,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
@@ -101,17 +101,17 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        },
        "atomic": {
             "type": "basic",
-            "batch_size": 5,
+            "batch_size": 10,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
-            "batch_size": 10,
+            "batch_size": 20,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
-            "batch_size": 10,
+            "batch_size": 20,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
@@ -231,10 +231,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "num_serialized_models_to_keep": 2,
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
-      "type": "adam",
-      #"lr": LR_RATE,
-      #"momentum": MOMENTUM,
-      #"nesterov": true
+      "type": "sgd",
+      "lr": LR_RATE,
+      "momentum": MOMENTUM,
+      "nesterov": true
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
