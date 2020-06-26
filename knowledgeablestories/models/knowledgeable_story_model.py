@@ -103,7 +103,7 @@ class KnowledgeableStoriesModel(Model):
                                  "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": None}
 
         if dataset_config is None:
-            dataset_config = {"atomic_lm": {"generate_text": 10, "bleu": True}, "swag_know_lm": {},
+            dataset_config = {"atomic": {}, "swag_know_lm": {},
                               "roc_lm": {}, "roc_hierarchy": {},
                               "writing_prompts_lm": {}, "writing_prompts_hierarchy": {},
                               "cmu_book_lm": {}, "cmu_book_hierarchy": {},
@@ -327,7 +327,7 @@ class KnowledgeableStoriesModel(Model):
                 (encoded_premises, encoded_conclusions, abs(encoded_premises - encoded_conclusions)), dim=-1)
 
             if "atomic" in dataset_name and self._atomic_dense is not None:
-                pred = self._position_dense(encoded_sentences_cat)
+                pred = self._atomic_dense(encoded_sentences_cat)
 
             elif "snli" in dataset_name and self._snli_dense is not None:
                 pred = self._snli_dense(encoded_sentences_cat)
