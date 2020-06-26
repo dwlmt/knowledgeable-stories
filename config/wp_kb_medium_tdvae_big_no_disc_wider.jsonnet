@@ -136,7 +136,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_device": 1,
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
-    "lm_gradients_for_hierarchy": true,
+    "lm_gradients_for_hierarchy": false,
     "sent_offsets": [-3, -2, -1, 1, 2, 3],
     "sent_scales": [2.5, 5.0, 10.0, 10.0, 5.0, 2.5],
     "label_smoothing": 0.0,
@@ -231,10 +231,10 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "num_serialized_models_to_keep": 2,
     "cuda_device": if NUM_GPUS > 1 then std.range(0, NUM_GPUS - 1) else 0,
     "optimizer": {
-      "type": "sgd",
-      "lr": LR_RATE,
-      "momentum": MOMENTUM,
-      "nesterov": true
+      "type": "adam",
+      #"lr": LR_RATE,
+      #"momentum": MOMENTUM,
+      #"nesterov": true
     },
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
