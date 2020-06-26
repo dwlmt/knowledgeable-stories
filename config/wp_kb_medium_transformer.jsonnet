@@ -20,31 +20,31 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-             "writing_prompts_lm": {
-                "type": "writing_prompts_lm",
-                "lazy": true,
-                "batch_size" : 36,
-            "max_sentence_grouping": 36,
-            "max_token_len": 768,
-            },
-            "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy",
-                "lazy": true,
-            "batch_size" : 100,
-            },
-            "atomic": {
-                "type": "atomic_story",
-                "lazy": true,
-            },
-            "snli": {
-                "type": "snli_story",
-                "lazy": true,
-            },
-            "multinli": {
-                "type": "snli_story",
-                "lazy": true,
-            },
+         "writing_prompts_lm": {
+            "type": "writing_prompts_lm",
+            "lazy": true,
+            "batch_size" : 36,
+        "max_sentence_grouping": 36,
+        "max_token_len": 768,
         },
+        "writing_prompts_hierarchy": {
+            "type": "writing_prompts_hierarchy",
+            "lazy": true,
+        "batch_size" : 100,
+        },
+        "atomic": {
+            "type": "atomic_story",
+            "lazy": true,
+        },
+        "snli": {
+            "type": "snli_story",
+            "lazy": true,
+        },
+        "multinli": {
+            "type": "snli_story",
+            "lazy": true,
+        },
+    },
   },
   "iterator": {
    "type": "multitask_iterator",
@@ -63,18 +63,21 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
-        "atomic": {
-                "type": "atomic_story",
-                "lazy": true,
-            },
-        "snli": {
-            "type": "snli_story",
-            "lazy": true,
-        },
-        "multinli": {
-            "type": "snli_story",
-            "lazy": true,
-        },
+       "atomic": {
+            "type": "basic",
+            "batch_size": 15,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "snli": {
+            "type": "basic",
+            "batch_size": 30,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "multinli": {
+            "type": "basic",
+            "batch_size": 30,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
     },
   },
   "validation_iterator": {
@@ -94,19 +97,19 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
-        "atomic": {
+       "atomic": {
             "type": "basic",
-            "batch_size": 10,
+            "batch_size": 15,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
-            "batch_size": 20,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
-            "batch_size": 20,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
