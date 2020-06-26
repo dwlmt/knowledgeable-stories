@@ -18,7 +18,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
 {
   "dataset_reader": {
     "type": "multitask_reader",
-    "datasets_for_vocab_creation": ["writing_prompts_lm","writing_prompts_hierarchy","atomic","snli", "multinli"],
+    "datasets_for_vocab_creation": [],
     "dataset_readers": {
              "writing_prompts_lm": {
                 "type": "writing_prompts_lm",

@@ -10,7 +10,7 @@ from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 from jsonlines import jsonlines
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.dataset_readers.special_tokens import token_tags, snli_dict
 
 
 @DatasetReader.register("snli_story")
@@ -41,7 +41,7 @@ class SNLIDatasetReader(DatasetReader):
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
-        fields["relation_labels"] = LabelField(label=text_dict["gold_label"], label_namespace="snli_labels")
+        fields["relation_labels"] = LabelField(snli_dict[text_dict["gold_label"]], skip_indexing=True)
         fields["premises"] = text_dict["sentence1"]
         fields["conclusions"] = text_dict["sentence2"]
 

@@ -9,7 +9,7 @@ from allennlp.data.token_indexers import PretrainedTransformerIndexer
 from allennlp.data.tokenizers import PretrainedTransformerTokenizer
 from allennlp.nn.util import logger
 
-from knowledgeablestories.dataset_readers.special_tokens import token_tags, atomic_categories
+from knowledgeablestories.dataset_readers.special_tokens import token_tags, atomic_categories, atomic_dict
 
 
 @DatasetReader.register("atomic")
@@ -55,7 +55,7 @@ class AtomicDatasetReader(DatasetReader):
                 TextField(tokens=premises_tokens,
                           token_indexers=self._token_indexers))
 
-            relation = LabelField(label = text_dict["relation"], label_namespace = "atomic_labels")
+            relation = LabelField(label = atomic_dict[text_dict["relation"]], skip_indexing=True)
 
             relation_labels.append(relation)
 
