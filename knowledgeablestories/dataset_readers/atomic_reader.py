@@ -22,7 +22,7 @@ class AtomicDatasetReader(DatasetReader):
     def __init__(self,
                  lazy: bool = False,
                  dataset_name: str = "atomic",
-                 tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None, categories=None,
+                 tokenizer: Tokenizer = None, token_indexers: Dict[str, TokenIndexer] = None,
                  ) -> None:
         super().__init__(lazy=lazy)
 
@@ -64,6 +64,8 @@ class AtomicDatasetReader(DatasetReader):
         fields["relation_labels"] = ListField(relation_labels)
 
         fields["metadata"] = MetadataField(text_dict)
+
+        print(fields)
 
         return Instance(fields)
 

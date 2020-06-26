@@ -47,6 +47,8 @@ class SNLIDatasetReader(DatasetReader):
 
         fields["metadata"] = MetadataField(text_dict)
 
+        print(fields)
+
         return Instance(fields)
 
     def _read(self, file_path: str) -> Iterator[Instance]:
