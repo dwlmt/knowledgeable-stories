@@ -7,10 +7,7 @@ import pytest
 from allennlp.common.util import ensure_list
 from allennlp.common.testing import AllenNlpTestCase, test_case
 from allennlp.data import Vocabulary
-from allennlp.data.fields import TextField
-from allennlp.data.instance import Instance
 
-from knowledgeablestories.dataset_readers.atomic_reader import AtomicDatasetReader
 from knowledgeablestories.dataset_readers.swag_reader import SwagKnowDatasetReader
 
 AllenNlpTestCase.MODULE_ROOT = (pathlib.Path(__file__).parent / ".." / ".." / "..").resolve()
