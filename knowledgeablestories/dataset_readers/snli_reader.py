@@ -49,7 +49,7 @@ class SNLIDatasetReader(DatasetReader):
         fields["conclusions"] = TextField(tokens=conclusions_tokens,
         token_indexers = self._token_indexers)
 
-        print(fields, text_dict)
+        #print(fields, text_dict)
 
         fields["metadata"] = MetadataField(text_dict)
 

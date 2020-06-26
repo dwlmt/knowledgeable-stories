@@ -63,7 +63,7 @@ class AtomicStoryDatasetReader(DatasetReader):
         fields["premises"] = ListField(premises)
         fields["relation_labels"] = ListField(relation_labels)
 
-        print(fields, text_dict)
+        #print(fields, text_dict)
 
         fields["metadata"] = MetadataField(text_dict)
 
