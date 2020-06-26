@@ -308,17 +308,18 @@ class KnowledgeableStoriesModel(Model):
 
             print("Sizes", premises["tokens"].size(), relation_labels.size(), conclusions["tokens"].size(), dataset_name)
 
-            '''
-            if len(premises["tokens"].size()) == 4:
+            if len(premises["tokens"].size()) == 3:
                 premises_tensor = premises["tokens"]
                 premises["tokens"] = premises_tensor.view(premises_tensor.size(0) * premises_tensor.size(1),
-                                                          premises_tensor.size(2), premises_tensor.size(3))
+                                                          premises_tensor.size(2))
 
-            if len(conclusions["tokens"].size()) == 4:
+            if len(conclusions["tokens"].size()) == 3:
                 conclusions_tensor = conclusions["tokens"]
                 conclusions["tokens"] = conclusions_tensor.view(conclusions_tensor.size(0) * conclusions_tensor.size(1),
-                                                          conclusions_tensor.size(2), conclusions_tensor.size(3))
-            '''
+                                                          conclusions_tensor.size(2))
+
+            if len(relation_labels.size()) == 2:
+                relation_labels = relation_labels.view(relation_labels.size(0) * relation_labels.size(1))
 
             encoded_premises = self._encode_representations(premises["tokens"], single=True)
             encoded_conclusions = self._encode_representations(conclusions["tokens"], single=True)
