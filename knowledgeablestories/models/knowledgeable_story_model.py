@@ -120,7 +120,7 @@ class KnowledgeableStoriesModel(Model):
         self._passage_dense = passage_dense
         self._storytype_dense = storytype_dense
         self._atomic_dense = atomic_dense
-        self._snli_dense: snli_dense
+        self._snli_dense = snli_dense
         self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
