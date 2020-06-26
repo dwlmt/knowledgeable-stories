@@ -49,7 +49,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": TRAINING_ITERATION_SIZE,
-   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [2.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -78,7 +78,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [2.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
