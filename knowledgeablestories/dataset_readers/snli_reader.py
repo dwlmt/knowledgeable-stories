@@ -19,6 +19,7 @@ class SNLIDatasetReader(DatasetReader):
     DatasetReader for SNLI.
 
     """
+
     def __init__(self,
                  lazy: bool = False,
                  dataset_name: str = "snli",
@@ -37,42 +38,43 @@ class SNLIDatasetReader(DatasetReader):
             "tokens": PretrainedTransformerIndexer(model_name="gpt2", do_lowercase=False)}
         self._token_indexers["tokens"]._tokenizer = self._tokenizer._tokenizer
 
-
     def text_to_instance(self, text_dict) -> Instance:
         fields = {}
 
         fields["relation_labels"] = LabelField(snli_dict[text_dict["gold_label"]], skip_indexing=True)
-        fields["premises"] = text_dict["sentence1"]
-        fields["conclusions"] = text_dict["sentence2"]
+        fields["premises"] = TextField(tokens=text_dict["sentence1"],
+                                       token_indexers=self._token_indexers)
+        fields["conclusions"] = TextField(tokens=text_dict["sentencew"],
+        token_indexers = self._token_indexers)
+
+        print(fields, text_dict)
 
         fields["metadata"] = MetadataField(text_dict)
 
-        print(fields)
-
         return Instance(fields)
 
-    def _read(self, file_path: str) -> Iterator[Instance]:
 
-        with jsonlines.open(file_path) as reader:
-            example_row_num = 0
-            for example in reader:
-                example_dict = {}
+def _read(self, file_path: str) -> Iterator[Instance]:
+    with jsonlines.open(file_path) as reader:
+        example_row_num = 0
+        for example in reader:
+            example_dict = {}
 
-                example_dict["gold_label"] = example["gold_label"]
+            example_dict["gold_label"] = example["gold_label"]
 
-                if  example_dict["gold_label"] == "-":
-                    # Skip, no agreement.
-                    continue
+            if example_dict["gold_label"] == "-":
+                # Skip, no agreement.
+                continue
 
-                example_dict["dataset"] = "snli"
-                example_dict["example_row_num"] = example_row_num
-                example_dict["sentence1"] = example["sentence1"]
-                example_dict["sentence2"] = example["sentence2"]
+            example_dict["dataset"] = "snli"
+            example_dict["example_row_num"] = example_row_num
+            example_dict["sentence1"] = example["sentence1"]
+            example_dict["sentence2"] = example["sentence2"]
 
-                example_row_num += 1
+            example_row_num += 1
 
-                yield self.text_to_instance(example_dict)
+            yield self.text_to_instance(example_dict)
 
-                example_row_num += 1
+            example_row_num += 1
 
-            logger.info(f'SNLI dataset {file_path} has  {example_row_num} examples.')
+        logger.info(f'SNLI dataset {file_path} has  {example_row_num} examples.')

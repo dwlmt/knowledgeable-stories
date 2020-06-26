@@ -63,9 +63,9 @@ class AtomicDatasetReader(DatasetReader):
         fields["arguments"] = ListField(premises)
         fields["relation_labels"] = ListField(relation_labels)
 
-        fields["metadata"] = MetadataField(text_dict)
+        print(fields, text_dict)
 
-        print(fields)
+        fields["metadata"] = MetadataField(text_dict)
 
         return Instance(fields)
 
