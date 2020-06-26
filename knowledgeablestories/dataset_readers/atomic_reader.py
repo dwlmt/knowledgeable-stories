@@ -60,7 +60,7 @@ class AtomicStoryDatasetReader(DatasetReader):
             relation_labels.append(relation)
 
         fields["conclusions"] = ListField(conclusions)
-        fields["arguments"] = ListField(premises)
+        fields["premises"] = ListField(premises)
         fields["relation_labels"] = ListField(relation_labels)
 
         print(fields, text_dict)
