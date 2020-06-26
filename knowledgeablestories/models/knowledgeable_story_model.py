@@ -306,7 +306,7 @@ class KnowledgeableStoriesModel(Model):
 
         if premises is not None and relation_labels is not None and conclusions is not None:
 
-            print("Sizes", premises.size(), relation_labels.size(), conclusions.size(), dataset_name)
+            print("Sizes", premises["tokens"].size(), relation_labels.size(), conclusions["tokens"].size(), dataset_name)
 
             '''
             if len(premises["tokens"].size()) == 4:
