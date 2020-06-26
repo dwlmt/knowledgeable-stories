@@ -53,7 +53,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": TRAINING_ITERATION_SIZE,
-   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [1.0/3.0, 1.0/3.0, 1.0/9.0, 1.0/9.0, 1.0/9.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -87,7 +87,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-   "sampling_rates": [1.0/4.0, 1.0/4.0, 1.0/4.0, 1.0/8.0, 1.0/8.0],
+   "sampling_rates": [1.0/3.0, 1.0/3.0, 1.0/9.0, 1.0/9.0, 1.0/9.0],,
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -136,6 +136,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_device": 1,
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
+    "lm_gradients_for_hierarchy": true,
     "sent_offsets": [-3, -2, -1, 1, 2, 3],
     "sent_scales": [2.5, 5.0, 10.0, 10.0, 5.0, 2.5],
     "label_smoothing": 0.0,
