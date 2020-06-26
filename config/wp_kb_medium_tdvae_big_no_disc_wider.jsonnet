@@ -18,7 +18,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
 {
   "dataset_reader": {
     "type": "multitask_reader",
-    "datasets_for_vocab_creation": [],
+    "datasets_for_vocab_creation": ["writing_prompts_lm","writing_prompts_hierarchy","atomic","snli", "multinli"],
     "dataset_readers": {
              "writing_prompts_lm": {
                 "type": "writing_prompts_lm",
@@ -190,7 +190,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "atomic_dense": {
         "input_dim": 3072,
         "num_layers": 1,
-        "hidden_dims": 10,
+        "hidden_dims": 9,
         "activations": "linear",
         "dropout": 0.0
     },
