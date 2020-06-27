@@ -235,17 +235,17 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
        },
        "atomic": {
             "type": "basic",
-            "batch_size": 35,
+            "batch_size": 30,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
-            "batch_size": 45,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
-            "batch_size": 45,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
@@ -344,17 +344,17 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
        },
          "atomic": {
             "type": "basic",
-            "batch_size": 35,
+            "batch_size": 30,
              "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "snli": {
             "type": "basic",
-            "batch_size": 45,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
        "multinli": {
             "type": "basic",
-            "batch_size": 45,
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
