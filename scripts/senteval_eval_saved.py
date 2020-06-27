@@ -16,6 +16,7 @@ PATH_TO_DATA = os.path.join(PATH_TO_SENTEVAL, 'data')
 
 sys.path.insert(0, PATH_TO_SENTEVAL)
 import senteval
+import torch
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
                         help='Path to JSON vectors file.')
     parser.add_argument('--output-file',
                         help='Write output to file.')
-    parser.add_argument('--dim-size', default=2048, type=int,
+    parser.add_argument('--dim-size', default=4096, type=int,
                         help='size of the default dimension size.')
     parser.add_argument('--embedding-name', default="sentences_encoded", type=str,
                         help='Name for the embedding attribute.')
@@ -57,8 +58,13 @@ def main():
                         sentences = batch["sentences"]
 
                         for sentence in sentences:
-                            print(f"Load sentence embedding for: {sentence['text']}")
-                            sent2emb[sentence["text"]] = np.array(sentence[args.embedding_name])
+                            with torch.no_grad():
+                                print(f"Load sentence embedding for: {sentence['text']}")
+                                sent_list = sentence[args.embedding_name]
+                                sent_one = torch.tensor(sent_list[: 1024])
+                                sent_two = torch.tensor(sent_list[1024 :])
+                                sent_emb = torch.cat((sent_one, sent_two, abs(sent_one - sent_two), sent_one * sent_two))
+                                sent2emb[sentence["text"]] = sent_emb.cpu().numpy()
 
         else:
             print(f"Loaded sentences in dict: {len(sent2emb)}")
@@ -83,14 +89,14 @@ def main():
 
     params_senteval = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 5}
     params_senteval['classifier'] = {'nhid': 0, 'optim': 'adam', 'batch_size': 64,
-                                 'tenacity': 5, 'epoch_size': 4}
+                                 'tenacity': 5, 'epoch_size': 10}
 
     se = senteval.engine.SE(params_senteval, batcher, prepare)
     if args.tasks is not None:
         transfer_tasks = args.tasks.split(',')
     else:
-        transfer_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',  'SNLI',
-                          'SICKEntailment', 'SICKRelatedness', 'STSBenchmark', 'ImageCaptionRetrieval',
+        transfer_tasks = ['CR', 'MR', 'MPQA', 'SUBJ', 'SST2', 'SST5', 'TREC', 'MRPC',  #'SNLI',
+                          'SICKEntailment', 'SICKRelatedness', 'STSBenchmark', #'ImageCaptionRetrieval',
                           'STS12', 'STS13', 'STS14', 'STS15', 'STS16',
                           'Length', 'WordContent', 'Depth', 'TopConstituents', 'BigramShift', 'Tense',
                           'SubjNumber', 'ObjNumber', 'OddManOut', 'CoordinationInversion']
