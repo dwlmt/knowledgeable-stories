@@ -405,7 +405,6 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "lm_device": 1,
-    "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
     "cat_minus": true,
     "sent_offsets": [-3, -2, -1, 1, 2, 3],
