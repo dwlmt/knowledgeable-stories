@@ -28,7 +28,7 @@ def main():
                         help='Path to JSON vectors file.')
     parser.add_argument('--output-file',
                         help='Write output to file.')
-    parser.add_argument('--dim-size', default=4096, type=int,
+    parser.add_argument('--dim-size', default=3072, type=int,
                         help='size of the default dimension size.')
     parser.add_argument('--embedding-name', default="sentences_encoded", type=str,
                         help='Name for the embedding attribute.')
@@ -63,7 +63,7 @@ def main():
                                 sent_list = sentence[args.embedding_name]
                                 sent_one = torch.tensor(sent_list[: 1024])
                                 sent_two = torch.tensor(sent_list[1024 :])
-                                sent_emb = torch.cat((sent_one, sent_two, abs(sent_one - sent_two), sent_one * sent_two))
+                                sent_emb = torch.cat((sent_one, sent_two, abs(sent_one - sent_two)))
                                 sent2emb[sentence["text"]] = sent_emb.cpu().numpy()
 
         else:
@@ -87,7 +87,7 @@ def main():
 
         return embeddings
 
-    params_senteval = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 5}
+    params_senteval = {'task_path': PATH_TO_DATA, 'usepytorch': True, 'kfold': 10}
     params_senteval['classifier'] = {'nhid': 0, 'optim': 'adam', 'batch_size': 64,
                                  'tenacity': 5, 'epoch_size': 10}
 
