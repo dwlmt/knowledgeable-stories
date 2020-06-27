@@ -399,7 +399,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "filmcorpus_hierarchy": dataset_root + "/filmcorpus/imsdb_raw_nov_2015/imsdb_raw_nov_2015/*",
         "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
         "snli": dataset_root + "/snli_1.0/snli_1.0_dev.jsonl",
-        "multinli": dataset_root + "/multinli_1.0/multinli_1.0_dev.jsonl",
+        "multinli": dataset_root + "/multinli_1.0/multinli_1.0_dev_matched.jsonl",
   },
   "model": {
     "type": "know_stories",
