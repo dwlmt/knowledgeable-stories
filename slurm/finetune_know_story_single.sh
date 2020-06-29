@@ -34,7 +34,7 @@ export NUM_GPUS=1
 export NUM_CPUS=12
 
 export MAX_INSTANCES_IN_MEMORY=64
-export EPOCHS=10
+export EPOCHS=15
 export LR_RATE=0.01
 export MOMENTUM=0.9
 export PATIENCE=3
