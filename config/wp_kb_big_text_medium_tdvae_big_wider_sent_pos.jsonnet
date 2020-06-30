@@ -437,37 +437,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "sentence_autoencoder": 1.0,
         "position_loss": 1.0,
         "sentiment_loss": 1.0,
-        "storytype_loss": 1.0,
         "atomic_loss": 1.0,
         "snli_loss": 1.0,
-    },
-    "snli_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 3,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "atomic_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 9,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "sentiment_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "position_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
     },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
@@ -499,18 +470,45 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "dropout_prob": 0.0,
       }
     },
-     "passage_tdvae": {
+    "sentiment_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 9,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "position_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 20,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "snli_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 3,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "atomic_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 9,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "passage_tdvae": {
          "x_size": 2048,
          "input_size": 2048,
          "belief_size": 2048,
          "z_posterior_size": 2048,
-         "num_layers": 6,
+         "num_layers": 5,
          "samples_per_seq": 100,
          "t_diff_min": 1,
          "t_diff_max": 8,
          "d_block_hidden_size": 512,
          "decoder_hidden_sizes": [6144, 4096, 2048],
-         "kl_loss_weight": 5.0,
     },
     "sentence_autoencoder": {
         "input_dim": 2048,

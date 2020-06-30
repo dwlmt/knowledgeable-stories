@@ -135,7 +135,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "lm_device": 1,
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
-    "lm_gradients_for_hierarchy": false,
+    "cat_minus": true,
     "sent_offsets": [-3, -2, -1, 1, 2, 3],
     "sent_scales": [2.5, 5.0, 10.0, 10.0, 5.0, 2.5],
     "label_smoothing": 0.0,
@@ -153,6 +153,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "sentence_autoencoder": 1.0,
         "position_loss": 1.0,
         "sentiment_loss": 1.0,
+        "storytype_loss": 1.0,
         "atomic_loss": 1.0,
         "snli_loss": 1.0,
     },
@@ -186,6 +187,20 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "dropout_prob": 0.0,
       }
     },
+    "sentiment_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 9,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "position_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 20,
+        "activations": "linear",
+        "dropout": 0.0
+    },
     "snli_dense": {
         "input_dim": 3072,
         "num_layers": 1,
@@ -200,26 +215,12 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "activations": "linear",
         "dropout": 0.0
     },
-    "sentiment_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "position_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 1,
-        "activations": "linear",
-        "dropout": 0.0
-    },
     "passage_tdvae": {
          "x_size": 2048,
          "input_size": 2048,
          "belief_size": 2048,
          "z_posterior_size": 2048,
-         "num_layers": 6,
+         "num_layers": 5,
          "samples_per_seq": 100,
          "t_diff_min": 1,
          "t_diff_max": 8,
@@ -231,7 +232,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "embedding_dim": 64,
         "hidden_dims":  [1024, 512, 256, 128],
         "negative_slope": 0.1
-    },
+    }
   },
   "trainer": {
     "num_epochs": EPOCHS,
