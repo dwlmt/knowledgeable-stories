@@ -363,7 +363,7 @@ class KnowledgeableStoriesModel(Model):
                     with torch.set_grad_enabled(self._reinforce and reinforce_bool):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    if not (self._reinforce and reinforce_bool):
+                    if not self._reinforce or not reinforce_bool:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -387,7 +387,7 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_pred = torch.cat(
                         (encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
 
-                if not (self._reinforce and reinforce_bool):
+                if not self._reinforce or not reinforce_bool:
                     loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
                                                                 passages_relative_positions, loss)
 
