@@ -20,26 +20,38 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "type": "multitask_reader",
     "datasets_for_vocab_creation": [],
     "dataset_readers": {
-             "writing_prompts_lm": {
-                "type": "writing_prompts_lm",
-                "lazy": true,
-                "batch_size" : 36,
-            "max_sentence_grouping": 36,
-            "max_token_len": 768,
-            },
-            "writing_prompts_hierarchy": {
-                "type": "writing_prompts_hierarchy",
-                "lazy": true,
-            "batch_size" : 100,
-            }
+         "writing_prompts_lm": {
+            "type": "writing_prompts_lm",
+            "lazy": true,
+            "batch_size" : 36,
+        "max_sentence_grouping": 36,
+        "max_token_len": 768,
         },
+        "writing_prompts_hierarchy": {
+            "type": "writing_prompts_hierarchy",
+            "lazy": true,
+        "batch_size" : 100,
+        },
+        "atomic": {
+            "type": "atomic_story",
+            "lazy": true,
+        },
+        "snli": {
+            "type": "snli_story",
+            "lazy": true,
+        },
+        "multinli": {
+            "type": "snli_story",
+            "lazy": true,
+        },
+    },
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": TRAINING_ITERATION_SIZE,
-   "sampling_rates": [0.5, 0.5],
+   "sampling_rates": [1.0/3.0, 1.0/3.0, 1.0/9.0, 1.0/9.0, 1.0/9.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -49,16 +61,31 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+         "atomic": {
+            "type": "basic",
+            "batch_size": 30,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "snli": {
+            "type": "basic",
+            "batch_size": 30,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "multinli": {
+            "type": "basic",
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy"],
+   "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy","atomic","snli","multinli"],
    "iterate_forever": false,
    "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-   "sampling_rates": [0.5, 0.5],
+   "sampling_rates": [1.0/3.0, 1.0/3.0, 1.0/9.0, 1.0/9.0, 1.0/9.0],
    "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -68,6 +95,21 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
        "writing_prompts_hierarchy": {
             "type": "basic",
             "batch_size": PASSAGE_BASE_BATCH_SIZE * NUM_GPUS,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+         "atomic": {
+            "type": "basic",
+            "batch_size": 30,
+             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "snli": {
+            "type": "basic",
+            "batch_size": 30,
+            "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
+       },
+       "multinli": {
+            "type": "basic",
+            "batch_size": 30,
             "max_instances_in_memory": MAX_INSTANCES_IN_MEMORY,
        },
     },
@@ -75,23 +117,57 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "train_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/train.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/train.wp_target",
+        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "snli": dataset_root + "/snli_1.0/snli_1.0_train.jsonl",
+        "multinli": dataset_root + "/multinli_1.0/multinli_1.0_train.jsonl",
   },
   "validation_data_path": {
         "writing_prompts_lm": dataset_root + "/WritingPrompts/valid.wp_target",
         "writing_prompts_hierarchy": dataset_root + "/WritingPrompts/valid.wp_target",
+        "atomic": dataset_root + "/atomic/v4_atomic_trn.csv",
+        "snli": dataset_root + "/snli_1.0/snli_1.0_train.jsonl",
+        "multinli": dataset_root + "/multinli_1.0/multinli_1.0_train.jsonl",
   },
   "model": {
     "type": "know_stories",
     "lm_name": "gpt2-medium",
     "lm_device": 1,
     "lm_finetune_final_layer_only": false,
-    "sent_offsets": [-1, 1],
-    "sent_scales": [10.0, 10.0],
+    "sent_offsets": [-3, -2, -1, 1, 2, 3],
+    "sent_scales": [2.5, 5.0, 10.0, 10.0, 5.0, 2.5],
     "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
         "writing_prompts_hierarchy": {},
+        "atomic": {},
+        "snli": {}
+    },
+    "loss_weights" : {
+        "lm_loss": 1.0,
+        "tdvae_loss": 1.0,
+        "sentence_disc_loss": 1.0,
+        "passage_disc_loss": 1.0,
+        "sentence_autoencoder": 1.0,
+        "passage_autoencoder": 1.0,
+        "position_loss": 1.0,
+        "sentiment_loss": 1.0,
+        "atomic_loss": 1.0,
+        "snli_loss": 1.0,
+    },
+    "snli_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 3,
+        "activations": "linear",
+        "dropout": 0.0
+    },
+    "atomic_dense": {
+        "input_dim": 3072,
+        "num_layers": 1,
+        "hidden_dims": 9,
+        "activations": "linear",
+        "dropout": 0.0
     },
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
@@ -102,7 +178,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 3,
+        "num_layers": 4,
         "num_attention_heads": 16,
         "positional_encoding": "embedding",
         "dropout_prob": 0.0,
@@ -117,13 +193,13 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
         "input_dim": 1024,
-        "num_layers": 3,
+        "num_layers": 4,
         "positional_encoding": "embedding",
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
       }
     },
-    "passage_seq2seq_encoder": {
+     "passage_seq2seq_encoder": {
       "type": "lstm",
       "input_size": 2048,
       "hidden_size": 1024,
@@ -153,7 +229,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",
- "patience": PATIENCE,
+    "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
@@ -169,7 +245,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "learning_rate_scheduler": {
       "type": "reduce_on_plateau",
       "factor": LR_REDUCE_RATE,
-"patience": LR_PATIENCE,
+      "patience": LR_PATIENCE,
     }
   }
 }
