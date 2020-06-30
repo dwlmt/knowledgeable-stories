@@ -511,6 +511,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "hidden_dims": [1024, 512, 256, 128],
         "negative_slope": 0.1
     },
+  },
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",

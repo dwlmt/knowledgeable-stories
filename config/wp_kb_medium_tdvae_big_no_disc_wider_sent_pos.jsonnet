@@ -201,14 +201,14 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "dropout": 0.0
     },
     "sentiment_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 1,
         "activations": "linear",
         "dropout": 0.0
     },
     "position_dense": {
-        "input_dim": 2048,
+        "input_dim": 3072,
         "num_layers": 1,
         "hidden_dims": 1,
         "activations": "linear",
