@@ -55,7 +55,7 @@ class KnowledgeableStoriesModel(Model):
                  storytype_dense: FeedForward = None,
                  atomic_dense: FeedForward = None,
                  snli_dense: FeedForward = None,
-                 cat_minus: bool = False,
+                 cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
                  dropout: float = 0.0,
