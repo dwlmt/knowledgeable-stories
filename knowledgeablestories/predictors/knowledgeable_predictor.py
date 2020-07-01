@@ -1,5 +1,6 @@
 import copy
 import os
+from random import shuffle
 
 import more_itertools
 import torch
@@ -155,7 +156,7 @@ class KnowledgeablePredictor(Predictor):
 
             if self._shuffle_sentences:
                 shuffled = copy.deepcopy(inputs["sentences"])
-                random.shuffle(shuffled)
+                shuffle(shuffled)
                 inputs["sentences"] = shuffled
 
             original_sentences = inputs["sentences"]
