@@ -364,7 +364,7 @@ class EvalClozePredictor(Predictor):
             res_dict = sentence["prediction_metrics"][f"-{1}"]
 
             if len(reference_points) > i + 1 and "passages_encoded" in reference_points[i + 1]:
-                dist_dict = surprise_distance_metrics("tdvae_surprise_belief", reference_points[i]["passages_encoded"],
+                dist_dict = surprise_distance_metrics("next_step_surprise_belief", reference_points[i]["passages_encoded"],
                                                       reference_points[i + 1]["passages_encoded"])
                 res_dict = {**res_dict, **dist_dict}
                 sentence["prediction_metrics"][f"-1"] = res_dict
