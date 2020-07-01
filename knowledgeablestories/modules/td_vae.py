@@ -134,11 +134,12 @@ class TDVAE(nn.Module, FromParams):
         if x.size(0) > 1:
             lengthes = torch.sum(mask.long(), dim=-1)
             max_length, max_indices = torch.max(lengthes, dim=0)
+            max_length = max_length.item()
         else:
             max_length = x.size(1)
 
         t_begin = 0
-        t_end = max_length.item() - self.t_diff_max
+        t_end = max_length - self.t_diff_max
 
         if t_end - self.min_length <= 0:
             return None
