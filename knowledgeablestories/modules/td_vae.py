@@ -129,7 +129,7 @@ class TDVAE(nn.Module, FromParams):
     def forward(self, x, mask=None):
 
         self.move_to_device(x)
-        print("TDVAE Input", x.size(), mask)
+        #print("TDVAE Input", x.size(), mask)
 
         if x.size(0) > 1:
             lengthes = torch.sum(mask.long(), dim=-1)
