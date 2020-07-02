@@ -151,9 +151,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "tdvae_loss": 1.0,
         "sentence_disc_loss": 1.0,
         "sentence_autoencoder": 1.0,
-        "position_loss": 1.0,
-        "sentiment_loss": 1.0,
-        "storytype_loss": 1.0,
         "atomic_loss": 1.0,
         "snli_loss": 1.0,
     },
@@ -186,20 +183,6 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
         "num_attention_heads": 16,
         "dropout_prob": 0.0,
       }
-    },
-    "sentiment_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 9,
-        "activations": "linear",
-        "dropout": 0.0
-    },
-    "position_dense": {
-        "input_dim": 3072,
-        "num_layers": 1,
-        "hidden_dims": 20,
-        "activations": "linear",
-        "dropout": 0.0
     },
     "snli_dense": {
         "input_dim": 3072,
