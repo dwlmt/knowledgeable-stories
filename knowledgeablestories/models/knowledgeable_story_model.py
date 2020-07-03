@@ -55,6 +55,7 @@ class KnowledgeableStoriesModel(Model):
                  storytype_dense: FeedForward = None,
                  atomic_dense: FeedForward = None,
                  snli_dense: FeedForward = None,
+                 pplm_projection_dense: FeedForward = None,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
@@ -88,6 +89,7 @@ class KnowledgeableStoriesModel(Model):
                             "position_loss": 1.0,
                             "storytype_loss": 1.0,
                             "reinforce_loss": 1.0,
+                            "pplm_loss": 1.0,
                             "atomic_loss": 1.0,
                             "snli_loss": 1.0,
                             }
@@ -121,6 +123,9 @@ class KnowledgeableStoriesModel(Model):
         self._storytype_dense = storytype_dense
         self._atomic_dense = atomic_dense
         self._snli_dense = snli_dense
+
+        self._pplm_projection_dense = pplm_projection_dense
+
         self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
@@ -402,6 +407,8 @@ class KnowledgeableStoriesModel(Model):
                 if self._sentence_detach:
                     encoded_sentences_cat = encoded_sentences_cat.detach()
 
+                loss = self.pplm_loss_if_required(encoded_sentences_cat, lm_mask, lm_output, loss)
+
                 loss = self._sentence_autoencoder_if_required(encoded_sentences_cat, loss, output, prediction_mode)
 
                 output["sentences_encoded"] = encoded_sentences_cat
@@ -467,8 +474,8 @@ class KnowledgeableStoriesModel(Model):
 
                                 self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                                loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
-                                                                    passages_encoded)
+                            loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                                passages_encoded)
 
                         if prediction_mode:
                             output["passages_encoded"] = passages_encoded
@@ -585,6 +592,23 @@ class KnowledgeableStoriesModel(Model):
         output["loss"] = loss
 
         return output
+
+    def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, loss):
+        if self._pplm_projection_dense is not None and "pplm_loss" in self._loss_weights:
+            def avg_representation(hidden, mask):
+                masked_hidden = hidden * mask
+                avg_hidden = torch.sum(masked_hidden, dim=1) / (
+                        torch.sum(mask, dim=1).detach() + 1e8
+                )
+                return avg_hidden
+
+            avg_hidden = avg_representation(lm_output, lm_mask)
+            sent_proj = self._pplm_projection_dense(avg_hidden)
+            sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
+            pplm_loss = torch.mean(sent_project_dist) * self._loss_weights["pplm_loss"]
+            loss += pplm_loss
+            self._metrics["pplm_loss"](pplm_loss)
+        return loss
 
     def _reinforce_finetune(self, passages, passage_mask, encoded_sentences):
 
