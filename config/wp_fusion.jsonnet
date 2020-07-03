@@ -64,6 +64,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "model": {
     "type": "know_stories",
+    "sentence_detach": false,
     "embedder_vocab_size": embedder_vocab_size,
     "lm_device": 1,
     "lm_finetune_final_layer_only": true,
