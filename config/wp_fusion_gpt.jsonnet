@@ -121,7 +121,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",
- "patience": PATIENCE,
+    "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
