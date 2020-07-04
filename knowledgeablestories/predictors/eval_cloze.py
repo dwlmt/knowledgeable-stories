@@ -112,6 +112,7 @@ class EvalClozePredictor(Predictor):
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
         self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
+        self._max_gen_lm_tokens = int(os.getenv("PREDICTOR_MAX_GEN_LM_TOKENS", default=1024))
 
         self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
 
@@ -122,6 +123,7 @@ class EvalClozePredictor(Predictor):
         self._neg_examples_num_block = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_BLOCK", default=1))
 
         self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
+
 
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
@@ -152,23 +154,25 @@ class EvalClozePredictor(Predictor):
 
                     if self._neg_examples_num_mutated is not None and self._neg_examples_num_mutated > 0:
                         for k in range(self._neg_examples_num_mutated):
-                            mut_rand = randint(1, len(mutated_story_sentences) - 1)
+                            mut_rand = randint(1, len(mutated_story_sentences) - self._neg_examples_num_block)
 
-                            context_text = mutated_story_sentences[0:mut_rand]
-                            context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
-                            #print("Mutate random", mut_rand, context_text, context_tokens)
-                            generated_sentence = self.generate_sentences(context_tokens, 1)[0]
-                            mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
-                            mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
+                            for i in range(self._neg_examples_num_block):
+
+                                context_text = mutated_story_sentences[0:mut_rand + i]
+                                context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
+                                #print("Mutate random", mut_rand, context_text, context_tokens)
+                                generated_sentence = self.generate_sentences(context_tokens, 1)[0]
+                                mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
+                                mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
 
                     if self._neg_examples_num_swapped is not None and self._neg_examples_num_swapped > 0:
                         for k in range(self._neg_examples_num_swapped):
-                            swap_a_idx = randint(0, len(mutated_story_sentences) - 1)
-                            swap_b_idx = randint(0, len(mutated_story_sentences) - 1)
+                            swap_a_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
+                            swap_b_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
 
-                            orig_b = mutated_story_sentences[swap_b_idx]
-                            mutated_story_sentences[swap_b_idx] = mutated_story_sentences[swap_a_idx]
-                            mutated_story_sentences[swap_a_idx] = orig_b
+                            orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
+                            mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
+                            mutated_story_sentences[swap_a_idx: swap_a_idx + self._neg_examples_num_block] = orig_b
 
                     story_sentences.append(mutated_story_sentences)
 
@@ -192,7 +196,7 @@ class EvalClozePredictor(Predictor):
                         perplexity_sum_total = 0.0
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
-                        for tensor_input_batch in torch.split(tensor_input, 1024):
+                        for tensor_input_batch in torch.split(tensor_input, self._max_gen_lm_tokens):
 
                             tensor_input_batch = torch.tensor(tensor_input_batch)
                             #print(tensor_input_batch)
