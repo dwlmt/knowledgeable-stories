@@ -124,6 +124,7 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
 
+        self._neg_examples_num_drop = int(os.getenv("NEGATIVE_EXAMPLES_NUM_DROP", default=1))
 
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
@@ -154,7 +155,7 @@ class EvalClozePredictor(Predictor):
 
                     if self._neg_examples_num_mutated is not None and self._neg_examples_num_mutated > 0:
                         for k in range(self._neg_examples_num_mutated):
-                            mut_rand = randint(1, len(mutated_story_sentences) - self._neg_examples_num_block)
+                            mut_rand = randint(self._neg_examples_num_drop + 1, len(mutated_story_sentences) - self._neg_examples_num_block)
 
                             for i in range(self._neg_examples_num_block):
 
@@ -164,6 +165,16 @@ class EvalClozePredictor(Predictor):
                                 generated_sentence = self.generate_sentences(context_tokens, 1)[0]
                                 mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
                                 mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
+
+                            if self._neg_examples_num_drop > 0:
+
+                                del mutated_story_sentences[mut_rand - self._neg_examples_num_drop:mut_rand]
+
+                                copy_story_sentences = copy.deepcopy(original_sentences)
+                                del copy_story_sentences[mut_rand - self._neg_examples_num_drop:mut_rand]
+
+                                story_sentences[0] = copy_story_sentences
+
 
                     if self._neg_examples_num_swapped is not None and self._neg_examples_num_swapped > 0:
                         for k in range(self._neg_examples_num_swapped):
