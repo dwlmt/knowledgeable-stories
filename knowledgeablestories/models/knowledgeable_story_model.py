@@ -56,6 +56,8 @@ class KnowledgeableStoriesModel(Model):
                  atomic_dense: FeedForward = None,
                  snli_dense: FeedForward = None,
                  pplm_projection_dense: FeedForward = None,
+                 pplm_projection_in: int = 1024,
+                 pplm_projection_out: int = 2048,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
@@ -124,7 +126,12 @@ class KnowledgeableStoriesModel(Model):
         self._atomic_dense = atomic_dense
         self._snli_dense = snli_dense
 
-        self._pplm_projection_dense = pplm_projection_dense
+        if pplm_projection_dense is not None:
+            self._pplm_projection_dense = pplm_projection_dense
+        elif pplm_projection_in > 0 and pplm_projection_out > 0:
+            self._pplm_projection_dense = torch.nn.Linear(pplm_projection_in, pplm_projection_out)
+        else:
+            self._pplm_projection_dense = pplm_projection_dense
 
         self._cat_minus = cat_minus
 
@@ -594,7 +601,7 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, loss):
-        if self._pplm_projection_dense is not None and "pplm_loss" in self._loss_weights:
+        if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
                 masked_hidden = hidden * mask
                 avg_hidden = torch.sum(masked_hidden, dim=1) / (
@@ -605,7 +612,7 @@ class KnowledgeableStoriesModel(Model):
             avg_hidden = avg_representation(lm_output, lm_mask)
             sent_proj = self._pplm_projection_dense(avg_hidden)
             sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
-            pplm_loss = torch.mean(sent_project_dist) * self._loss_weights["pplm_loss"]
+            pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
             loss += pplm_loss
             self._metrics["pplm_loss"](pplm_loss)
         return loss
