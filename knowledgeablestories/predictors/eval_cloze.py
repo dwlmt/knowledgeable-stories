@@ -124,7 +124,7 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
 
-        self._neg_examples_num_drop = int(os.getenv("NEGATIVE_EXAMPLES_NUM_DROP", default=1))
+        self._neg_examples_num_drop = int(os.getenv("NEGATIVE_EXAMPLES_NUM_DROP", default=0))
 
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
