@@ -605,6 +605,7 @@ class KnowledgeableStoriesModel(Model):
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
                 masked_hidden = hidden * torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
+                print(masked_hidden.size(), mask.size())
                 avg_hidden = torch.sum(masked_hidden, dim=2) / (
                         torch.sum(mask, dim=2).detach() + 1e8
                 )
