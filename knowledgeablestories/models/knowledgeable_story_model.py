@@ -127,7 +127,7 @@ class KnowledgeableStoriesModel(Model):
         self._snli_dense = snli_dense
 
         if pplm_projection_dense is not None:
-            self._pplm_projection_dense = pplm_projection_dense
+            self._pplm_projection_dense = pplm_projection_dense.cuda()
         else:
             self._pplm_projection_dense = None
         self._pplm_projection_in = pplm_projection_in
@@ -311,7 +311,7 @@ class KnowledgeableStoriesModel(Model):
         dataset_name = metadata[0]["dataset"]
 
         if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None:
-            self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out)
+            self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out).cuda()
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
@@ -618,7 +618,9 @@ class KnowledgeableStoriesModel(Model):
                 return avg_hidden
 
             avg_hidden = avg_representation(lm_output, lm_mask)
+            avg_hidden = avg_hidden.to(avg_hidden)
             sent_proj = self._pplm_projection_dense(avg_hidden)
+
             #print("Cosine Input", sent_proj.size(), encoded_sentences_cat.size())
             sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
             pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
