@@ -609,7 +609,7 @@ class KnowledgeableStoriesModel(Model):
                 print(masked_hidden.size(), mask_exp.size())
                 sum_hidden = torch.sum(masked_hidden, dim=2)
                 print(sum_hidden.size(), mask_exp.size())
-                avg_hidden = sum_hidden /  (torch.sum(mask, dim=2).detach() + 1e8)
+                avg_hidden = sum_hidden /  (torch.sum(mask_exp, dim=2).detach() + 1e8)
                 return avg_hidden
 
             avg_hidden = avg_representation(lm_output, lm_mask)
