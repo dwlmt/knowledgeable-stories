@@ -601,7 +601,7 @@ class KnowledgeableStoriesModel(Model):
         return output
 
     def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, loss):
-        print("PPLM Inputs", encoded_sentences_cat.size(), lm_mask, lm_output)
+        #print("PPLM Inputs", encoded_sentences_cat.size(), lm_mask, lm_output)
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
                 masked_hidden = hidden * torch.unsqueeze(mask, dim=2).expand_as(hidden)
