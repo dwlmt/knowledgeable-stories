@@ -128,6 +128,8 @@ class KnowledgeableStoriesModel(Model):
 
         if pplm_projection_dense is not None:
             self._pplm_projection_dense = pplm_projection_dense
+        else:
+            self._pplm_projection_dense = None
         self._pplm_projection_in = pplm_projection_in
         self._pplm_projection_out = pplm_projection_out
 
