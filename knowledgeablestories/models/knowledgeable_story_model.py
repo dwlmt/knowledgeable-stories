@@ -55,7 +55,7 @@ class KnowledgeableStoriesModel(Model):
                  storytype_dense: FeedForward = None,
                  atomic_dense: FeedForward = None,
                  snli_dense: FeedForward = None,
-                 #pplm_projection_dense: FeedForward = None,
+                 pplm_projection_dense: FeedForward = None,
                  pplm_projection_in: int = 1024,
                  pplm_projection_out: int = 2048,
                  cat_minus: bool = True,
@@ -126,14 +126,11 @@ class KnowledgeableStoriesModel(Model):
         self._atomic_dense = atomic_dense
         self._snli_dense = snli_dense
 
-        '''
         if pplm_projection_dense is not None:
             self._pplm_projection_dense = pplm_projection_dense
-        elif pplm_projection_in > 0 and pplm_projection_out > 0:
-            self._pplm_projection_dense = torch.nn.Linear(pplm_projection_in, pplm_projection_out)
-        else:
-            self._pplm_projection_dense = None
-        '''
+        self._pplm_projection_in = pplm_projection_in
+        self._pplm_projection_out = pplm_projection_out
+
 
         self._cat_minus = cat_minus
 
@@ -310,6 +307,9 @@ class KnowledgeableStoriesModel(Model):
 
         output = {}
         dataset_name = metadata[0]["dataset"]
+
+        if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None:
+            self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out)
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
