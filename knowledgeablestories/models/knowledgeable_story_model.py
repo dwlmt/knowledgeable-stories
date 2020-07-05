@@ -607,15 +607,15 @@ class KnowledgeableStoriesModel(Model):
             def avg_representation(hidden, mask):
                 mask_exp = torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
                 masked_hidden = hidden * mask_exp
-                print(masked_hidden.size(), mask_exp.size())
+                #print(masked_hidden.size(), mask_exp.size())
                 sum_hidden = torch.sum(masked_hidden, dim=2)
-                print(sum_hidden.size(), mask_exp.size())
+                #print(sum_hidden.size(), mask_exp.size())
                 avg_hidden = sum_hidden /  (torch.sum(mask_exp, dim=2).detach() + 1e8)
                 return avg_hidden
 
             avg_hidden = avg_representation(lm_output, lm_mask)
             sent_proj = self._pplm_projection_dense(avg_hidden)
-            print("Cosine Input", sent_proj.size(), encoded_sentences_cat.size())
+            #print("Cosine Input", sent_proj.size(), encoded_sentences_cat.size())
             sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
             pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
             loss += pplm_loss
