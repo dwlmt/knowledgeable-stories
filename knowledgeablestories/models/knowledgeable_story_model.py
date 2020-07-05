@@ -131,7 +131,7 @@ class KnowledgeableStoriesModel(Model):
         elif pplm_projection_in > 0 and pplm_projection_out > 0:
             self._pplm_projection_dense = torch.nn.Linear(pplm_projection_in, pplm_projection_out)
         else:
-            self._pplm_projection_dense = pplm_projection_dense
+            self._pplm_projection_dense = None
 
         self._cat_minus = cat_minus
 
@@ -604,9 +604,11 @@ class KnowledgeableStoriesModel(Model):
         #print("PPLM Inputs", encoded_sentences_cat.size(), lm_mask, lm_output)
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
-                masked_hidden = hidden * torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
-                print(masked_hidden.size(), mask.size())
+                mask_exp = torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
+                masked_hidden = hidden * mask_exp
+                print(masked_hidden.size(), mask_exp.size())
                 sum_hidden = torch.sum(masked_hidden, dim=2)
+                print(sum_hidden.size(), mask_exp.size)
                 avg_hidden = sum_hidden /  (torch.sum(mask, dim=2).detach() + 1e8)
                 return avg_hidden
 
