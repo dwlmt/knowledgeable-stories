@@ -216,6 +216,7 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["reinforce_loss"] = Average()
             self._metrics["atomic_loss"] = Average()
             self._metrics["snli_loss"] = Average()
+            self._metrics["pplm_loss"] = Average()
 
             self._metrics["passage_disc_logits_mean"] = Average()
             self._metrics["passage_disc_logits_std"] = Average()
@@ -614,7 +615,7 @@ class KnowledgeableStoriesModel(Model):
 
             avg_hidden = avg_representation(lm_output, lm_mask)
             sent_proj = self._pplm_projection_dense(avg_hidden)
-            print("Cosine Input", sent_proj.size(), encoded_sentences_cat)
+            print("Cosine Input", sent_proj.size(), encoded_sentences_cat.size())
             sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
             pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
             loss += pplm_loss
