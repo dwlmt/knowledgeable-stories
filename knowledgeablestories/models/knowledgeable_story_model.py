@@ -604,14 +604,15 @@ class KnowledgeableStoriesModel(Model):
         #print("PPLM Inputs", encoded_sentences_cat.size(), lm_mask, lm_output)
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
-                masked_hidden = hidden * torch.unsqueeze(mask, dim=2).expand_as(hidden)
+                masked_hidden = hidden * torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
                 avg_hidden = torch.sum(masked_hidden, dim=1) / (
-                        torch.sum(mask, dim=1).detach() + 1e8
+                        torch.sum(mask, dim=2).detach() + 1e8
                 )
                 return avg_hidden
 
             avg_hidden = avg_representation(lm_output, lm_mask)
             sent_proj = self._pplm_projection_dense(avg_hidden)
+            print("Cosine Input", sent_proj.size(), encoded_sentences_cat)
             sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
             pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
             loss += pplm_loss
