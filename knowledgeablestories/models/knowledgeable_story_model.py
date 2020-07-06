@@ -605,7 +605,7 @@ class KnowledgeableStoriesModel(Model):
 
         return output
 
-    def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, loss):
+    def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, passage_mask, loss):
         #print("PPLM Inputs", encoded_sentences_cat.size(), lm_mask, lm_output)
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
             def avg_representation(hidden, mask):
@@ -621,9 +621,22 @@ class KnowledgeableStoriesModel(Model):
             avg_hidden = avg_hidden.to(avg_hidden)
             sent_proj = self._pplm_projection_dense(avg_hidden)
 
-            #print("Cosine Input", sent_proj.size(), encoded_sentences_cat.size())
-            sent_project_dist = 1.0 - self._cosine_similarity(sent_proj, encoded_sentences_cat.detach())
-            pplm_loss = torch.mean(sent_project_dist) #* self._loss_weights["pplm_loss"]
+            encoded_sentences_cat = encoded_sentences_cat[passage_mask]
+            sent_proj = sent_proj[passage_mask]
+
+            target_pos = torch.ones_like(encoded_sentences_cat)
+
+            cosine_loss = nn.CosineEmbeddingLoss()
+
+            rotate = torch.randperm(encoded_sentences_cat.size(1))
+            encoded_sentences_perm = encoded_sentences_cat[:, rotate, :]
+            target_neg = torch.zeroes_like(encoded_sentences_perm)
+
+            sent_proj = torch.cat((sent_proj, sent_proj), dim=0)
+            encoded_sentences = torch.cat((encoded_sentences_cat, encoded_sentences_perm), dim=0)
+            targets = torch.cat((target_pos, target_neg))
+
+            pplm_loss = cosine_loss(sent_proj, encoded_sentences.detach(), targets)
             loss += pplm_loss
             self._metrics["pplm_loss"](pplm_loss)
         return loss
