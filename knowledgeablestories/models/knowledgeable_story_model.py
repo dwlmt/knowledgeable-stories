@@ -629,7 +629,7 @@ class KnowledgeableStoriesModel(Model):
 
             sent_proj = sent_proj[passage_mask]
 
-            target_pos = torch.zeros(encoded_sentences.size(0))
+            target_pos = torch.ones(encoded_sentences.size(0))
 
             #print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
 
