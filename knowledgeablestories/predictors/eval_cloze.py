@@ -223,7 +223,7 @@ class EvalClozePredictor(Predictor):
 
                         return perplexity_sum_total
 
-                sentence_text = [s["text"] + " <|endofsentence|>" for s in sentences]
+                sentence_text = [f"{s['text']} <|endofsentence|>" for s in sentences]
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
