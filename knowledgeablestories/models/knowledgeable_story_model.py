@@ -627,13 +627,13 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences_cat = encoded_sentences_cat[passage_mask]
             sent_proj = sent_proj[passage_mask]
 
-            target_pos = torch.ones_like(encoded_sentences_cat)
+            target_pos = torch.zeros(encoded_sentences_cat.size(0))
 
             print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
 
             rotate = torch.randperm(encoded_sentences_cat.size(0))
             encoded_sentences_perm = encoded_sentences_cat[rotate]
-            target_neg = torch.zeros_like(encoded_sentences_perm)
+            target_neg = torch.zeros(encoded_sentences_perm.size(0))
 
             sent_proj = torch.cat((sent_proj, sent_proj), dim=0)
             encoded_sentences = torch.cat((encoded_sentences_cat, encoded_sentences_perm), dim=0)
