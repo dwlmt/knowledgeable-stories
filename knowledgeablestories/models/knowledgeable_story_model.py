@@ -56,8 +56,8 @@ class KnowledgeableStoriesModel(Model):
                  atomic_dense: FeedForward = None,
                  snli_dense: FeedForward = None,
                  pplm_projection_dense: FeedForward = None,
-                 pplm_projection_in: int = 1024,
-                 pplm_projection_out: int = 2048,
+                 pplm_projection_in: int = 2048,
+                 pplm_projection_out: int = 1024,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
@@ -605,7 +605,7 @@ class KnowledgeableStoriesModel(Model):
 
         return output
 
-    def pplm_loss_if_required(self, encoded_sentences_cat, lm_mask, lm_output, passage_mask, loss):
+    def pplm_loss_if_required(self, encoded_sentences, lm_mask, lm_output, passage_mask, loss):
 
         if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
 
@@ -622,21 +622,23 @@ class KnowledgeableStoriesModel(Model):
 
             avg_hidden = avg_representation(lm_output, lm_mask)
             avg_hidden = avg_hidden.to(avg_hidden)
-            sent_proj = self._pplm_projection_dense(avg_hidden)
+            sent_proj = avg_hidden
 
-            encoded_sentences_cat = encoded_sentences_cat[passage_mask]
+            encoded_sentences = self._pplm_projection_dense(encoded_sentences)
+            encoded_sentences = encoded_sentences[passage_mask]
+
             sent_proj = sent_proj[passage_mask]
 
-            target_pos = torch.zeros(encoded_sentences_cat.size(0))
+            target_pos = torch.zeros(encoded_sentences.size(0))
 
             #print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
 
-            rotate = torch.randperm(encoded_sentences_cat.size(0))
-            encoded_sentences_perm = encoded_sentences_cat[rotate]
+            rotate = torch.randperm(encoded_sentences.size(0))
+            encoded_sentences_perm = encoded_sentences[rotate]
             target_neg = torch.zeros(encoded_sentences_perm.size(0))
 
             sent_proj = torch.cat((sent_proj, sent_proj), dim=0)
-            encoded_sentences = torch.cat((encoded_sentences_cat, encoded_sentences_perm), dim=0)
+            encoded_sentences = torch.cat((encoded_sentences, encoded_sentences_perm), dim=0)
             targets = torch.cat((target_pos, target_neg))
 
             #print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.size())
