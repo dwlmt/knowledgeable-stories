@@ -419,7 +419,7 @@ class KnowledgeableStoriesModel(Model):
                 if self._sentence_detach:
                     encoded_sentences_cat = encoded_sentences_cat.detach()
 
-                loss = self.pplm_loss_if_required(encoded_sentences_cat, lm_mask, lm_output, loss)
+                loss = self.pplm_loss_if_required(encoded_sentences_cat, lm_mask, lm_output, passage_mask, loss)
 
                 loss = self._sentence_autoencoder_if_required(encoded_sentences_cat, loss, output, prediction_mode)
 
