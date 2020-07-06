@@ -190,6 +190,7 @@ class EvalClozePredictor(Predictor):
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
             '''
             for i, sentences in enumerate(story_sentences):
+                print(sentences)
                 all_processed_sentences = []
 
                 def perplexity_score(sentences):
