@@ -639,7 +639,7 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = torch.cat((encoded_sentences_cat, encoded_sentences_perm), dim=0)
             targets = torch.cat((target_pos, target_neg))
 
-            print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.sizes())
+            print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.size())
 
             pplm_loss = cosine_loss(sent_proj, encoded_sentences.detach(), targets)
             loss += pplm_loss
