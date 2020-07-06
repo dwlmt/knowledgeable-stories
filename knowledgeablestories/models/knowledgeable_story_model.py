@@ -643,7 +643,7 @@ class KnowledgeableStoriesModel(Model):
 
             #print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.size())
 
-            pplm_loss = cosine_loss(sent_proj, encoded_sentences.detach(), targets.to(encoded_sentences.device))
+            pplm_loss = cosine_loss(sent_proj, encoded_sentences, targets.to(encoded_sentences.device))
             loss += pplm_loss
             self._metrics["pplm_loss"](pplm_loss)
         return loss
