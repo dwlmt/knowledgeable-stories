@@ -631,13 +631,15 @@ class KnowledgeableStoriesModel(Model):
 
             print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
 
-            rotate = torch.randperm(encoded_sentences_cat.size(1))
-            encoded_sentences_perm = encoded_sentences_cat[:, rotate, :]
+            rotate = torch.randperm(encoded_sentences_cat.size(0))
+            encoded_sentences_perm = encoded_sentences_cat[rotate]
             target_neg = torch.zeros_like(encoded_sentences_perm)
 
             sent_proj = torch.cat((sent_proj, sent_proj), dim=0)
             encoded_sentences = torch.cat((encoded_sentences_cat, encoded_sentences_perm), dim=0)
             targets = torch.cat((target_pos, target_neg))
+
+            print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.sizes())
 
             pplm_loss = cosine_loss(sent_proj, encoded_sentences.detach(), targets)
             loss += pplm_loss
