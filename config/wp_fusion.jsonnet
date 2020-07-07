@@ -67,7 +67,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "sentence_detach": false,
     "embedder_vocab_size": embedder_vocab_size,
     "lm_device": 1,
-    "lm_name": "gpt2-small",
+    "lm_name": "gpt2",
     "lm_finetune_final_layer_only": true,
     "dataset_config": {
         "writing_prompts_lm": {},
