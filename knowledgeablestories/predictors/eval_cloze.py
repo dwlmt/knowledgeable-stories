@@ -190,7 +190,7 @@ class EvalClozePredictor(Predictor):
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
             '''
             for i, sentences in enumerate(story_sentences):
-                print(sentences)
+
                 all_processed_sentences = []
 
                 def perplexity_score(sentences):
@@ -224,7 +224,7 @@ class EvalClozePredictor(Predictor):
                         return perplexity_sum_total
 
                 print(sentences)
-                sentence_text = [f"{s['text']} <|endofsentence|>" for s in sentences]
+                sentence_text = [s['text'] for s in sentences]
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
