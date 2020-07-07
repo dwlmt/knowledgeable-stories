@@ -310,7 +310,7 @@ class KnowledgeableStoriesModel(Model):
         output = {}
         dataset_name = metadata[0]["dataset"]
 
-        if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None:
+        if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None and "pplm_los" in self._loss_weights:
             self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out).cuda()
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
@@ -607,7 +607,7 @@ class KnowledgeableStoriesModel(Model):
 
     def pplm_loss_if_required(self, encoded_sentences, lm_mask, lm_output, passage_mask, loss):
 
-        if self._pplm_projection_dense is not None: #and "pplm_loss" in self._loss_weights:
+        if self._pplm_projection_dense is not None and "pplm_loss" in self._loss_weights:
 
             cosine_loss = nn.CosineEmbeddingLoss()
 
