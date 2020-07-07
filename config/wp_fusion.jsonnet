@@ -74,34 +74,34 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     },
     "sentence_seq2vec_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
+      "input_size": 1024,
+      "hidden_size": 1024,
       "num_layers": 3,
       "dropout": 0.0,
     },
     "passage_seq2seq_encoder": {
       "type": "lstm",
-      "input_size": 768,
-      "hidden_size": 768,
+      "input_size": 1024,
+      "hidden_size": 1024,
       "num_layers": 4,
       "dropout": 0.0,
     },
     "sentence_autoencoder": {
-        "input_dim": 768,
+        "input_dim": 1024,
         "embedding_dim": 48,
-        "hidden_dims": [384, 192, 96],
+        "hidden_dims": [512, 256, 128],
         "negative_slope": 0.1
     },
     "passage_autoencoder": {
-        "input_dim": 768,
+        "input_dim": 1024,
         "embedding_dim": 48,
-        "hidden_dims": [384, 192, 96],
+        "hidden_dims": [512, 256, 128],
         "negative_slope": 0.1
     },
     "fusion_dense": {
-        "input_dim": 1536,
+        "input_dim": 2048,
         "num_layers": 2,
-        "hidden_dims": 768,
+        "hidden_dims": 1024,
         "activations": "elu",
         "dropout": 0.0
     }
@@ -109,7 +109,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   "trainer": {
     "num_epochs": EPOCHS,
     "validation_metric": "-loss",
- "patience": PATIENCE,
+    "patience": PATIENCE,
     "grad_norm": 5.0,
     "shuffle": false,
     "summary_interval": 500,
