@@ -144,7 +144,8 @@ class EvalClozePredictor(Predictor):
             original_sentences = inputs["sentences"]
             total_story_len = len(inputs["sentences"])
 
-            story_sentences = [original_sentences]
+            all_stories = [copy.deepcopy(original_sentences)]
+            print(all_stories, all_stories.keys())
 
             all_processed_stories = []
 
@@ -173,7 +174,7 @@ class EvalClozePredictor(Predictor):
                                 copy_story_sentences = copy.deepcopy(original_sentences)
                                 del copy_story_sentences[mut_rand - self._neg_examples_num_drop:mut_rand]
 
-                                story_sentences[0] = copy_story_sentences
+                                all_stories[0] = copy_story_sentences
 
 
                     if self._neg_examples_num_swapped is not None and self._neg_examples_num_swapped > 0:
@@ -185,12 +186,12 @@ class EvalClozePredictor(Predictor):
                             mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
                             mutated_story_sentences[swap_a_idx: swap_a_idx + self._neg_examples_num_block] = orig_b
 
-                    story_sentences.append(mutated_story_sentences)
+                    print(mutated_story_sentences, mutated_story_sentences.keys())
+                    all_stories.append(mutated_story_sentences)
 
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
             '''
-            for i, sentences in enumerate(story_sentences):
-                print(sentences)
+            for i, sentences in enumerate(all_stories):
                 all_processed_sentences = []
 
                 def perplexity_score(sentences):
