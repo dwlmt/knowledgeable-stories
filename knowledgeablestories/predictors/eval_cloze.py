@@ -145,7 +145,7 @@ class EvalClozePredictor(Predictor):
             total_story_len = len(inputs["sentences"])
 
             all_stories = [copy.deepcopy(original_sentences)]
-            print(all_stories, all_stories.keys())
+            print(original_sentences, original_sentences.keys())
 
             all_processed_stories = []
 
