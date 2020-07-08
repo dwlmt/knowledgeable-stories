@@ -145,7 +145,7 @@ class EvalClozePredictor(Predictor):
             total_story_len = len(inputs["sentences"])
 
             all_stories = [copy.deepcopy(original_sentences)]
-            print(original_sentences, original_sentences.keys())
+            print(original_sentences, original_sentences[0].keys())
 
             all_processed_stories = []
 
@@ -186,7 +186,7 @@ class EvalClozePredictor(Predictor):
                             mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
                             mutated_story_sentences[swap_a_idx: swap_a_idx + self._neg_examples_num_block] = orig_b
 
-                    print(mutated_story_sentences, mutated_story_sentences.keys())
+                    print(mutated_story_sentences, mutated_story_sentences[0].keys())
                     all_stories.append(mutated_story_sentences)
 
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
