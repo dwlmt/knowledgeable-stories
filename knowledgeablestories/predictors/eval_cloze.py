@@ -225,9 +225,10 @@ class EvalClozePredictor(Predictor):
 
                 print(sentences)
                 sentence_text = []
-                for s in sentences:
-                    print(s)
-                    sentence_text.append(f"{s['text']} <|endofsentence|>")
+                for sent in sentences:
+                    print(sent)
+                    print(sent.keys())
+                    sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
