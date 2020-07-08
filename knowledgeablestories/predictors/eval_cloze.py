@@ -142,6 +142,9 @@ class EvalClozePredictor(Predictor):
             self._split_sentences_if_required(inputs)
 
             original_sentences = inputs["sentences"]
+
+            original_sentences = [s for s in original_sentences if isinstance(s, dict)]
+
             total_story_len = len(inputs["sentences"])
 
             all_stories = [copy.deepcopy(original_sentences)]
@@ -227,10 +230,7 @@ class EvalClozePredictor(Predictor):
                 print(sentences)
                 sentence_text = []
                 for sent in sentences:
-                    if isinstance(sent, dict):
-                        print(sent)
-                        print(sent.keys())
-                        sentence_text.append(f"{sent['text']} <|endofsentence|>")
+                    sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
