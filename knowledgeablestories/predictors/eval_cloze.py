@@ -519,7 +519,7 @@ class EvalClozePredictor(Predictor):
                     res_dict[f"tdvae_suspense_{k}_wass_z"] = wasserstein
 
                 cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein = self.extract_z_distances(
-                    torch.cat((z1),dim=-1), torch.cat((z2),dim=-1))
+                    z1.view(z1.size(0) * z1.size(1)), z2.view(z2.size(0) * z2.size(1)))
 
                 k = all
 
