@@ -504,22 +504,9 @@ class EvalClozePredictor(Predictor):
 
                 for k, (z1_layer, z2_layer) in enumerate(zip(z1, z2)):
                     # print(k, z1_layer.size(), z2_layer.size())
-                    l1 = torch.mean(self._l1_distance(z1_layer, z2_layer), dim=-1)
-                    l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
-                    cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
 
-                    with torch.no_grad():
-                        z1_layer = torch.sigmoid(z1_layer)
-                        z2_layer = torch.sigmoid(z2_layer)
-                        kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
-                        kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
-
-                        #print("Dot Product sizes", z1_layer.size(), z2_layer.size())
-                        dot_product = torch.mean((z1_layer * z2_layer).sum(-1))
-
-                        #print("Wasserstein", z1_layer.size(), z2_layer.size())
-                        wasserstein = wasserstein_distance(z1_layer.view(z1_layer.size(0) * z1_layer.size(1)).numpy(),
-                                                           z2_layer.view(z2_layer.size(0) * z2_layer.size(1)).numpy())
+                    cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein = self.extract_z_distances(
+                        z1_layer, z2_layer)
 
                     res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                     res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
@@ -531,9 +518,42 @@ class EvalClozePredictor(Predictor):
                             1 / 2)
                     res_dict[f"tdvae_suspense_{k}_wass_z"] = wasserstein
 
+                cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein = self.extract_z_distances(
+                    torch.cat((z1),dim=-1), torch.cat((z2),dim=-1))
+
+                k = all
+
+                res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
+                res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
+                res_dict[f"tdvae_suspense_{k}_cosine_dist"] = cosine.item()
+                res_dict[f"tdvae_suspense_{k}_dot_product"] = dot_product.item()
+                res_dict[f"tdvae_suspense_{k}_kl_z2_from_z1"] = kl_z2_from_z1.item()
+                res_dict[f"tdvae_suspense_{k}_kl_z1_from_z2"] = kl_z1_from_z2.item()
+                res_dict[f"tdvae_suspense_{k}_js_z"] = ((kl_z2_from_z1.item() + kl_z1_from_z2.item() / 2.0)) ** (
+                        1 / 2)
+                res_dict[f"tdvae_suspense_{k}_wass_z"] = wasserstein
+
                 if i < len(sentence_batch):
                     sentence_batch[j]["prediction_metrics"][f"{j}"] = res_dict
 
+    def extract_z_distances(self, z1_layer, z2_layer):
+        with torch.no_grad():
+            l1 = torch.mean(self._l1_distance(z1_layer, z2_layer), dim=-1)
+            l2 = torch.mean(self._l2_distance(z1_layer, z2_layer), dim=-1)
+            cosine = 1.0 - torch.mean(self._cosine_similarity(z1_layer, z2_layer), dim=-1)
+
+            z1_layer = torch.sigmoid(z1_layer)
+            z2_layer = torch.sigmoid(z2_layer)
+            kl_z2_from_z1 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z1_layer), z2_layer)
+            kl_z1_from_z2 = torch.nn.KLDivLoss(reduction="batchmean")(torch.log(z2_layer), z1_layer)
+
+            # print("Dot Product sizes", z1_layer.size(), z2_layer.size())
+            dot_product = torch.mean((z1_layer * z2_layer).sum(-1))
+
+            # print("Wasserstein", z1_layer.size(), z2_layer.size())
+            wasserstein = wasserstein_distance(z1_layer.view(z1_layer.size(0) * z1_layer.size(1)).numpy(),
+                                               z2_layer.view(z2_layer.size(0) * z2_layer.size(1)).numpy())
+        return cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein
 
     def _vader_polarity(self, sentence_batch):
         sentiment_polarity = [float(self._vader_analyzer.polarity_scores(t["text"])["compound"]) for t in
