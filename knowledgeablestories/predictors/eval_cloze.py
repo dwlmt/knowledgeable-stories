@@ -189,6 +189,7 @@ class EvalClozePredictor(Predictor):
                             mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
                             mutated_story_sentences[swap_a_idx: swap_a_idx + self._neg_examples_num_block] = orig_b
 
+                    mutated_story_sentences = [s for s in mutated_story_sentences if isinstance(s, dict)]
                     print(mutated_story_sentences, mutated_story_sentences[0].keys())
                     all_stories.append(mutated_story_sentences)
 
@@ -230,7 +231,8 @@ class EvalClozePredictor(Predictor):
                 print(sentences)
                 sentence_text = []
                 for sent in sentences:
-                    sentence_text.append(f"{sent['text']} <|endofsentence|>")
+                    if 'text' in sent:
+                        sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
                 perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
