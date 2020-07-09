@@ -611,6 +611,9 @@ class EvalClozePredictor(Predictor):
 
                 generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
 
+                if generated_sequence is None or len(generated_sequence) == 0:
+                    continue
+
                 if generated_sequence[0] not in self._eos_token_ids:
 
                     # Truncate the generated sentence.
