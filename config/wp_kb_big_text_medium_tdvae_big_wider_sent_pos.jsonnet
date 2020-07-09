@@ -503,7 +503,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "input_size": 2048,
          "belief_size": 2048,
          "z_posterior_size": 2048,
-         "num_layers": 5,
+         "num_layers": 6,
          "samples_per_seq": 100,
          "t_diff_min": 1,
          "t_diff_max": 8,
