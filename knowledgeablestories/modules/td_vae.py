@@ -90,6 +90,8 @@ class TDVAE(nn.Module, FromParams):
                  prediction_loss_weight: float = 1.0,
                  kl_loss_weight: float = 1.0,
                  recon_loss_weight: float = 1.0,
+                 tdvae_anneal_steps: int = 2000,
+                 tdvae_anneal_reset: int = 4000,
                  ):
         super().__init__()
         self.num_layers = num_layers
@@ -101,6 +103,11 @@ class TDVAE(nn.Module, FromParams):
         self._prediction_loss_weight = prediction_loss_weight
         self._kl_loss_weight = kl_loss_weight
         self._recon_loss_weight = recon_loss_weight
+
+        self._tdvae_anneal_steps = tdvae_anneal_steps
+        self._tdvae_anneal_reset = tdvae_anneal_reset
+
+        self._step = 0
 
         # Multilayer LSTM for aggregating belief states
         self.b_belief_rnn = MultilayerLSTM(input_size=input_size, hidden_size=belief_size, layers=num_layers)
@@ -382,6 +389,8 @@ class TDVAE(nn.Module, FromParams):
     def loss_function(self, forward_ret, labels=None):
         ''' Takes the output from the main forward.
         '''
+        self._step += 1
+
         (x, t2, qs_z1_z2_b1_mu, qs_z1_z2_b1_logvar, pb_z1_b1_mu, pb_z1_b1_logvar, qb_z2_b2_mu, qb_z2_b2_logvar,
          qb_z2_b2, pt_z2_z1_mu, pt_z2_z1_logvar, pd_x2_z2) = forward_ret
 
@@ -402,7 +411,17 @@ class TDVAE(nn.Module, FromParams):
         bce_optimal = F.binary_cross_entropy(x2, x2, reduction='sum').detach() / batch_size
         bce_diff = bce - bce_optimal
 
-        loss = (bce_diff * self._recon_loss_weight) + (kl_div_qs_pb * self._kl_loss_weight) + (
+        anneal_weight = 1.0
+        if self._tdvae_anneal_steps > 0:
+            anneal_weight = (1.0 / float(self._tdvae_anneal_steps)) * float(self._step % self._tdvae_anneal_steps)
+
+            if self._tdvae_anneal_reset > 0:
+                if self._step < self._tdvae_anneal_reset and self._step > self._tdvae_anneal_steps:
+                    anneal_weight = 1.0
+                elif self._step >= self._tdvae_anneal_reset:
+                    self._step = 0
+
+        loss = (bce_diff * self._recon_loss_weight) + (kl_div_qs_pb * self._kl_loss_weight * anneal_weight) + (
                     kl_predict_qb_pt * self._prediction_loss_weight)
 
         return loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt, bce_optimal

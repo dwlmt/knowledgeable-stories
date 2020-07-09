@@ -133,7 +133,6 @@ class KnowledgeableStoriesModel(Model):
         self._pplm_projection_in = pplm_projection_in
         self._pplm_projection_out = pplm_projection_out
 
-
         self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
