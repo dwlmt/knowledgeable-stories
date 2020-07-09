@@ -90,7 +90,7 @@ class TDVAE(nn.Module, FromParams):
                  prediction_loss_weight: float = 1.0,
                  kl_loss_weight: float = 1.0,
                  recon_loss_weight: float = 1.0,
-                 tdvae_anneal_steps: int = 2000,
+                 tdvae_anneal_steps: int = 3000,
                  tdvae_anneal_reset: int = 4000,
                  ):
         super().__init__()
