@@ -520,7 +520,8 @@ class EvalClozePredictor(Predictor):
 
                 print(z1.size(), z2.size())
                 cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein = self.extract_z_distances(
-                    z1.permute(1,0,2).view(z1.size(0), z1.size(1) * z1.size(2)), z2.permute(1,0,2).view(z2.size(0), z2.size(1) * z2.size(2)))
+                    z1.permute(1, 0, 2).contiguous().view(z1.size(0), z1.size(1) * z1.size(2)),
+                    z2.permute(1, 0, 2).contiguous().view(z2.size(0), z2.size(1) * z2.size(2)))
 
                 k = all
 
