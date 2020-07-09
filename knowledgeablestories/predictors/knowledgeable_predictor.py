@@ -372,7 +372,7 @@ class KnowledgeablePredictor(Predictor):
                     z1.permute(1, 0, 2).contiguous().view(z1.size(0), z1.size(1) * z1.size(2)),
                     z2.permute(1, 0, 2).contiguous().view(z2.size(0), z2.size(1) * z2.size(2)))
 
-                k = all
+                k = "all"
 
                 res_dict[f"tdvae_suspense_{k}_l1_dist"] = l1.item()
                 res_dict[f"tdvae_suspense_{k}_l2_dist"] = l2.item()
