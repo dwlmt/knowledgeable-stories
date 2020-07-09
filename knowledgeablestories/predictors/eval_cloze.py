@@ -75,6 +75,9 @@ class EvalClozePredictor(Predictor):
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
+
+        self._max_context_lm_tokens = int(os.getenv("PREDICTOR_MAX_CONTEXT_LM_TOKENS", default=924))
+
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
@@ -111,8 +114,7 @@ class EvalClozePredictor(Predictor):
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
-        self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
-        self._max_gen_lm_tokens = int(os.getenv("PREDICTOR_MAX_GEN_LM_TOKENS", default=1024))
+        self._lm_num_context_tokens = int(os.getenv("PREDICTOR_LM_NUM_CONTEXT_TOKENS", default=1024))
 
         self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
 
@@ -165,8 +167,10 @@ class EvalClozePredictor(Predictor):
 
                                 context_text = mutated_story_sentences[0:mut_rand + i]
                                 context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
-                                #print("Mutate random", mut_rand, context_text, context_tokens)
+
                                 generated_sentence = self.generate_sentences(context_tokens, 1)[0]
+
+                                print("Mutate random", mut_rand, context_text, context_tokens, generated_sentence)
                                 mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
                                 mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
 
@@ -184,6 +188,8 @@ class EvalClozePredictor(Predictor):
                         for k in range(self._neg_examples_num_swapped):
                             swap_a_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
                             swap_b_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
+
+                            print("Swapped", swap_a_idx, swap_b_idx)
 
                             orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
                             mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
@@ -213,7 +219,7 @@ class EvalClozePredictor(Predictor):
                         perplexity_sum_total = 0.0
                         num_of_batches = 0
                         print("Tensor Input", tensor_input)
-                        for tensor_input_batch in torch.split(tensor_input, self._max_gen_lm_tokens):
+                        for tensor_input_batch in torch.split(tensor_input, self._lm_num_context_tokens):
 
                             tensor_input_batch = torch.tensor(tensor_input_batch)
                             #print(tensor_input_batch)
@@ -577,8 +583,8 @@ class EvalClozePredictor(Predictor):
         else:
             flat_previous_tokens = previous_tokens
 
-        if len(flat_previous_tokens) > self._max_previous_lm_tokens:
-            flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
+        if len(flat_previous_tokens) > self._max_context_lm_tokens:
+            flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_context_lm_tokens:]
 
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
         if torch.cuda.is_available():
