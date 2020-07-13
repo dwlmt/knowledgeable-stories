@@ -18,6 +18,12 @@ sys.path.insert(0, PATH_TO_SENTEVAL)
 import senteval
 import torch
 
+def add_bool_arg(parser, name, default=False):
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('--' + name, dest=name, action='store_true')
+    group.add_argument('--no-' + name, dest=name, action='store_false')
+    parser.set_defaults(**{name:default})
+
 
 def main():
     logging.basicConfig(format='%(asctime)s : %(message)s',
@@ -36,6 +42,9 @@ def main():
                         help='A comma-separated list of tasks.')
     parser.add_argument('--no-gpu', action='store_true',
                         help='Do not use GPU (turn off PyTorch).')
+
+    add_bool_arg(parser, 'cat-minus-vector')
+
     args = parser.parse_args()
 
     sent2emb = {}
@@ -63,7 +72,12 @@ def main():
                                 sent_list = sentence[args.embedding_name]
                                 sent_one = torch.tensor(sent_list[: 1024])
                                 sent_two = torch.tensor(sent_list[1024 :])
-                                sent_emb = torch.cat((sent_one, sent_two, abs(sent_one - sent_two)))
+
+                                if args.cat_minus_vector:
+                                    sent_emb = torch.cat((sent_one, sent_two, abs(sent_one - sent_two)))
+                                else:
+                                    sent_emb = torch.cat((sent_one, sent_two))
+
                                 sent2emb[sentence["text"]] = sent_emb.cpu().numpy()
 
         else:
