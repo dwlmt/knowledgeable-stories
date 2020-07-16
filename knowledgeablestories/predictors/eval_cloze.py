@@ -161,7 +161,7 @@ class EvalClozePredictor(Predictor):
 
                     if self._neg_examples_num_mutated is not None and self._neg_examples_num_mutated > 0:
                         for k in range(self._neg_examples_num_mutated):
-                            mut_rand = randint(self._neg_examples_num_drop + 1, len(mutated_story_sentences) - self._neg_examples_num_block)
+                            mut_rand = randint(0, len(mutated_story_sentences) - self._neg_examples_num_block - self._neg_examples_num_drop)
 
                             for i in range(self._neg_examples_num_block):
 
@@ -176,10 +176,10 @@ class EvalClozePredictor(Predictor):
 
                             if self._neg_examples_num_drop > 0:
 
-                                del mutated_story_sentences[mut_rand - self._neg_examples_num_drop:mut_rand]
+                                del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
                                 copy_story_sentences = copy.deepcopy(original_sentences)
-                                del copy_story_sentences[mut_rand - self._neg_examples_num_drop:mut_rand]
+                                del copy_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
                                 all_stories[0] = copy_story_sentences
 
