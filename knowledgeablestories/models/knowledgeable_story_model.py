@@ -58,6 +58,11 @@ class KnowledgeableStoriesModel(Model):
                  pplm_projection_dense: FeedForward = None,
                  pplm_projection_in: int = 2048,
                  pplm_projection_out: int = 1024,
+                 trans_mem_fusion_dense: FeedForward = None,
+                 lm_memory_in: int = 2048,
+                 lm_memory_out: int = 1024,
+                 lm_memory_layers: int = 16,
+                 lm_memory_cuda_device: int = 3,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = None,
@@ -132,6 +137,14 @@ class KnowledgeableStoriesModel(Model):
             self._pplm_projection_dense = None
         self._pplm_projection_in = pplm_projection_in
         self._pplm_projection_out = pplm_projection_out
+
+        if trans_mem_fusion_dense is not None:
+            self._lm_memory_dense = trans_mem_fusion_dense.cuda()
+
+        self._lm_memory_in = lm_memory_in
+        self._lm_memory_out = lm_memory_out
+        self._lm_memory_layers = lm_memory_layers
+        self._lm_memory_cuda_device =  lm_memory_cuda_device
 
         self._cat_minus = cat_minus
 
@@ -312,6 +325,9 @@ class KnowledgeableStoriesModel(Model):
         if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None and "pplm_los" in self._loss_weights:
             self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out).cuda()
 
+        if self._lm_memory_in > 0 and self._lm_memory_out > 0 and self._lm_memory_dense is None and "gpt_memory_loss" in self._loss_weights:
+            self._lm_memory_dense = torch.nn.linear(self._lm_memory_in, self._lm_memory_out * self._lm_memory_layers)
+
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
         reinforce_bool = random.choice([True, False])
@@ -379,7 +395,7 @@ class KnowledgeableStoriesModel(Model):
                     with torch.set_grad_enabled(self._reinforce and reinforce_bool):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    if not self._reinforce or not reinforce_bool:
+                    if (not self._reinforce or not reinforce_bool) and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -455,7 +471,7 @@ class KnowledgeableStoriesModel(Model):
                             encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
 
                         if "passage_disc_loss" in self._loss_weights:
-                            if self._sentence_disc:
+                            if self._sentence_disc  and not prediction_mode:
                                 passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                                 encoded_sentences_cat,
                                                                                                 mask=passage_mask,
@@ -472,21 +488,23 @@ class KnowledgeableStoriesModel(Model):
                                 self._metrics["passage_disc_loss"](passage_disc_loss.item())
                             else:
 
-                                passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                                passages_encoded,
-                                                                                                mask=passage_mask,
-                                                                                                offsets=self._passage_offsets,
-                                                                                                scales=self._passage_scales,
-                                                                                                label_smoothing=self._label_smoothing,
-                                                                                                level_name="passage",
-                                                                                                exclude_self=True)
+                                if not prediction_mode:
+                                    passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                                    passages_encoded,
+                                                                                                    mask=passage_mask,
+                                                                                                    offsets=self._passage_offsets,
+                                                                                                    scales=self._passage_scales,
+                                                                                                    label_smoothing=self._label_smoothing,
+                                                                                                    level_name="passage",
+                                                                                                    exclude_self=True)
 
-                                loss += passage_disc_loss
+                                    loss += passage_disc_loss
 
-                                self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                                    self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                            loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
-                                                                passages_encoded)
+                            if not not prediction_mode:
+                                loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                                    passages_encoded)
 
                         if prediction_mode:
                             output["passages_encoded"] = passages_encoded
@@ -496,7 +514,8 @@ class KnowledgeableStoriesModel(Model):
 
                             output["passages_mask"] = passages_mask
 
-                        loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
+                        if not not prediction_mode:
+                            loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
                         # if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
@@ -542,7 +561,7 @@ class KnowledgeableStoriesModel(Model):
                             tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
                             tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
                             tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
-                            print(f"TDVAE Keys: {tdvae_output.keys()}")
+                            #print(f"TDVAE Keys: {tdvae_output.keys()}")
 
                             if self._sampled:
                                 rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
@@ -567,10 +586,6 @@ class KnowledgeableStoriesModel(Model):
             else:
                 self._lm_model = self._lm_model.to(argument_tokens.device)
 
-            # position_ids = torch.arange(argument_tokens.size(0), argument_tokens.size(1), dtype=torch.long,
-            #                            device=argument_tokens.device)
-            # print(argument_tokens)
-            # print("Argument tokens size", argument_tokens.size())
             lm_loss, lm_logits, _ = self._lm_model(argument_tokens, attention_mask=lm_mask.to(argument_tokens.device),
                                                    labels=argument_tokens.to(argument_tokens.device))
 
