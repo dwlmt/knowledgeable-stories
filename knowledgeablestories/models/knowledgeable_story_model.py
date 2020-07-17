@@ -58,7 +58,7 @@ class KnowledgeableStoriesModel(Model):
                  pplm_projection_dense: FeedForward = None,
                  pplm_projection_in: int = 2048,
                  pplm_projection_out: int = 1024,
-                 trans_mem_fusion_dense: FeedForward = None,
+                 lm_memory_dense: FeedForward = None,
                  lm_memory_in: int = 2048,
                  lm_memory_out: int = 1024,
                  lm_memory_layers: int = 16,
@@ -138,8 +138,10 @@ class KnowledgeableStoriesModel(Model):
         self._pplm_projection_in = pplm_projection_in
         self._pplm_projection_out = pplm_projection_out
 
-        if trans_mem_fusion_dense is not None:
-            self._lm_memory_dense = trans_mem_fusion_dense.cuda()
+        if lm_memory_dense is not None:
+            self._lm_memory_dense = lm_memory_dense.cuda()
+        else:
+            self._lm_memory_dense = None
 
         self._lm_memory_in = lm_memory_in
         self._lm_memory_out = lm_memory_out
