@@ -444,14 +444,14 @@ class KnowledgeableStoriesModel(Model):
                 if self._passage_lm and passage_tuning_random:
                     lm_output = lm_output.detach().cpu()
                     lm_mask = lm_mask.detach().cpu()
-                    encoded_sentences = encoded_sentences.detach().cpu()
-                    encoded_sentences_cat = encoded_sentences_cat.detach().cpu()
+                    encoded_sentences = encoded_sentences.detach()
+                    encoded_sentences_cat = encoded_sentences_cat.detach()
 
                     del lm_output
                     del lm_mask
                     del encoded_sentences
 
-                    passages["tokens"] = passages["tokens"].detach().cpu()
+                    passages["tokens"] = passages["tokens"].detach()
 
                     if "reinforce_loss" in self._loss_weights:
                         lm_memory_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
@@ -620,7 +620,7 @@ class KnowledgeableStoriesModel(Model):
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
-        output["loss"] = loss
+        output["loss"] = loss.to(0)
 
         return output
 
@@ -726,7 +726,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
-        loss = torch.tensor(0.0).to(self._lm_memory_cuda_device)
+        loss = torch.tensor(0.0).to(0)
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
         print("Encoded Sentences", encoded_sentences.size())
@@ -748,7 +748,7 @@ class KnowledgeableStoriesModel(Model):
                        labels=tokens, past= past.to(self._lm_device))
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
-        loss += lm_loss
+        loss += lm_loss.to(0)
         self._metrics["lm_memory_loss"](lm_loss.item())
 
         return loss
