@@ -383,13 +383,13 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                with torch.set_grad_enabled(not (self._passage_lm and passage_tuning_random)):
+                with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
                     encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
 
-                    with torch.set_grad_enabled(not (self._passage_lm and passage_tuning_random)):
+                    with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
                     if (not self._passage_lm or not passage_tuning_random) and not prediction_mode:
