@@ -542,15 +542,15 @@ class KnowledgeableStoriesModel(Model):
                                 tdvae_return)
 
                             if orig_device:
-                                encoded_sentences_cat = encoded_sentences_cat.to(orig_device)
-                                passage_mask = passage_mask.to(orig_device)
-                                total_loss = total_loss.to(orig_device)
-                                kl_div_qs_pb = kl_div_qs_pb.to(orig_device)
-                                bce_diff = bce_diff.to(orig_device)
-                                kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
+                                encoded_sentences_cat = encoded_sentences_cat.to(self._default_cuda_device)
+                                passage_mask = passage_mask.to(self._default_cuda_device)
+                                total_loss = total_loss.to(self._default_cuda_device)
+                                kl_div_qs_pb = kl_div_qs_pb.to(self._default_cuda_device)
+                                bce_diff = bce_diff.to(self._default_cuda_device)
+                                kl_predict_qb_pt = kl_predict_qb_pt.to(self._default_cuda_device)
 
-                            print(total_loss)
-                            loss += (total_loss.to(self._default_cuda_device) * self._loss_weights["tdvae_loss"])
+                            print("TDVAE losses", total_loss, bce_diff, kl_div_qs_pb, kl_predict_qb_pt)
+                            loss += (total_loss * self._loss_weights["tdvae_loss"])
 
                             self._metrics["tdvae_loss"](total_loss)
                             self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
