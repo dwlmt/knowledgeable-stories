@@ -59,9 +59,9 @@ class KnowledgeableStoriesModel(Model):
                  pplm_projection_in: int = 2048,
                  pplm_projection_out: int = 1024,
                  lm_memory_dense: FeedForward = None,
-                 lm_memory_in: int = 2048,
-                 lm_memory_out: int = 1024,
-                 lm_memory_layers: int = 16,
+                 lm_memory_in: int = 0,
+                 lm_memory_out: int = 0,
+                 lm_memory_layers: int = 0,
                  lm_memory_cuda_device: int = 3,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
@@ -338,7 +338,7 @@ class KnowledgeableStoriesModel(Model):
 
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
-        lm_finetune_on_passage = random.choice([True, False])
+        reinforce_random = random.choice([True, False])
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
@@ -394,16 +394,16 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                with torch.set_grad_enabled(not (self._reinforce and lm_finetune_on_passage)):
+                with torch.set_grad_enabled(not (self._reinforce and reinforce_random)):
                     encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
 
-                    with torch.set_grad_enabled(not (self._reinforce and lm_finetune_on_passage)):
+                    with torch.set_grad_enabled(not (self._reinforce and reinforce_random)):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
 
-                    if (not self._reinforce or not lm_finetune_on_passage) and not prediction_mode:
+                    if (not self._reinforce or not reinforce_random) and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -427,7 +427,7 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_pred = torch.cat(
                         (encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
 
-                if not self._reinforce or not lm_finetune_on_passage:
+                if not self._reinforce or not reinforce_random:
                     loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
                                                                 passages_relative_positions, loss)
 
@@ -451,7 +451,7 @@ class KnowledgeableStoriesModel(Model):
                 output["lm_mask"] = lm_mask
                 output["tokens"] = passages["tokens"]
 
-                if self._reinforce and lm_finetune_on_passage:
+                if self._reinforce and reinforce_random:
                     lm_output = lm_output.detach().cpu()
                     lm_mask = lm_mask.detach().cpu()
                     encoded_sentences = encoded_sentences.detach().cpu()
