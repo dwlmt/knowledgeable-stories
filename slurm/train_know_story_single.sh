@@ -3,7 +3,7 @@
 #SBATCH -e /home/%u/slurm_logs/slurm-%A_%a.out
 #SBATCH -N 1	  # nodes requested
 #SBATCH -n 1	  # tasks requested
-#SBATCH --gres=gpu:3
+#SBATCH --gres=gpu:4
 #SBATCH --mem=24g  # Memory
 #SBATCH --cpus-per-task=12  # number of cpus to use - there are 32 on each node.
 
