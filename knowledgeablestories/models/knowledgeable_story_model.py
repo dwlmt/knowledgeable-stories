@@ -462,8 +462,8 @@ class KnowledgeableStoriesModel(Model):
 
                     if "lm_memory_loss" in self._loss_weights:
                         lm_memory_loss = self._lm_memory_finetune(passages, encoded_sentences_cat)
-                        loss += lm_memory_loss
-                        loss = loss.to(0)
+                        print(lm_memory_loss)
+                        loss += lm_memory_loss.to(0)
                         self._metrics["lm_memory_loss"](lm_memory_loss)
 
                 else:
@@ -552,6 +552,7 @@ class KnowledgeableStoriesModel(Model):
                                 bce_diff = bce_diff.to(orig_device)
                                 kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
 
+                            print(total_loss)
                             loss += (total_loss.to(0) * self._loss_weights["tdvae_loss"])
 
                             self._metrics["tdvae_loss"](total_loss)
