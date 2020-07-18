@@ -331,7 +331,7 @@ class KnowledgeableStoriesModel(Model):
 
         loss = torch.tensor(0.0)
         if torch.cuda.is_available():
-            loss = loss.cuda()
+            loss = loss.to(self._default_cuda_device)
 
         if premises is not None and relation_labels is not None and conclusions is not None:
 
@@ -453,10 +453,9 @@ class KnowledgeableStoriesModel(Model):
                     passages["tokens"] = passages["tokens"].detach()
 
                     if "reinforce_loss" in self._loss_weights:
-                        lm_memory_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
-                        loss += lm_memory_loss
-                        loss = loss.to(self._lm_device)
-                        self._metrics["reinforce_loss"](lm_memory_loss)
+                        reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
+                        loss += reinforce_loss.to(self._default_cuda_device)
+                        self._metrics["reinforce_loss"](reinforce_loss)
 
                     if "lm_memory_loss" in self._loss_weights:
                         lm_memory_loss = self._lm_memory_finetune(passages, encoded_sentences_cat)
@@ -506,7 +505,7 @@ class KnowledgeableStoriesModel(Model):
 
                                     self._metrics["passage_disc_loss"](passage_disc_loss.item())
 
-                            if not not prediction_mode:
+                            if not prediction_mode:
                                 loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
                                                                     passages_encoded)
 
@@ -518,7 +517,7 @@ class KnowledgeableStoriesModel(Model):
 
                             output["passages_mask"] = passages_mask
 
-                        if not not prediction_mode:
+                        if not prediction_mode:
                             loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
 
                         # if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
