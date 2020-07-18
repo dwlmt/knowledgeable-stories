@@ -330,8 +330,7 @@ class KnowledgeableStoriesModel(Model):
         passage_tuning_random = random.choice([True, False])
 
         loss = torch.tensor(0.0)
-        if torch.cuda.is_available():
-            loss = loss.to(self._default_cuda_device)
+        loss = loss.to(self._default_cuda_device)
 
         if premises is not None and relation_labels is not None and conclusions is not None:
 
@@ -371,7 +370,6 @@ class KnowledgeableStoriesModel(Model):
             elif "snli" in dataset_name and self._snli_dense is not None:
                 self._metrics["snli_loss"](sent_loss)
 
-
         elif passages != None:
             if len(passages["tokens"].size()) == 4:
                 passages["tokens"] = torch.squeeze(passages["tokens"], dim=0)
@@ -392,7 +390,7 @@ class KnowledgeableStoriesModel(Model):
                     with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2).to(self._default_cuda_device)
 
-                    if (not self._passage_lm or not passage_tuning_random) and not prediction_mode:
+                    if not (self._passage_lm and passage_tuning_random) and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -417,7 +415,7 @@ class KnowledgeableStoriesModel(Model):
                     encoded_sentences_pred = torch.cat(
                         (encoded_sentences_cat, abs(encoded_sentences - encoded_sentences_2)), dim=-1)
 
-                if not self._passage_lm or not passage_tuning_random:
+                if not (self._passage_lm and passage_tuning_random):
                     loss = self.position_prediction_if_required(encoded_sentences_pred, passage_mask,
                                                                 passages_relative_positions, loss)
 
@@ -463,7 +461,6 @@ class KnowledgeableStoriesModel(Model):
                         print(lm_memory_loss)
                         loss += lm_memory_loss.to(self._default_cuda_device)
                         self._metrics["lm_memory_loss"](lm_memory_loss)
-
                 else:
 
                     if self._passage_seq2seq_encoder != None:
@@ -476,6 +473,7 @@ class KnowledgeableStoriesModel(Model):
 
                         if "passage_disc_loss" in self._loss_weights:
                             if self._sentence_disc  and not prediction_mode:
+
                                 passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                                 encoded_sentences_cat,
                                                                                                 mask=passage_mask,
@@ -525,9 +523,11 @@ class KnowledgeableStoriesModel(Model):
                         #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
                         #                                         passages_encoded, lm_mask)
 
-                    if self._passage_tdvae is not None:
+                    elif self._passage_tdvae is not None:
 
                         encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
+
+                        print(encoded_sentences_cat)
 
                         orig_device = None
                         if self._tdvae_device:
