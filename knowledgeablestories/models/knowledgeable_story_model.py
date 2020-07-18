@@ -527,7 +527,7 @@ class KnowledgeableStoriesModel(Model):
 
                         encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
 
-                        print(encoded_sentences_cat)
+                        #print(encoded_sentences_cat)
 
                         orig_device = None
                         if self._tdvae_device:
