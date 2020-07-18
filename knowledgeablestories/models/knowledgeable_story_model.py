@@ -384,13 +384,13 @@ class KnowledgeableStoriesModel(Model):
                     passage_mask = self._passage_masks(lm_mask)
 
                 with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
-                    encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask)
+                    encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask).to(self._default_cuda_device)
 
                 if "sentence_disc_loss" in self._loss_weights and (
                         self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None):
 
                     with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
-                        encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2)
+                        encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2).to(self._default_cuda_device)
 
                     if (not self._passage_lm or not passage_tuning_random) and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
@@ -401,6 +401,7 @@ class KnowledgeableStoriesModel(Model):
                                                                                               label_smoothing=self._label_smoothing,
                                                                                               level_name="sentence")
 
+                        print("Sentence disc loss", sentence_disc_loss)
                         loss += sentence_disc_loss
 
                         self._metrics["sentence_disc_loss"](sentence_disc_loss.item())
