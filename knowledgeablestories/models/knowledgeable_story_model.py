@@ -39,7 +39,7 @@ class KnowledgeableStoriesModel(Model):
                  vocab: Vocabulary,
                  embedder_vocab_size: int = None,
                  lm_name: str = "gpt2",
-                 lm_device: int = None,
+                 lm_device: int = 1,
                  lm_finetune_final_layer_only: bool = False,
                  sentence_seq2vec_encoder: Seq2VecEncoder = None,
                  sentence_2_seq2vec_encoder: Seq2VecEncoder = None,
@@ -130,6 +130,8 @@ class KnowledgeableStoriesModel(Model):
         self._atomic_dense = atomic_dense
         self._snli_dense = snli_dense
 
+        self._default_cuda_device = torch.device(f'cuda:{0}')
+
         if pplm_projection_dense is not None:
             self._pplm_projection_dense = pplm_projection_dense.cuda()
         else:
@@ -137,6 +139,7 @@ class KnowledgeableStoriesModel(Model):
         self._pplm_projection_in = pplm_projection_in
         self._pplm_projection_out = pplm_projection_out
 
+        self._lm_memory_cuda_device = torch.device(f'cuda:{lm_memory_cuda_device}')
         if lm_memory_dense is not None:
             self._lm_memory_dense = lm_memory_dense
             if lm_memory_cuda_device:
@@ -144,16 +147,13 @@ class KnowledgeableStoriesModel(Model):
         else:
             self._lm_memory_dense = None
 
-        self._lm_memory_cuda_device = lm_memory_cuda_device
         self._lm_memory_hidden_size = lm_memory_hidden_size
 
         self._cat_minus = cat_minus
 
         self._passage_tdvae = passage_tdvae
 
-        self._tdvae_device = None
-        if tdvae_device is not None:
-            self._tdvae_device = torch.device(f'cuda:{tdvae_device}')
+        self._tdvae_device = torch.device(f'cuda:{tdvae_device}')
         self.move_tdvae_to_gpu_if_required()
 
         self._sentence_detach = sentence_detach
@@ -184,9 +184,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_model = None
         self._lm_finetune_final_layer_only = lm_finetune_final_layer_only
 
-        self._lm_device = None
-        if lm_device is not None:
-            self._lm_device = torch.device(f'cuda:{lm_device}')
+        self._lm_device = torch.device(f'cuda:{lm_device}')
 
         self.init_lm_model(lm_name, embedder_vocab_size)
 
@@ -463,7 +461,7 @@ class KnowledgeableStoriesModel(Model):
                     if "lm_memory_loss" in self._loss_weights:
                         lm_memory_loss = self._lm_memory_finetune(passages, encoded_sentences_cat)
                         print(lm_memory_loss)
-                        loss += lm_memory_loss.to(0)
+                        loss += lm_memory_loss.to(self._default_cuda_device)
                         self._metrics["lm_memory_loss"](lm_memory_loss)
 
                 else:
@@ -553,7 +551,7 @@ class KnowledgeableStoriesModel(Model):
                                 kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
 
                             print(total_loss)
-                            loss += (total_loss.to(0) * self._loss_weights["tdvae_loss"])
+                            loss += (total_loss.to(self._default_cuda_device) * self._loss_weights["tdvae_loss"])
 
                             self._metrics["tdvae_loss"](total_loss)
                             self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
@@ -622,7 +620,7 @@ class KnowledgeableStoriesModel(Model):
 
                         self._bleu_score_if_required(dataset_name, prem_tokens, conclusions, generated_text)
 
-        output["loss"] = loss.to(0)
+        output["loss"] = loss.to(self._default_cuda_device)
 
         return output
 
@@ -728,7 +726,7 @@ class KnowledgeableStoriesModel(Model):
 
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
-        loss = torch.tensor(0.0).to(0)
+        loss = torch.tensor(0.0).to(self._default_cuda_device)
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
         print("Encoded Sentences", encoded_sentences.size())
