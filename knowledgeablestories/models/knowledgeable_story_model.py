@@ -65,7 +65,7 @@ class KnowledgeableStoriesModel(Model):
                  lm_memory_cuda_device: int = 3,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
-                 tdvae_device: int = None,
+                 tdvae_device: int = 2,
                  dropout: float = 0.0,
                  label_smoothing: float = 0.0,
                  sent_offsets: List[int] = [-1, 1],
@@ -554,7 +554,7 @@ class KnowledgeableStoriesModel(Model):
                                 bce_diff = bce_diff.to(orig_device)
                                 kl_predict_qb_pt = kl_predict_qb_pt.to(orig_device)
 
-                            loss += total_loss * self._loss_weights["tdvae_loss"]
+                            loss += (total_loss.to(0) * self._loss_weights["tdvae_loss"])
 
                             self._metrics["tdvae_loss"](total_loss)
                             self._metrics["tdvae_kl_loss"](kl_div_qs_pb)
