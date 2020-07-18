@@ -231,6 +231,7 @@ class KnowledgeableStoriesModel(Model):
             self._metrics["atomic_loss"] = Average()
             self._metrics["snli_loss"] = Average()
             self._metrics["pplm_loss"] = Average()
+            self._metrics["lm_memory_loss"] = Average()
 
             self._metrics["passage_disc_logits_mean"] = Average()
             self._metrics["passage_disc_logits_std"] = Average()
