@@ -142,8 +142,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_memory_cuda_device = torch.device(f'cuda:{lm_memory_cuda_device}')
         if lm_memory_dense is not None:
             self._lm_memory_dense = lm_memory_dense
-            if lm_memory_cuda_device:
-                self._lm_memory_dense = self._lm_memory_dense.to(lm_memory_cuda_device)
+            self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         else:
             self._lm_memory_dense = None
 
