@@ -730,9 +730,11 @@ class KnowledgeableStoriesModel(Model):
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
         print("Encoded Sentences", encoded_sentences.size())
 
-        past = self._lm_memory_dense(encoded_sentences.detach().to(self._lm_memory_cuda_device))
-        print("Past", encoded_sentences.size())
+        encoded_sentences = encoded_sentences.detach()
+        encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
+        past = self._lm_memory_dense(encoded_sentences)
+        print("Past", past.size())
 
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         print("Past Split", [p.size() for p in past_split])
