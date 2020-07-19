@@ -141,8 +141,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._lm_memory_cuda_device = torch.device(f'cuda:{lm_memory_cuda_device}')
         if lm_memory_dense is not None:
-            self._lm_memory_dense = lm_memory_dense
-            self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
+            self._lm_memory_dense = lm_memory_dense.to(self._lm_memory_cuda_device)
         else:
             self._lm_memory_dense = None
 
@@ -728,10 +727,11 @@ class KnowledgeableStoriesModel(Model):
         loss = torch.tensor(0.0).to(self._default_cuda_device)
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
-        print("Encoded Sentences", encoded_sentences.size())
 
         encoded_sentences = encoded_sentences.detach()
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
+
+        print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
 
         past = self._lm_memory_dense(encoded_sentences)
         print("Past", past.size())
