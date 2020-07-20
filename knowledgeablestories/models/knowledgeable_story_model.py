@@ -724,6 +724,9 @@ class KnowledgeableStoriesModel(Model):
 
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
+        tokens = passages["tokens"].to(self._lm_device)
+        print("Tokens", tokens)
+
         loss = torch.tensor(0.0).to(self._default_cuda_device)
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
@@ -737,14 +740,10 @@ class KnowledgeableStoriesModel(Model):
         past = self._lm_memory_dense(encoded_sentences)
         print("Past", past.size())
 
+        past = past.to(self._lm_device)
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
-
-        tokens = passages["tokens"].to(self._lm_device)
-        print("Tokens", tokens)
-
-        past = [p.to(self._lm_device) for p in past]
 
         lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
