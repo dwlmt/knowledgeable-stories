@@ -753,7 +753,6 @@ class KnowledgeableStoriesModel(Model):
 
         lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
-                                            attention_mask=lm_mask.to(self._lm_device),
                        labels=tokens, past=past)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
