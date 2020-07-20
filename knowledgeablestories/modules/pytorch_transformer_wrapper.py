@@ -114,7 +114,7 @@ class PytorchTransformer(Seq2SeqEncoder):
             src_mask = ~src_mask
 
         elif self._full_mask:
-            src_mask = torch.zeros(output.size(-2),output.size(-2),device=output.device, dtype=torch.BoolTensor)
+            src_mask = torch.zeros(output.size(-2),output.size(-2)).to(output.device).bool()
 
         output = self._transformer(output, src_key_padding_mask=mask, src_mask=src_mask)
         output = output.permute(1, 0, 2)
