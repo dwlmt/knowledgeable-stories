@@ -45,7 +45,7 @@ class PytorchTransformer(Seq2SeqEncoder):
             positional_embedding_size: int = 512,
             dropout_prob: float = 0.1,
             activation: str = "gelu",
-            full_mask: bool = True,
+            full_mask: bool = False,
     ) -> None:
         super().__init__()
 
@@ -79,7 +79,7 @@ class PytorchTransformer(Seq2SeqEncoder):
                 "positional_encoding must be one of None, 'sinusoidal', or 'embedding'"
             )
 
-        self._full_mask = True
+        self._full_mask = full_mask
 
     @overrides
     def get_input_dim(self) -> int:
