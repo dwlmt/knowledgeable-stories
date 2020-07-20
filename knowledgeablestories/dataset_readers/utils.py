@@ -86,7 +86,7 @@ def sentiment_to_labels_field(scalar_values):
 def convert_to_textfield(text_batch, tokenizer, max_token_len, token_indexers):
     text_field_list = []
     for text in text_batch:
-        tokens = tokenizer.tokenize(text + "<|endoftext|>")
+        tokens = tokenizer.tokenize(f"{text} <|endoftext|>")
         if len(tokens) > max_token_len:
             tokens = tokens[0: max_token_len]
         text_field_list.append(
