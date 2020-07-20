@@ -320,8 +320,6 @@ class KnowledgeableStoriesModel(Model):
         output = {}
         dataset_name = metadata[0]["dataset"]
 
-        print("Passages", passages["tokens"])
-
         if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None and "pplm_los" in self._loss_weights:
             self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out).cuda()
 
