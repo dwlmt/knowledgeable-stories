@@ -48,7 +48,7 @@ class WritingPromptsAbstractReader(DatasetReader):
         self._fusion = fusion
 
         # Add the relations as new tokens.
-        #self._tokenizer._tokenizer.add_tokens(token_tags)
+        self._tokenizer._tokenizer.add_tokens(token_tags)
 
         vocab_size = len(self._tokenizer._tokenizer)
         logger.info(f"Tokenizer vocabulary count: {vocab_size}")

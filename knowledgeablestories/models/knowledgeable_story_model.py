@@ -743,10 +743,13 @@ class KnowledgeableStoriesModel(Model):
         print("Past", past.size())
 
         past = past.to(self._lm_device)
-        past_split = torch.split(past.unsqueeze(1).unsqueeze(1).repeat(1,self._lm_memory_heads,1,1), self._lm_memory_hidden_size, dim=3)
+        past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
         past = [torch.stack(p) for p in past]
+        print("Past Stacked", [p.size() for p in past_split])
+        past = [p.view(p.size(0), p.size(1), self._lm_memory_heads, p.size(3) / self._lm_memory_heads).permute(0,1,3,2,4) for p in past]
+
 
         lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
