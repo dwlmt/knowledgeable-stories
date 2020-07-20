@@ -106,7 +106,7 @@ class CmuAbstractBookReader(DatasetReader):
     def convert_text_to_sentences(self, story_text):
         story_text = strip_repeating_punctuation(story_text)
         split_sentences = [s for s in self._sentence_splitter.split_sentences(story_text) if not s.isspace()]
-        split_sentences = [s + "<|endofsentence|>" for s in split_sentences]
+        split_sentences = [f"{s} <|endofsentence|>" for s in split_sentences]
         return split_sentences
 
 
