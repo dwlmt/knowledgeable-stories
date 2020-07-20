@@ -45,6 +45,7 @@ class PytorchTransformer(Seq2SeqEncoder):
             positional_embedding_size: int = 512,
             dropout_prob: float = 0.1,
             activation: str = "gelu",
+            full_mask: bool = True,
     ) -> None:
         super().__init__()
 
@@ -78,6 +79,8 @@ class PytorchTransformer(Seq2SeqEncoder):
                 "positional_encoding must be one of None, 'sinusoidal', or 'embedding'"
             )
 
+        self._full_mask = True
+
     @overrides
     def get_input_dim(self) -> int:
         return self._input_dim
@@ -106,10 +109,12 @@ class PytorchTransformer(Seq2SeqEncoder):
         # For some other reason, the torch transformer takes the mask backwards.
         mask = ~mask
 
+        # Default source mask to full mask if not provided.
         if src_mask is not None:
             src_mask = ~src_mask
-        else:
-            src_mask = torch.ones(output.size(-2),output.size(-2)).to(output)
+
+        elif self._full_mask:
+            src_mask = torch.zeros(output.size(-2),output.size(-2),device=output.device, type=torch.BoolTensor)
 
         output = self._transformer(output, src_key_padding_mask=mask, src_mask=src_mask)
         output = output.permute(1, 0, 2)
