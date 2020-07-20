@@ -60,6 +60,7 @@ class KnowledgeableStoriesModel(Model):
                  pplm_projection_out: int = 1024,
                  lm_memory_dense: FeedForward = None,
                  lm_memory_hidden_size: int = 1024,
+                 lm_memory_heads: int = 16,
                  lm_memory_cuda_device: int = 3,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
@@ -146,6 +147,7 @@ class KnowledgeableStoriesModel(Model):
             self._lm_memory_dense = None
 
         self._lm_memory_hidden_size = lm_memory_hidden_size
+        self._lm_memory_heads = lm_memory_heads
 
         self._cat_minus = cat_minus
 
@@ -741,7 +743,7 @@ class KnowledgeableStoriesModel(Model):
         print("Past", past.size())
 
         past = past.to(self._lm_device)
-        past_split = torch.split(past.unsqueeze(1).unsqueeze(1), self._lm_memory_hidden_size, dim=2)
+        past_split = torch.split(past.unsqueeze(1).unsqueeze(1).repeat(1,self._lm_memory_heads,1,1), self._lm_memory_hidden_size, dim=3)
         print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
         past = [torch.stack(p) for p in past]
