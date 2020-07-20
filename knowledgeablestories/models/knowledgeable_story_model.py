@@ -62,7 +62,7 @@ class KnowledgeableStoriesModel(Model):
                  lm_memory_hidden_size: int = 1024,
                  lm_memory_heads: int = 16,
                  lm_memory_cuda_device: int = 3,
-                 lm_memory_max_sentences: int = 10,
+                 lm_memory_max_sentences: int = 20,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = 2,
