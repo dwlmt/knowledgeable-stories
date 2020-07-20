@@ -748,8 +748,8 @@ class KnowledgeableStoriesModel(Model):
             tokens = tokens[:,0:max_pass,:]
 
             rand_indices = torch.randperm(max_pass)
-            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass) ]
-            tokens = tokens[:, rand_indices, :][: min(self._lm_memory_max_sentences,max_pass) ]
+            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass), : ]
+            tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences,max_pass), : ]
 
             print(encoded_sentences.size(), tokens.size())
 
