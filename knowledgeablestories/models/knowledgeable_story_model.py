@@ -734,14 +734,24 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
+        lm_mask = self.create_lm_mask(tokens)
+        passage_mask = self._passage_masks(lm_mask)
+        max_pass = torch.sum(passage_mask)
+
+        print("Masks", lm_mask, passage_mask, max_pass)
+
+        encoded_sentences = encoded_sentences[0: max_pass]
+        tokens = tokens[:,0:max_pass,:]
+
+        print(encoded_sentences.size(), tokens.size())
+
         encoded_sentences = encoded_sentences.detach()
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
-        #encoded_sentences = encoded_sentences[0:5]
+        # encoded_sentences = encoded_sentences[0:5]
         print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
 
-
-        self._lm_memory_dense =  self._lm_memory_dense.to(self._lm_memory_cuda_device)
+        self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences)
 
         print("Past", past.size())
@@ -752,10 +762,10 @@ class KnowledgeableStoriesModel(Model):
         past = list(zip(past_split, past_split))
         past = [torch.stack(p) for p in past]
         print("Past Stacked", [p.size() for p in past])
-        past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads, int(p.size(3) / self._lm_memory_heads)).permute(0,1,3,2,4) for p in past]
+        past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads,
+                       int(p.size(3) / self._lm_memory_heads)).permute(0, 1, 3, 2, 4) for p in past]
         print("Past Permuted", [p.size() for p in past])
 
-        lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
                        labels=tokens, past=past)
 
