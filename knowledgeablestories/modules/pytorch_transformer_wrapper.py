@@ -91,7 +91,7 @@ class PytorchTransformer(Seq2SeqEncoder):
         return False
 
     @overrides
-    def forward(self, inputs: torch.Tensor, mask: torch.BoolTensor):
+    def forward(self, inputs: torch.Tensor, mask: torch.BoolTensor, src_mask: torch.BoolTensor = None):
         output = inputs
         if self._sinusoidal_positional_encoding:
             output = add_positional_features(output)
@@ -105,7 +105,11 @@ class PytorchTransformer(Seq2SeqEncoder):
         output = output.permute(1, 0, 2)
         # For some other reason, the torch transformer takes the mask backwards.
         mask = ~mask
-        output = self._transformer(output, src_key_padding_mask=mask)
+
+        if src_mask is not None:
+            src_mask = ~src_mask
+
+        output = self._transformer(output, src_key_padding_mask=mask, src_mask=src_mask)
         output = output.permute(1, 0, 2)
 
         return output
