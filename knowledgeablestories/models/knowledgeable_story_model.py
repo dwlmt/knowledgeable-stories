@@ -62,7 +62,7 @@ class KnowledgeableStoriesModel(Model):
                  lm_memory_hidden_size: int = 1024,
                  lm_memory_heads: int = 16,
                  lm_memory_cuda_device: int = 3,
-                 lm_memory_max_sentences: int = 20,
+                 lm_memory_max_sentences: int = 15,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
                  tdvae_device: int = 2,
@@ -742,7 +742,7 @@ class KnowledgeableStoriesModel(Model):
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
 
-            print("Masks", lm_mask, passage_mask, max_pass)
+            print("Masks", lm_mask.size())
 
             encoded_sentences = encoded_sentences[0: max_pass]
             tokens = tokens[:,0:max_pass,:]
@@ -775,7 +775,7 @@ class KnowledgeableStoriesModel(Model):
         print("Past Permuted", [p.size() for p in past])
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
-                       labels=tokens, past=past)
+                       labels=tokens, past=past, attention_mask=lm_mask)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
