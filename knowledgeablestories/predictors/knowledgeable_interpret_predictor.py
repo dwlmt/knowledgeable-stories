@@ -161,8 +161,8 @@ class KnowledgeableInterpretPredictor(Predictor):
         add_end_to_sentences = []
         for sent in sentences_text:
 
-            if "<|endofsentence|>" not in sent:
-                sent += " <|endofsentence|>"
+            #if "<|endofsentence|>" not in sent:
+            #    sent += " <|endofsentence|>"
             add_end_to_sentences.append(sent)
 
         sentences_text = add_end_to_sentences
