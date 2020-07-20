@@ -103,18 +103,18 @@ class PytorchTransformer(Seq2SeqEncoder):
             position_ids = position_ids.unsqueeze(0).expand(inputs.shape[:-1])
             output = output + self._positional_embedding(position_ids)
 
-        # For some reason the torch transformer expects the shape (sequence, batch, features), not the more
-        # familiar (batch, sequence, features), so we have to fix it.
-        output = output.permute(1, 0, 2)
-        # For some other reason, the torch transformer takes the mask backwards.
-        mask = ~mask
-
         # Default source mask to full mask if not provided.
         if src_mask is not None:
             src_mask = ~src_mask
 
         elif self._full_mask:
-            src_mask = torch.zeros(output.size(-2),output.size(-2)).to(output.device).bool()
+            src_mask = torch.zeros(output.size(-2), output.size(-2)).to(output.device).bool()
+
+        # For some reason the torch transformer expects the shape (sequence, batch, features), not the more
+        # familiar (batch, sequence, features), so we have to fix it.
+        output = output.permute(1, 0, 2)
+        # For some other reason, the torch transformer takes the mask backwards.
+        mask = ~mask
 
         output = self._transformer(output, src_key_padding_mask=mask, mask=src_mask)
         output = output.permute(1, 0, 2)
