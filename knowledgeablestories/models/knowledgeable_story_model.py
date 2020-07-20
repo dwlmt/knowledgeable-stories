@@ -727,8 +727,8 @@ class KnowledgeableStoriesModel(Model):
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
         tokens = passages["tokens"].to(self._lm_device)
-        tokens = tokens[:, 0:5, :]
-        print("Tokens", tokens)
+        #tokens = tokens[:, 0:5, :]
+        print("Tokens", tokens.size())
 
         loss = torch.tensor(0.0).to(self._default_cuda_device)
 
@@ -737,7 +737,7 @@ class KnowledgeableStoriesModel(Model):
         encoded_sentences = encoded_sentences.detach()
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
-        encoded_sentences = encoded_sentences[0:5]
+        #encoded_sentences = encoded_sentences[0:5]
         print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
 
 
