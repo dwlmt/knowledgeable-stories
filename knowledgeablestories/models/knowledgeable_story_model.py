@@ -733,6 +733,7 @@ class KnowledgeableStoriesModel(Model):
 
         print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
 
+        self._lm_memory_dense =  self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences)
         print("Past", past.size())
 
