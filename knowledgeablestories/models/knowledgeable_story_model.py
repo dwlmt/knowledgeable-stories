@@ -741,9 +741,10 @@ class KnowledgeableStoriesModel(Model):
         print("Past", past.size())
 
         past = past.to(self._lm_device)
-        past_split = torch.split(past, self._lm_memory_hidden_size, dim=1)
+        past_split = torch.split(past.unsqueeze(1).unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
+        past = [torch.stack(p) for p in past]
 
         lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
