@@ -320,6 +320,8 @@ class KnowledgeableStoriesModel(Model):
         output = {}
         dataset_name = metadata[0]["dataset"]
 
+        print("Passages", passages["tokens"])
+
         if self._pplm_projection_in > 0 and self._pplm_projection_out > 0 and self._pplm_projection_dense is None and "pplm_los" in self._loss_weights:
             self._pplm_projection_dense = torch.nn.Linear(self._pplm_projection_in, self._pplm_projection_out).cuda()
 
@@ -744,10 +746,12 @@ class KnowledgeableStoriesModel(Model):
         tokens = passages["tokens"].to(self._lm_device)
         print("Tokens", tokens)
 
+        past = [p.to(self._lm_device) for p in past]
+
         lm_mask = self.create_lm_mask(tokens)
         lm_loss, lm_logits = self._lm_model(tokens,
                                             attention_mask=lm_mask.to(self._lm_device),
-                       labels=tokens, past= past.to(self._lm_device))
+                       labels=tokens, past=past)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
