@@ -68,7 +68,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         # Config for text generation
         gen_temp = float(os.getenv("STORY_WRITER_GEN_TEMP", default=1.0))
         gen_top_k = int(os.getenv("STORY_WRITER_GEN_TOP_K", default=0))
-        gen_top_p = float(os.getenv("STORY_WRITER_GEN_TOP_P", default=0.925))
+        gen_top_p = float(os.getenv("STORY_WRITER_GEN_TOP_P", default=0.90))
         gen_length_penalty = float(os.getenv("STORY_WRITER_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("STORY_WRITER_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = parse_bool(os.getenv("STORY_WRITER_GEN_DO_SAMPLE", default="True"))
@@ -359,7 +359,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                             generated_sequence = generated_sequence[: first_index]
 
                         if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                            pass#generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
                         generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
@@ -384,7 +384,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
-                    sentence += "<|endofsentence|>"
+                    #sentence += "<|endofsentence|>"
                     token_ids = self._tokenizer._tokenizer.encode(sentence)
                     sentence_dict_list.append(
                         {"sentence_num": i, "tokens": token_ids, "text": sentence})
