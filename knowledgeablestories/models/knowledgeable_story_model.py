@@ -747,8 +747,8 @@ class KnowledgeableStoriesModel(Model):
         print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
         past = [torch.stack(p) for p in past]
-        print("Past Stacked", [p.size() for p in past_split])
-        past = [p.view(p.size(0), p.size(1), self._lm_memory_heads, p.size(3) / self._lm_memory_heads).permute(0,1,3,2,4) for p in past]
+        print("Past Stacked", [p.size() for p in past])
+        past = [p.view(p.size(0), p.size(1), self._lm_memory_heads, int(p.size(3) / self._lm_memory_heads)).permute(0,1,3,2,4) for p in past]
 
 
         lm_mask = self.create_lm_mask(tokens)
