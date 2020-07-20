@@ -108,6 +108,8 @@ class PytorchTransformer(Seq2SeqEncoder):
 
         if src_mask is not None:
             src_mask = ~src_mask
+        else:
+            src_mask = torch.ones(output.size(-2),output.size(-2)).to(output)
 
         output = self._transformer(output, src_key_padding_mask=mask, src_mask=src_mask)
         output = output.permute(1, 0, 2)
