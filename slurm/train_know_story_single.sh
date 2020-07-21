@@ -41,7 +41,7 @@ export PATIENCE=3
 export TRAINING_ITERATION_SIZE=20000
 export VALIDATION_ITERATION_SIZE=2000
 export LR_PATIENCE=1
-export LR_REDUCE_RATE=0.25
+export LR_REDUCE_RATE=0.50
 
 declare -a ScratchPathArray=(/disk/scratch_big/ /disk/scratch1/ /disk/scratch2/ /disk/scratch/ /disk/scratch_fast/)
 
