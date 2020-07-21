@@ -728,38 +728,38 @@ class KnowledgeableStoriesModel(Model):
 
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
-        with torch.no_grad():
+        #with torch.no_grad():
 
-            tokens = passages["tokens"].to(self._lm_device)
-            #tokens = tokens[:, 0:5, :]
-            print("Tokens", tokens.size())
+        tokens = passages["tokens"].to(self._lm_device)
+        #tokens = tokens[:, 0:5, :]
+        print("Tokens", tokens.size())
 
-            loss = torch.tensor(0.0).to(self._default_cuda_device)
+        loss = torch.tensor(0.0).to(self._default_cuda_device)
 
-            encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
+        encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
-            lm_mask = self.create_lm_mask(tokens)
+        lm_mask = self.create_lm_mask(tokens)
 
-            passage_mask = self._passage_masks(lm_mask)
-            max_pass = torch.sum(passage_mask)
+        passage_mask = self._passage_masks(lm_mask)
+        max_pass = torch.sum(passage_mask)
 
-            print("Masks", lm_mask.size())
+        print("Masks", lm_mask.size())
 
-            encoded_sentences = encoded_sentences[0: max_pass]
-            tokens = tokens[:,0:max_pass,:]
+        encoded_sentences = encoded_sentences[0: max_pass]
+        tokens = tokens[:,0:max_pass,:]
 
-            rand_indices = torch.randperm(max_pass)
-            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass), : ]
-            tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences,max_pass), : ]
+        rand_indices = torch.randperm(max_pass)
+        encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass), : ]
+        tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences,max_pass), : ]
 
-            lm_mask = self.create_lm_mask(tokens)
-            lm_mask = torch.cat((torch.ones(lm_mask.size(0), lm_mask.size(1), 1).bool().to(lm_mask.device), lm_mask),
-                                dim=-1)
-            print("Masks", lm_mask.size())
+        lm_mask = self.create_lm_mask(tokens)
+        lm_mask = torch.cat((torch.ones(lm_mask.size(0), lm_mask.size(1), 1).bool().to(lm_mask.device), lm_mask),
+                            dim=-1)
+        print("Masks", lm_mask.size())
 
-            #print(encoded_sentences.size(), tokens.size())
+        #print(encoded_sentences.size(), tokens.size())
 
-        encoded_sentences = encoded_sentences.detach()
+        #encoded_sentences = encoded_sentences.detach()
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
         # encoded_sentences = encoded_sentences[0:5]
