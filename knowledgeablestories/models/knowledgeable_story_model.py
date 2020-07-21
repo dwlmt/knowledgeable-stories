@@ -740,7 +740,7 @@ class KnowledgeableStoriesModel(Model):
 
             lm_mask = self.create_lm_mask(tokens)
 
-            lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1).bool().to(lm_mask.device), lm_mask))
+            lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1).bool().to(lm_mask.device), lm_mask),dim=-1)
 
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
