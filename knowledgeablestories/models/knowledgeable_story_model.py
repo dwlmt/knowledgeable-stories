@@ -740,12 +740,12 @@ class KnowledgeableStoriesModel(Model):
 
             lm_mask = self.create_lm_mask(tokens)
 
-            lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1).bool().to(lm_mask.device), lm_mask),dim=-1)
+            #lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1).bool().to(lm_mask.device), lm_mask),dim=-1)
 
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
 
-            print("Masks", lm_mask.size())
+            #print("Masks", lm_mask.size())
 
             encoded_sentences = encoded_sentences[0: max_pass]
             tokens = tokens[:,0:max_pass,:]
@@ -760,25 +760,25 @@ class KnowledgeableStoriesModel(Model):
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
         # encoded_sentences = encoded_sentences[0:5]
-        print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
+        #print("Encoded Sentences", encoded_sentences.size(), encoded_sentences.device)
 
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences)
 
-        print("Past", past.size())
+        #print("Past", past.size())
 
         past = past.to(self._lm_device)
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
-        print("Past Split", [p.size() for p in past_split])
+        #print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
         past = [torch.stack(p) for p in past]
-        print("Past Stacked", [p.size() for p in past])
+        #print("Past Stacked", [p.size() for p in past])
         past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads,
                        int(p.size(3) / self._lm_memory_heads)).permute(0, 1, 3, 2, 4) for p in past]
-        print("Past Permuted", [p.size() for p in past])
+        #print("Past Permuted", [p.size() for p in past])
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
-                       labels=tokens, past=past, attention_mask=lm_mask)
+                       labels=tokens, past=past)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
