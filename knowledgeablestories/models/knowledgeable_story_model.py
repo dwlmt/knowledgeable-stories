@@ -740,12 +740,10 @@ class KnowledgeableStoriesModel(Model):
 
             lm_mask = self.create_lm_mask(tokens)
 
-            #lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1).bool().to(lm_mask.device), lm_mask),dim=-1)
-
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
 
-            #print("Masks", lm_mask.size())
+            print("Masks", lm_mask.size())
 
             encoded_sentences = encoded_sentences[0: max_pass]
             tokens = tokens[:,0:max_pass,:]
@@ -754,7 +752,12 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass), : ]
             tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences,max_pass), : ]
 
-            print(encoded_sentences.size(), tokens.size())
+            lm_mask = self.create_lm_mask(tokens)
+            lm_mask = torch.cat((torch.ones(lm_mask.size(0), lm_mask.size(1), 1).bool().to(lm_mask.device), lm_mask),
+                                dim=-1)
+            print("Masks", lm_mask.size())
+
+            #print(encoded_sentences.size(), tokens.size())
 
         encoded_sentences = encoded_sentences.detach()
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
@@ -778,7 +781,7 @@ class KnowledgeableStoriesModel(Model):
         #print("Past Permuted", [p.size() for p in past])
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
-                       labels=tokens, past=past)
+                       labels=tokens, past=past, mask=lm_mask)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
