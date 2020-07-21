@@ -739,6 +739,9 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
             lm_mask = self.create_lm_mask(tokens)
+
+            lm_mask = torch.cat((torch.ones(lm_mask.size(0),lm_mask.size(1),1), lm_mask))
+
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
 
