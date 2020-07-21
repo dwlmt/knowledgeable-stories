@@ -781,7 +781,7 @@ class KnowledgeableStoriesModel(Model):
         #print("Past Permuted", [p.size() for p in past])
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
-                       labels=tokens, past=past, mask=lm_mask)
+                       labels=tokens, past=past, attention_mask=lm_mask)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
