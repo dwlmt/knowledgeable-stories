@@ -364,6 +364,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
+                            print({"text": generated_text, "tokens": generated_sequence})
                             generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
                             # print(generated_sequences)
