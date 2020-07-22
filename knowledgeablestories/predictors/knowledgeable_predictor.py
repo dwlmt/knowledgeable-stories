@@ -101,7 +101,7 @@ class KnowledgeablePredictor(Predictor):
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
-        dont_generate_token_ids = []
+        dont_generate_token_ids = [[50256]]
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
 
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
@@ -112,10 +112,6 @@ class KnowledgeablePredictor(Predictor):
 
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
-
-        token_tags_ids = [self._tokenizer._tokenizer.encode(t) for t in token_tags]
-        dont_generate_token_ids = token_tags_ids + dont_generate_token_ids
-        dont_generate_token_ids = [t for t in dont_generate_token_ids if t not in self._eos_token_ids]
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
