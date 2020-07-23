@@ -288,7 +288,7 @@ class KnowledgeableStoriesModel(Model):
             initializer(self)
 
     def move_tdvae_to_gpu_if_required(self):
-        if self._tdvae_device is not None:
+        if self._passage_tdvae is not None:
             self._passage_tdvae = self._passage_tdvae.to(self._tdvae_device)
 
     def init_lm_model(self, lm_name: str, embedder_vocab_size: int, override: bool = False):
