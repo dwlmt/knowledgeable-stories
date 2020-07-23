@@ -122,7 +122,7 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples = int(os.getenv("NEGATIVE_EXAMPLES_PER_STORY", default=1))
         self._neg_examples_num_mutated = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_SENTENCES", default=1))
-        self._neg_examples_num_block = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_BLOCK", default=0))
+        self._neg_examples_num_block = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_BLOCK", default=1))
 
         self._neg_examples_num_swapped = int(os.getenv("NEGATIVE_EXAMPLES_NUM_SWAPPED", default=1))
 
