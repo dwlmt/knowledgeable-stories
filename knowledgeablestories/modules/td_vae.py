@@ -282,10 +282,10 @@ class TDVAE(nn.Module, FromParams):
         for i in range(seq_size):
             #print("X", x.size())
             rollout_x, rollout_z2, z1, b = self.rollout_posteriors(x, t=i, n=n, do_sample=do_sample)
-            rollout_xs.append(rollout_x.cpu())
-            rollout_z2s.append(rollout_z2.cpu())
-            rollout_z1s.append(z1.cpu())
-            bs.append(b.cpu())
+            rollout_xs.append(rollout_x)
+            rollout_z2s.append(rollout_z2)
+            rollout_z1s.append(z1)
+            bs.append(b)
 
         rollout_xs = torch.stack(rollout_xs)
         rollout_z2s = torch.stack(rollout_z2s)
