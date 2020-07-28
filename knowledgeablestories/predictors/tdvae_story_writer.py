@@ -75,7 +75,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
 
-        dont_generate_token_ids = [[50256]]
+        dont_generate_token_ids = [[50256],  [5145, 5145] ]
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
 
         eos_text_token_ids = [764]
