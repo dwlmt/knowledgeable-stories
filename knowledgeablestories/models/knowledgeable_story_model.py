@@ -760,7 +760,7 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
-        past = self._lm_memory_encode_past(encoded_sentences)
+        past = self._lm_memory_encode_past_train(encoded_sentences)
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
                        labels=tokens, past=past, attention_mask=lm_mask)
@@ -771,11 +771,26 @@ class KnowledgeableStoriesModel(Model):
 
         return loss
 
-    def _lm_memory_encode_past(self, encoded_sentences):
-        print(encoded_sentences.size())
+    def _lm_memory_encode_past_train(self, encoded_sentences):
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device))
         past = past.to(self._lm_device)
+        past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
+        # print("Past Split", [p.size() for p in past_split])
+        past = list(zip(past_split, past_split))
+        past = [torch.stack(p) for p in past]
+        # print("Past Stacked", [p.size() for p in past])
+        past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads,
+                       int(p.size(3) / self._lm_memory_heads)).permute(0, 1, 3, 2, 4) for p in past]
+        # print("Past Permuted", [p.size() for p in past])
+        return past
+
+    def _lm_memory_encode_past_pred(self, encoded_sentences):
+        print(encoded_sentences.size())
+        self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
+        past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
+        past = past.to(self._lm_device)
+        print("Past", past)
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         # print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
@@ -1234,7 +1249,7 @@ class KnowledgeableStoriesModel(Model):
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
             logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
             print("Logit",logit.size())
-            past = self._lm_memory_encode_past(logit)
+            past = self._lm_memory_encode_past_pred(logit)
             print("Past", past.size())
         else:
             past=None
