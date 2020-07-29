@@ -88,7 +88,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
-                                   "max_length": gen_max_length, "do_sample": gen_do_sample,
+                                   "max_length": gen_max_length,  "min_length": 2, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": dont_generate_token_ids}
