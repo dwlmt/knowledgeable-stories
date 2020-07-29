@@ -1399,7 +1399,7 @@ class KnowledgeableStoriesModel(Model):
                                  num_return_sequences: int = 10,
                                  ):
 
-        print("Past", past.size())
+        print("Past", [p.size() for p in past])
 
         with torch.set_grad_enabled(trace_log_probs):
 
