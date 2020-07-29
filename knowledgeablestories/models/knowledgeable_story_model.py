@@ -1434,17 +1434,21 @@ class KnowledgeableStoriesModel(Model):
             first_token = True
 
             while cur_len < max_length:
-                model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
-                                                                            attention_mask=attention_mask)
+                if not first_token:
+                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
+                                                                                attention_mask=attention_mask)
+                else:
+                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=None,
+                                                                                attention_mask=attention_mask)
 
                 if past is None:
                     outputs = self._lm_model(**model_inputs)
                 else:
                     # If passed is provided then need to concat to create history
-                    outputs = self._lm_model.transformer(model_inputs)
+                    outputs = self._lm_model.transformer(**model_inputs)
                     print("Transformer Outputs", outputs)
                     print("Output sizes",[o.size() for o in outputs])
-                    print("Past", past.size())
+                    #print("Past", past.size())
 
                     lm_logits = self.lm_head(outputs[0])
 
