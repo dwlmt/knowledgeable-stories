@@ -236,7 +236,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         for story_context in story_contexts:
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
-            generated_sentences = self.generate_sentences(token_ids, rollout_x)
+            generated_sentences = self.generate_sentences(token_ids, rollout_x[-1,steps-1])
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
                 sent["sentence_id"] = sentence_id
