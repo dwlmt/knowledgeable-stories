@@ -236,7 +236,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         for story_context in story_contexts:
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
-            generated_sentences = self.generate_sentences(token_ids)
+            generated_sentences = self.generate_sentences(token_ids, rollout_x)
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
                 sent["sentence_id"] = sentence_id
@@ -298,78 +298,17 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         return encoded_sentences_batch
 
-    def generate_sentences(self, previous_tokens):
+    def generate_sentences(self, previous_tokens, sentence_embeddings):
 
-        if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
-            flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
-        else:
-            flat_previous_tokens = previous_tokens
+        print("Rollout X", sentence_embeddings.size())
 
-        if len(flat_previous_tokens) > self._max_previous_lm_tokens:
-            flat_previous_tokens = flat_previous_tokens[
-                                   len(flat_previous_tokens) - self._max_previous_lm_tokens:]
+        generated_sequences, _, _ = self._model.generate_sentences(
+            previous_tokens=previous_tokens,
+            sentence_embedding=sentence_embeddings,
+            gen_config=self._generation_config,
+            trace_log_probs=False,
+            gen_num_of_sequences=self._gen_num_of_sequences)
 
-        previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
-        if torch.cuda.is_available():
-            previous_tokens_tensor = previous_tokens_tensor.cuda()
-
-        generated_sequences = []
-        retries = 0
-
-        while len(
-                generated_sequences) < self._gen_num_of_sequences and self._gen_num_of_sequences_max_retry > retries:
-
-            retries += 1
-
-            output_sequences = self._model.generate_text(previous_tokens_tensor,
-                                                         num_of_sequences=min(
-                                                             self._gen_num_of_sequences - len(
-                                                                 generated_sequences),
-                                                             self._gen_max_per_batch),
-                                                         override_gen_config=self._generation_config)
-
-            # print(previous_tokens_tensor, output_sequences)
-
-            if len(output_sequences.shape) > 2:
-                output_sequences.squeeze_()
-            for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
-                generated_sequence = generated_sequence.tolist()
-                # Remove the prompt.
-
-                generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
-
-                if generated_sequence[0] not in self._eos_token_ids:
-
-                    # Truncate the generated sentence.
-                    first_index = self._generation_config["max_length"]
-                    for end_token in self._eos_token_ids:
-                        try:
-                            if end_token not in self._keep_eos_ids:
-                                first_index = min(generated_sequence.index(end_token), first_index)
-                            else:
-                                first_index = min(generated_sequence.index(end_token) + 1, first_index)
-                        except ValueError:
-                            pass
-
-                        if first_index < self._generation_config["max_length"]:
-                            generated_sequence = generated_sequence[: first_index]
-
-                        if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
-
-                    if len(generated_sequence) > 0:
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
-                                                                           clean_up_tokenization_spaces=True,
-                                                                           skip_special_tokens=True)
-
-                        if not generated_text.isspace() and sum(
-                                [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
-                            print({"text": generated_text, "tokens": generated_sequence})
-                            generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
-
-                            # print(generated_sequences)
-
-        # print(f"Generated: {generated_sequences}")
         return generated_sequences
 
     def _split_sentences_if_required(self, inputs):

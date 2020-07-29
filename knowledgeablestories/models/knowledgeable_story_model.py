@@ -282,7 +282,7 @@ class KnowledgeableStoriesModel(Model):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
         for t in bad_words.split():
             bad_words_ids.extend(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids = []  # bad_words_ids
+        self._bad_words_ids = [[50256],  [5145, 5145] ]  # bad_words_ids
 
         if initializer is not None:
             initializer(self)
@@ -760,18 +760,7 @@ class KnowledgeableStoriesModel(Model):
 
         encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
 
-        self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
-        past = self._lm_memory_dense(encoded_sentences)
-
-        past = past.to(self._lm_device)
-        past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
-        #print("Past Split", [p.size() for p in past_split])
-        past = list(zip(past_split, past_split))
-        past = [torch.stack(p) for p in past]
-        #print("Past Stacked", [p.size() for p in past])
-        past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads,
-                       int(p.size(3) / self._lm_memory_heads)).permute(0, 1, 3, 2, 4) for p in past]
-        #print("Past Permuted", [p.size() for p in past])
+        past = self._lm_memory_encode_past(encoded_sentences)
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
                        labels=tokens, past=past, attention_mask=lm_mask)
@@ -781,6 +770,20 @@ class KnowledgeableStoriesModel(Model):
         self._metrics["lm_memory_loss"](lm_loss.item())
 
         return loss
+
+    def _lm_memory_encode_past(self, encoded_sentences):
+        self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
+        past = self._lm_memory_dense(encoded_sentences)
+        past = past.to(self._lm_device)
+        past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
+        # print("Past Split", [p.size() for p in past_split])
+        past = list(zip(past_split, past_split))
+        past = [torch.stack(p) for p in past]
+        # print("Past Stacked", [p.size() for p in past])
+        past = [p.view(p.size(0), p.size(1), p.size(2), self._lm_memory_heads,
+                       int(p.size(3) / self._lm_memory_heads)).permute(0, 1, 3, 2, 4) for p in past]
+        # print("Past Permuted", [p.size() for p in past])
+        return past
 
     def reward_function(self, generated_sents, original_sents):
         reward = self._cosine_similarity(generated_sents, original_sents)
@@ -1217,13 +1220,22 @@ class KnowledgeableStoriesModel(Model):
 
         return encoded_sentences_batch
 
-    def generate_sentences(self, previous_tokens, do_sample=True, trace_log_probs=False, gen_num_of_sequences=10,
-                           gen_num_of_sequences_max_retry=100):
+    def generate_sentences(self, previous_tokens, sentence_embedding=None, do_sample=True, trace_log_probs=False, gen_num_of_sequences=10,
+                           gen_num_of_sequences_max_retry=100, gen_config=None):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
         else:
             flat_previous_tokens = previous_tokens
+
+
+        if sentence_embedding:
+            # Inverse sigmoid as TD-VAE projections have sigmoid applied.
+            logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
+            print("Logit",logit.size())
+            past = self._lm_memory_encode_past(logit)
+            print("Past", past.size())
+
 
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
@@ -1244,14 +1256,14 @@ class KnowledgeableStoriesModel(Model):
 
             retries += 1
 
-            gen_config = self._generation_config
+            gen_config = gen_config or self._generation_config
 
             if trace_log_probs:
                 output_sequences, log_probs = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
                     do_sample=do_sample,
                     min_length=gen_config["min_length"],
-                    max_length=988,
+                    max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
@@ -1353,21 +1365,22 @@ class KnowledgeableStoriesModel(Model):
         return output_sequences
 
     def _generate_no_beam_search(self,
-                                 input_ids,
-                                 max_length,
-                                 min_length,
-                                 trace_log_probs,
-                                 do_sample,
-                                 temperature,
-                                 top_k,
-                                 top_p,
-                                 pad_token_id,
-                                 eos_token_ids,
-                                 bad_words_ids,
-                                 num_return_sequences,
+                                 input_ids: torch.Tensor = None,
+                                 past: torch.Tensor = None,
+                                 max_length: int = None,
+                                 min_length: int = None,
+                                 trace_log_probs: bool = False,
+                                 do_sample : bool = False,
+                                 temperature: int = 1.0,
+                                 top_k: int = 50,
+                                 top_p: int = 0.95,
+                                 pad_token_id: int = 50256,
+                                 eos_token_ids = None,
+                                 bad_words_ids = None,
+                                 num_return_sequences: int = 10,
                                  ):
-        """ This is based on the uncom
-        """
+
+        print("Past", past.size())
 
         with torch.set_grad_enabled(trace_log_probs):
 
