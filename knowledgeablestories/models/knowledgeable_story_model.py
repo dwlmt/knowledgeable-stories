@@ -1229,7 +1229,7 @@ class KnowledgeableStoriesModel(Model):
             flat_previous_tokens = previous_tokens
 
 
-        if sentence_embedding:
+        if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
             logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
             print("Logit",logit.size())
