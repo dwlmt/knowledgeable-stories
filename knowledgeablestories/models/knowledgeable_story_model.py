@@ -1235,7 +1235,8 @@ class KnowledgeableStoriesModel(Model):
             print("Logit",logit.size())
             past = self._lm_memory_encode_past(logit)
             print("Past", past.size())
-
+        else:
+            past=None
 
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
@@ -1262,6 +1263,7 @@ class KnowledgeableStoriesModel(Model):
                 output_sequences, log_probs = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
                     do_sample=do_sample,
+                    past=past,
                     min_length=gen_config["min_length"],
                     max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
@@ -1277,6 +1279,7 @@ class KnowledgeableStoriesModel(Model):
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
                     do_sample=do_sample,
+                    past=past,
                     min_length=gen_config["min_length"],
                     max_length=128,
                     temperature=gen_config["temperature"],
@@ -1410,15 +1413,29 @@ class KnowledgeableStoriesModel(Model):
                     effective_batch_size * num_beams, input_ids_len
                 )  # shape: (batch_size * num_return_sequences * num_beams, cur_len)
 
-            past = None  # defined for encoder-decoder models, None for decoder-only models
-
             log_probs = []
+
+            first_token = True
 
             while cur_len < max_length:
                 model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
                                                                             attention_mask=attention_mask)
 
-                outputs = self._lm_model(**model_inputs)
+                if past is None:
+                    outputs = self._lm_model(**model_inputs)
+                else:
+                    # If passed is provided then need to concat to create history
+                    outputs = self._lm_model.transformer(model_inputs)
+                    print("Transformer Outputs", outputs)
+                    print("Output sizes",[o.size() for o in outputs])
+                    print("Past", past.size())
+
+                    lm_logits = self.lm_head(outputs[0])
+
+                    outputs = [lm_logits] + outputs
+
+                first_token = False
+
                 next_token_logits = outputs[0][:, -1, :]
 
                 # if model has past, then set the past variable to speed up decoding
