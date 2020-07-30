@@ -1449,7 +1449,9 @@ class KnowledgeableStoriesModel(Model):
                     print("Transformer Outputs", outputs)
                     print("Output lengths", len(outputs))
                     #print("Output sizes",[o.size() for o in outputs])
-                    #print("Past", past.size())
+
+                    if first_token:
+                        print("Outputs to concat", [o.size() for o in outputs[1]], past.size())
 
                     lm_logits = self.lm_head(outputs[0])
 
