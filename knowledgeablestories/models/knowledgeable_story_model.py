@@ -1447,7 +1447,8 @@ class KnowledgeableStoriesModel(Model):
                     # If passed is provided then need to concat to create history
                     outputs = self._lm_model.transformer(**model_inputs)
                     print("Transformer Outputs", outputs)
-                    print("Output sizes",[o.size() for o in outputs])
+                    print("Output lengths", len(outputs))
+                    #print("Output sizes",[o.size() for o in outputs])
                     #print("Past", past.size())
 
                     lm_logits = self.lm_head(outputs[0])
