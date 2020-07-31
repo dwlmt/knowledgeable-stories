@@ -1340,9 +1340,7 @@ class KnowledgeableStoriesModel(Model):
 
                     if not generated_text.isspace() and sum(
                             [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
-                        generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
-
-                        # logger.info(generated_text, generated_sequence, log_prob)
+                        generated_sequences.append({"text": generated_text, "tokens": generated_sequence.tolist()})
 
                         sequences_tensor_list.append(generated_sequence)
                         if log_prob is not None:
