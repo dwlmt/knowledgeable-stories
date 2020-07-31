@@ -1451,16 +1451,21 @@ class KnowledgeableStoriesModel(Model):
                     print("Hidden", outputs[0].size())
 
                     if first_token:
-                        pass
 
-                    for o in outputs[1]:
-                        print(type(o))
-                        if isinstance(o, torch.Tensor):
-                            print("Outputs", o.size())
+                        past_cat = []
+                        for p, o in zip(past, outputs[1]):
+                            p_exp = p.expand(past.size(0), outputs[1].size(1), past.size(2), past.size(3),
+                                                   past.size(4))
+                            print("Expanded", p_exp.size(), o.size())
 
-                    lm_logits = self.lm_head(outputs[0])
+                            p = torch.cat((p,o), dim=-2)
+                            print("Cat", p.size())
+                            past_cat.append(p)
 
-                    outputs = [lm_logits] + outputs
+                        past = past_cat
+
+                    outputs = self._lm_model(past=past)
+
 
                 first_token = False
 
