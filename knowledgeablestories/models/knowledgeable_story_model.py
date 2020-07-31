@@ -1435,11 +1435,9 @@ class KnowledgeableStoriesModel(Model):
 
             while cur_len < max_length:
                 if not first_token:
-                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past,
-                                                                                attention_mask=attention_mask)
+                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past)
                 else:
-                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=None,
-                                                                                attention_mask=attention_mask)
+                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=None)
 
                 if past is None:
                     outputs = self._lm_model(**model_inputs)
@@ -1453,6 +1451,7 @@ class KnowledgeableStoriesModel(Model):
                     if first_token:
 
                         past_cat = []
+
                         for p, o in zip(past, outputs[1]):
                             p_exp = p.expand(p.size(0), o.size(1), p.size(2), p.size(3),
                                                    p.size(4))
@@ -1464,7 +1463,8 @@ class KnowledgeableStoriesModel(Model):
 
                         past = past_cat
 
-                    outputs = self._lm_model(past=past)
+                    model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past)
+                    outputs = self._lm_model(**model_inputs)
 
 
                 first_token = False
