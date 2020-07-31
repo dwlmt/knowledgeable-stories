@@ -239,7 +239,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             generated_sentences = self.generate_sentences(token_ids, rollout_x[-1,steps-1])
             #print(generated_sentences)
             print("Generated sentences", generated_sentences)
-            generated_sentences = [g.tolist() for g in generated_sentences]
+            #generated_sentences = [g.tolist() for g in generated_sentences]
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
                 sent["sentence_id"] = sentence_id
