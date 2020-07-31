@@ -1455,7 +1455,7 @@ class KnowledgeableStoriesModel(Model):
                         for o in outputs[1]:
                             print(type(o))
                             if isinstance(o, torch.Tensor):
-                                print("Outputs to concat", o.size())
+                                print("Outputs", o.size())
 
                     lm_logits = self.lm_head(outputs[0])
 
