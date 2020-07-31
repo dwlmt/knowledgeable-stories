@@ -1454,7 +1454,7 @@ class KnowledgeableStoriesModel(Model):
 
                         past_cat = []
                         for p, o in zip(past, outputs[1]):
-                            p_exp = p.expand(p.size(0), outputs[1].size(1), p.size(2), p.size(3),
+                            p_exp = p.expand(p.size(0), o.size(1), p.size(2), p.size(3),
                                                    p.size(4))
                             print("Expanded", p_exp.size(), o.size())
 
