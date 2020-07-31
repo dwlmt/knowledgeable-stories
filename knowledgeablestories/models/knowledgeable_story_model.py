@@ -1454,8 +1454,8 @@ class KnowledgeableStoriesModel(Model):
 
                         past_cat = []
                         for p, o in zip(past, outputs[1]):
-                            p_exp = p.expand(past.size(0), outputs[1].size(1), past.size(2), past.size(3),
-                                                   past.size(4))
+                            p_exp = p.expand(p.size(0), outputs[1].size(1), p.size(2), p.size(3),
+                                                   p.size(4))
                             print("Expanded", p_exp.size(), o.size())
 
                             p = torch.cat((p,o), dim=-2)
