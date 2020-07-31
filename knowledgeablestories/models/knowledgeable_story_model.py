@@ -1448,10 +1448,14 @@ class KnowledgeableStoriesModel(Model):
                     outputs = self._lm_model.transformer(**model_inputs)
                     print("Transformer Outputs", outputs)
                     print("Output lengths", len(outputs))
-                    #print("Output sizes",[o.size() for o in outputs])
+                    print("Hidden", outputs[0].size())
 
                     if first_token:
-                        print("Outputs to concat", [o.size() for o in outputs[1]], past.size())
+
+                        for o in outputs[1]:
+                            print(type(o))
+                            if isinstance(o, torch.Tensor):
+                                print("Outputs to concat", o.size())
 
                     lm_logits = self.lm_head(outputs[0])
 
