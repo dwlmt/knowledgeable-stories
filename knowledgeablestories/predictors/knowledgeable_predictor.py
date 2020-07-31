@@ -101,7 +101,7 @@ class KnowledgeablePredictor(Predictor):
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
 
-        dont_generate_token_ids = [[50256]]
+        dont_generate_token_ids = [[50256],  [5145, 5145], [50257]]
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
 
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
