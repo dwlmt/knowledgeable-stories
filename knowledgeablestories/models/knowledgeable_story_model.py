@@ -1458,7 +1458,7 @@ class KnowledgeableStoriesModel(Model):
                                                    p.size(4))
                             print("Expanded", p_exp.size(), o.size())
 
-                            p = torch.cat((p,o), dim=-2)
+                            p = torch.cat((p_exp,o), dim=-2)
                             print("Cat", p.size())
                             past_cat.append(p)
 
