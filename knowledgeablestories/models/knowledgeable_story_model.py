@@ -1323,29 +1323,31 @@ class KnowledgeableStoriesModel(Model):
 
                 generated_sequence = generated_sequence[len(flat_previous_tokens):]
 
-                if generated_sequence[0] in self._eos_token_ids:
-                    generated_sequence[0] = END_OF_SENTENCE_TOKEN_ID
-
-                if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                    pass
-                    #generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
-                    #    torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
-
                 if len(generated_sequence) > 0:
-                    # logger.info(generated_sequence)
 
-                    generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
-                                                                       clean_up_tokenization_spaces=True,
-                                                                       skip_special_tokens=True)
+                    if generated_sequence[0] in self._eos_token_ids:
+                        generated_sequence[0] = END_OF_SENTENCE_TOKEN_ID
 
-                    if not generated_text.isspace() and sum(
-                            [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
-                        generated_sequences.append({"text": generated_text, "tokens": generated_sequence.tolist()})
+                    if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
+                        pass
+                        #generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
+                        #    torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
-                        sequences_tensor_list.append(generated_sequence)
-                        if log_prob is not None:
-                            print("Log probs size", log_prob.size())
-                            log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
+                    if len(generated_sequence) > 0:
+                        # logger.info(generated_sequence)
+
+                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
+                                                                           clean_up_tokenization_spaces=True,
+                                                                           skip_special_tokens=True)
+
+                        if not generated_text.isspace() and sum(
+                                [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
+                            generated_sequences.append({"text": generated_text, "tokens": generated_sequence.tolist()})
+
+                            sequences_tensor_list.append(generated_sequence)
+                            if log_prob is not None:
+                                print("Log probs size", log_prob.size())
+                                log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences, sequences_tensor_list, log_probs_tensor_list
