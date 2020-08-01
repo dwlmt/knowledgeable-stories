@@ -97,7 +97,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "max_length": gen_max_length,  "min_length": 2, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": bad_words_ids}
+                                   "bad_words_ids": self._bad_words_ids}
 
         self._sent_id_generated_tensor_dict = {}
 
