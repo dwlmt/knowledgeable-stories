@@ -75,7 +75,13 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
 
-        dont_generate_token_ids = [[50256],  [5145, 5145], [50257]]
+        bad_words_ids = []
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
+        for t in bad_words.split():
+            bad_words_ids.extend(self._tokenizer._tokenizer.encode(t))
+        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
+
+
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
 
         eos_text_token_ids = [764]
@@ -91,7 +97,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "max_length": gen_max_length,  "min_length": 2, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": dont_generate_token_ids}
+                                   "bad_words_ids": bad_words_ids}
 
         self._sent_id_generated_tensor_dict = {}
 
