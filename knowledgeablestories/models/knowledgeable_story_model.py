@@ -1398,7 +1398,7 @@ class KnowledgeableStoriesModel(Model):
                                  max_length: int = None,
                                  min_length: int = None,
                                  trace_log_probs: bool = False,
-                                 do_sample : bool = False,
+                                 do_sample : bool = True,
                                  temperature: int = 1.0,
                                  top_k: int = 50,
                                  top_p: int = 0.95,

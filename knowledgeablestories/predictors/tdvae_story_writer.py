@@ -315,6 +315,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             previous_tokens=previous_tokens,
             sentence_embedding=sentence_embeddings,
             gen_config=self._generation_config,
+            do_sample=True,
             trace_log_probs=False,
             gen_num_of_sequences=self._gen_num_of_sequences)
 
@@ -329,7 +330,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
-                    #sentence += "<|endofsentence|>"
+                    sentence += "<|endofsentence|>"
                     token_ids = self._tokenizer._tokenizer.encode(sentence)
                     sentence_dict_list.append(
                         {"sentence_num": i, "tokens": token_ids, "text": sentence})
