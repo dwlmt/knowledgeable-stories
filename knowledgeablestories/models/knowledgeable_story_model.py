@@ -108,10 +108,12 @@ class KnowledgeableStoriesModel(Model):
                              "hierarchy_accuracy_top_k": [1, 5]}
 
         if generation_config is None:
+            dont_generate_token_ids = [[50256], [5145, 5145], [50257]]
+
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.95, "min_length": 3,
                                  "max_length": 100, "min_length": 2,"do_sample": True,
                                  "num_beams": 1, "eos_token_ids": END_OF_TEXT_TOKEN_IDS[0],
-                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": None}
+                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": dont_generate_token_ids}
 
         if dataset_config is None:
             dataset_config = {"atomic": {}, "swag_know_lm": {},
@@ -1484,6 +1486,7 @@ class KnowledgeableStoriesModel(Model):
 
                 if bad_words_ids is not None:
                     # calculate a list of banned tokens according to bad words
+                    print("Bad words", input_ids, banned_tokens)
                     banned_tokens = calc_banned_bad_words_ids(input_ids, bad_words_ids)
 
                     for batch_idx in range(batch_size):
