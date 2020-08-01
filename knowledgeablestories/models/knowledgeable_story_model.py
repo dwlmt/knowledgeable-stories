@@ -1486,7 +1486,7 @@ class KnowledgeableStoriesModel(Model):
 
                 if bad_words_ids is not None:
                     # calculate a list of banned tokens according to bad words
-                    print("Bad words", input_ids, banned_tokens)
+                    print("Bad words", input_ids, bad_words_ids)
                     banned_tokens = calc_banned_bad_words_ids(input_ids, bad_words_ids)
 
                     for batch_idx in range(batch_size):
