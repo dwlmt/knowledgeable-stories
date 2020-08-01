@@ -149,6 +149,14 @@ class EvalClozePredictor(Predictor):
 
             total_story_len = len(inputs["sentences"])
 
+            change_dict = {}
+            change_dict["story_length"] = total_story_len
+            change_dict["mutation_positions"] = []
+            change_dict["swap_positions"] = []
+            change_dict["drop_positions"] = []
+            change_dict["story_indices"] = [r for r in range(total_story_len)]
+
+
             all_stories = [copy.deepcopy(original_sentences)]
             print(original_sentences, original_sentences[0].keys())
 
@@ -162,6 +170,8 @@ class EvalClozePredictor(Predictor):
                     if self._neg_examples_num_mutated is not None and self._neg_examples_num_mutated > 0:
                         for k in range(self._neg_examples_num_mutated):
                             mut_rand = randint(0, len(mutated_story_sentences) - self._neg_examples_num_block - self._neg_examples_num_drop)
+                            change_dict["mutation_positions"].append(mut_rand)
+
 
                             for i in range(self._neg_examples_num_block):
 
@@ -175,6 +185,7 @@ class EvalClozePredictor(Predictor):
                                 mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
 
                             if self._neg_examples_num_drop > 0:
+                                change_dict["drop_positions"].extend([r + mut_rand + 1 for r in range(self._neg_examples_num_drop)])
 
                                 del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
