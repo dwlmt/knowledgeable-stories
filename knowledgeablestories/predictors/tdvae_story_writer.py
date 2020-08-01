@@ -303,7 +303,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def generate_sentences(self, previous_tokens, sentence_embeddings):
 
-        print("Rollout X", sentence_embeddings.size())
+        #print("Rollout X", sentence_embeddings.size())
 
         generated_sequences, _, _ = self._model.generate_sentences(
             previous_tokens=previous_tokens,
@@ -323,7 +323,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
-                    sentence += "<|endofsentence|>"
+                    #sentence += "<|endofsentence|>"
                     token_ids = self._tokenizer._tokenizer.encode(sentence)
                     sentence_dict_list.append(
                         {"sentence_num": i, "tokens": token_ids, "text": sentence})
