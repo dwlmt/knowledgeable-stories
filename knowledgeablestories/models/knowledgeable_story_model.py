@@ -282,7 +282,7 @@ class KnowledgeableStoriesModel(Model):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
         for t in bad_words.split():
             bad_words_ids.extend(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids = [[50256],  [5145, 5145] ]  # bad_words_ids
+        self._bad_words_ids = [[50256],  [5145, 5145], 50257 ]  # bad_words_ids
 
         if initializer is not None:
             initializer(self)
@@ -790,7 +790,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
         past = past.to(self._lm_device)
-        print("Past", past.size())
+        #print("Past", past.size())
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         # print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
@@ -1250,7 +1250,7 @@ class KnowledgeableStoriesModel(Model):
             logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
             print("Logit",logit.size())
             past = self._lm_memory_encode_past_pred(logit)
-            print("Past", [p.size() for p in past])
+            #print("Past", [p.size() for p in past])
         else:
             past=None
 
