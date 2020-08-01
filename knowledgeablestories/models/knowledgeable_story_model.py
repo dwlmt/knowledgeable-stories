@@ -1250,7 +1250,7 @@ class KnowledgeableStoriesModel(Model):
         if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
             logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
-            print("Logit",logit.size())
+            #print("Logit",logit.size())
             past = self._lm_memory_encode_past_pred(logit)
             #print("Past", [p.size() for p in past])
         else:
@@ -1351,7 +1351,7 @@ class KnowledgeableStoriesModel(Model):
                             sequences_tensor_list.append(generated_sequence)
 
                             if log_prob is not None:
-                                print("Log probs size", log_prob.size())
+                                #print("Log probs size", log_prob.size())
                                 log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
@@ -1454,8 +1454,8 @@ class KnowledgeableStoriesModel(Model):
                     # If passed is provided then need to concat to create history
                     outputs = self._lm_model.transformer(**model_inputs)
                     #print("Transformer Outputs", outputs)
-                    print("Output lengths", len(outputs))
-                    print("Hidden", outputs[0].size())
+                    #print("Output lengths", len(outputs))
+                    #print("Hidden", outputs[0].size())
 
                     if first_token:
 
@@ -1464,10 +1464,10 @@ class KnowledgeableStoriesModel(Model):
                         for p, o in zip(past, outputs[1]):
                             p_exp = p.expand(p.size(0), o.size(1), p.size(2), p.size(3),
                                                    p.size(4))
-                            print("Expanded", p_exp.size(), o.size())
+                            #print("Expanded", p_exp.size(), o.size())
 
                             p = torch.cat((p_exp,o), dim=-2)
-                            print("Cat", p.size())
+                            #print("Cat", p.size())
                             past_cat.append(p)
 
                         past = past_cat
@@ -1486,7 +1486,7 @@ class KnowledgeableStoriesModel(Model):
 
                 if bad_words_ids is not None:
                     # calculate a list of banned tokens according to bad words
-                    print("Bad words", input_ids, bad_words_ids)
+                    #print("Bad words", input_ids, bad_words_ids)
                     banned_tokens = calc_banned_bad_words_ids(input_ids, bad_words_ids)
 
                     for batch_idx in range(batch_size):
@@ -1506,6 +1506,7 @@ class KnowledgeableStoriesModel(Model):
                     # Sample and trace log probs
                     catdist = Categorical(logits=next_token_logits)
                     next_token = catdist.sample()
+                    print("Next token", next_token)
                 else:
 
                     next_token = torch.argmax(next_token_logits, dim=-1)
