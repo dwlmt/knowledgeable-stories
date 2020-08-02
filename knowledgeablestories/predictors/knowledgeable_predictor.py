@@ -115,7 +115,9 @@ class KnowledgeablePredictor(Predictor):
         self._keep_eos_ids = eos_text_token_ids
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS", default="**  /u/ /r/ http:// https:// www. \n {cite web}"))
+        bad_words = str(
+            os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
+
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])

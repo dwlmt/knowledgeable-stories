@@ -61,7 +61,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         self._gen_num_of_sequences = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES", default=20))
         self._gen_num_of_sequences_max_retry = int(os.getenv("STORY_WRITER_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
-        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
+        self._gen_max_per_batch = int(os.getenv("STORY_WRITER_NUM_SEQUENCES_MAX_PER_BATCH", default=20))
 
         self._max_previous_lm_tokens = int(os.getenv("STORY_WRITER_PREVIOUS_LM_TOKENS", default=924))
 
@@ -77,7 +77,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=4))
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS", default="**  /u/ /r/ http:// https:// www. \n {cite web}"))
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
