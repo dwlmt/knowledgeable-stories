@@ -200,6 +200,9 @@ class EvalClozePredictor(Predictor):
                             swap_a_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
                             swap_b_idx = randint(0, len(mutated_story_sentences) -  self._neg_examples_num_block)
 
+                            change_dict["swapped_positions"].append(swap_a_idx)
+                            change_dict["swapped_positions"].append(swap_b_idx)
+
                             print("Swapped", swap_a_idx, swap_b_idx)
 
                             orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
@@ -317,6 +320,7 @@ class EvalClozePredictor(Predictor):
                 story_prediction_list.append(pred_dict)
 
             inputs["aggregated_prediction_metrics"] = story_prediction_list
+            inputs["stories"] = all_processed_stories
 
             correct = story_prediction_list[0]
             incorrect_list = story_prediction_list[1:]
@@ -326,7 +330,8 @@ class EvalClozePredictor(Predictor):
                     correct_dict[k] = 1
                 else:
                     correct_dict[k] = 0
-            inputs["accuracy"] = correct_dict
+            inputs["gold_smaller"] = correct_dict
+            inputs["change_dict"] = change_dict
 
             return inputs
 
