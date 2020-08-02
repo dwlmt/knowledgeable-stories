@@ -244,9 +244,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
             generated_sentences = self.generate_sentences(token_ids, rollout_x[-1,steps-1])
-            #print(generated_sentences)
-            print("Generated sentences", generated_sentences)
-            #generated_sentences = [g.tolist() for g in generated_sentences]
+
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
                 sent["sentence_id"] = sentence_id
@@ -258,7 +256,6 @@ class TdvaeStoryWriterPredictor(Predictor):
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
-            print("Encoded Sentences")
 
             encoded_sentences = torch.sigmoid(encoded_sentences)
             for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):

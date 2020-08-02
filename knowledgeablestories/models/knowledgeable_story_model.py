@@ -1350,7 +1350,7 @@ class KnowledgeableStoriesModel(Model):
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
 
-                        print("Generated sequence", previous_tokens, generated_sequence, generated_text)
+                        #print("Generated sequence", previous_tokens, generated_sequence, generated_text)
 
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
@@ -1526,7 +1526,7 @@ class KnowledgeableStoriesModel(Model):
                     # Sample and trace log probs
                     catdist = Categorical(logits=next_token_logits)
                     next_token = catdist.sample()
-                    print("Next token", next_token)
+                    #print("Next token", next_token)
                 else:
 
                     next_token = torch.argmax(next_token_logits, dim=-1)
