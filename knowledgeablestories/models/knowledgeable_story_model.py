@@ -792,9 +792,10 @@ class KnowledgeableStoriesModel(Model):
         return past
 
     def _lm_memory_encode_past_pred(self, encoded_sentences):
-        print(encoded_sentences.size())
+        print("Encoded Sentences", encoded_sentences.size())
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
+        print("Past", past.size())
         past = past.to(self._lm_device)
         # print("Past", past.size())
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
