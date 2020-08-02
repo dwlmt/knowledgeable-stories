@@ -100,7 +100,7 @@ class KnowledgeablePredictor(Predictor):
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
-        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=5))
+        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=4))
 
 
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
@@ -115,7 +115,7 @@ class KnowledgeablePredictor(Predictor):
         self._keep_eos_ids = eos_text_token_ids
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="**  /u/ /r/ http:// https:// www. \n {cite web}"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])

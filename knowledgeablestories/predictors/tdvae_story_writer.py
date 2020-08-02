@@ -74,10 +74,10 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_do_sample = parse_bool(os.getenv("STORY_WRITER_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
-        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=5))
+        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=4))
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="**  /u/ /r/ http:// https:// www. \n {cite web}"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
