@@ -939,20 +939,23 @@ class KnowledgeablePredictor(Predictor):
 
                 gen_config = self._generation_config
 
-                num_return_sequences = 1  # min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
+                num_return_sequences = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
 
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
-                    passages_encoded=passages_encoded,
-                    cur_len=len(previous_tokens_tensor),
+                    do_sample=True,
                     min_length=gen_config["min_length"],
                     max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
-                    pad_token_id=0,
-                    num_return_sequences=num_return_sequences
+                    pad_token_id=50256,
+                    bad_words_ids=self._bad_words_ids,
+                    repetition_penalty=gen_config["repetition_penalty"],
+                    no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
+                    trace_log_probs=False,
+                    num_return_sequences=num_return_sequences,
                 )
 
                 if orig_device is not None:
