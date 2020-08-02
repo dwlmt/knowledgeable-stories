@@ -100,8 +100,9 @@ class KnowledgeablePredictor(Predictor):
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
+        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=5))
 
-        dont_generate_token_ids = [[50256],  [5145, 5145], [50257]]
+
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
 
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
@@ -113,13 +114,19 @@ class KnowledgeablePredictor(Predictor):
         self._eos_token_ids = eos_text_token_ids
         self._keep_eos_ids = eos_text_token_ids
 
+        self._bad_words_ids = []
+        bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
+        for t in bad_words.split():
+            self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
+        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])
+
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
                                    "max_length": gen_max_length,  "min_length": gen_min_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": dont_generate_token_ids}
+                                   "bad_words_ids": self._bad_words_ids, "no_repeat_ngram_size": no_repeat_ngram_size}
 
         # print("Generation config", self._generation_config)
 

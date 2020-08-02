@@ -19,7 +19,8 @@ from torch.nn import CrossEntropyLoss
 from torch.nn.utils.rnn import pad_sequence
 from transformers import top_k_top_p_filtering
 from transformers.modeling_auto import AutoModelWithLMHead
-from transformers.modeling_utils import calc_banned_bad_words_ids
+from transformers.modeling_tf_utils import _create_next_token_logits_penalties
+from transformers.modeling_utils import calc_banned_bad_words_ids, calc_banned_ngram_tokens
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.modules.td_vae import TDVAE
@@ -111,9 +112,10 @@ class KnowledgeableStoriesModel(Model):
             dont_generate_token_ids = [[50256], [5145, 5145], [50257]]
 
             generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.95, "min_length": 3,
-                                 "max_length": 100, "min_length": 2,"do_sample": True,
+                                 "max_length": 100, "min_length": 2, "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": END_OF_TEXT_TOKEN_IDS[0],
-                                 "repetition_penalty": 1.2, "length_penalty": 1.0, "bad_words_ids": dont_generate_token_ids}
+                                 "repetition_penalty": 1.2, "length_penalty": 1.0,
+                                 "bad_words_ids": dont_generate_token_ids}
 
         if dataset_config is None:
             dataset_config = {"atomic": {}, "swag_know_lm": {},
@@ -284,7 +286,7 @@ class KnowledgeableStoriesModel(Model):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256],  [5145, 5145], [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
 
         if initializer is not None:
             initializer(self)
@@ -340,7 +342,8 @@ class KnowledgeableStoriesModel(Model):
 
         if premises is not None and relation_labels is not None and conclusions is not None:
 
-            print("Sizes", premises["tokens"].size(), relation_labels.size(), conclusions["tokens"].size(), dataset_name)
+            print("Sizes", premises["tokens"].size(), relation_labels.size(), conclusions["tokens"].size(),
+                  dataset_name)
 
             if len(premises["tokens"].size()) == 3:
                 premises_tensor = premises["tokens"]
@@ -350,7 +353,7 @@ class KnowledgeableStoriesModel(Model):
             if len(conclusions["tokens"].size()) == 3:
                 conclusions_tensor = conclusions["tokens"]
                 conclusions["tokens"] = conclusions_tensor.view(conclusions_tensor.size(0) * conclusions_tensor.size(1),
-                                                          conclusions_tensor.size(2))
+                                                                conclusions_tensor.size(2))
 
             if len(relation_labels.size()) == 2:
                 relation_labels = relation_labels.view(relation_labels.size(0) * relation_labels.size(1))
@@ -387,15 +390,17 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
+                with torch.set_grad_enabled(False):  # not (self._passage_lm and passage_tuning_random)):
                     encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask).to(self._default_cuda_device)
 
-                if  self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None:
+                if self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None:
 
-                    with torch.set_grad_enabled(False):#not (self._passage_lm and passage_tuning_random)):
-                        encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2).to(self._default_cuda_device)
+                    with torch.set_grad_enabled(False):  # not (self._passage_lm and passage_tuning_random)):
+                        encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2).to(
+                            self._default_cuda_device)
 
-                    if "sentence_disc_loss" in self._loss_weights and not (self._passage_lm and passage_tuning_random) and not prediction_mode:
+                    if "sentence_disc_loss" in self._loss_weights and not (
+                            self._passage_lm and passage_tuning_random) and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -477,7 +482,7 @@ class KnowledgeableStoriesModel(Model):
                             encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
 
                         if "passage_disc_loss" in self._loss_weights:
-                            if self._sentence_disc  and not prediction_mode:
+                            if self._sentence_disc and not prediction_mode:
 
                                 passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
                                                                                                 encoded_sentences_cat,
@@ -522,7 +527,8 @@ class KnowledgeableStoriesModel(Model):
                             output["passages_mask"] = passages_mask
 
                         if not prediction_mode:
-                            loss = self._passage_autoencoder_if_required(loss, output, passages_encoded, prediction_mode)
+                            loss = self._passage_autoencoder_if_required(loss, output, passages_encoded,
+                                                                         prediction_mode)
 
                         # if not self.training and conclusions != None and negative_conclusions != None and "roc" in dataset_name:
                         #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
@@ -532,7 +538,7 @@ class KnowledgeableStoriesModel(Model):
 
                         encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
 
-                        #print(encoded_sentences_cat)
+                        # print(encoded_sentences_cat)
 
                         orig_device = None
                         if self._tdvae_device:
@@ -571,7 +577,7 @@ class KnowledgeableStoriesModel(Model):
                             tdvae_output["tdvae_rollout_z2"] = torch.unsqueeze(rollout_z2, dim=0)
                             tdvae_output["tdvae_z1"] = torch.unsqueeze(z1, dim=0)
                             tdvae_output["passages_encoded"] = torch.unsqueeze(b, dim=0)
-                            #print(f"TDVAE Keys: {tdvae_output.keys()}")
+                            # print(f"TDVAE Keys: {tdvae_output.keys()}")
 
                             if self._sampled:
                                 rollout_x, rollout_z2, z1, b = self._passage_tdvae.rollout_posteriors_sequence(
@@ -632,16 +638,15 @@ class KnowledgeableStoriesModel(Model):
     def pplm_loss_if_required(self, encoded_sentences, lm_mask, lm_output, passage_mask, loss):
 
         if self._pplm_projection_dense is not None and "pplm_loss" in self._loss_weights:
-
             cosine_loss = nn.CosineEmbeddingLoss()
 
             def avg_representation(hidden, mask):
                 mask_exp = torch.unsqueeze(mask, dim=3).expand_as(hidden).detach()
                 masked_hidden = hidden * mask_exp
-                #print(masked_hidden.size(), mask_exp.size())
+                # print(masked_hidden.size(), mask_exp.size())
                 sum_hidden = torch.sum(masked_hidden, dim=2)
-                #print(sum_hidden.size(), mask_exp.size())
-                avg_hidden = sum_hidden /  (torch.sum(mask_exp, dim=2).detach() + 1e8)
+                # print(sum_hidden.size(), mask_exp.size())
+                avg_hidden = sum_hidden / (torch.sum(mask_exp, dim=2).detach() + 1e8)
                 return avg_hidden
 
             avg_hidden = avg_representation(lm_output, lm_mask)
@@ -655,7 +660,7 @@ class KnowledgeableStoriesModel(Model):
 
             target_pos = torch.ones(encoded_sentences.size(0))
 
-            #print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
+            # print("PPLM", encoded_sentences_cat.size(), sent_proj.size())
 
             rotate = torch.randperm(encoded_sentences.size(0))
             sent_proj_perm = sent_proj[rotate]
@@ -665,9 +670,9 @@ class KnowledgeableStoriesModel(Model):
             encoded_sentences = torch.cat((encoded_sentences, encoded_sentences), dim=0)
             targets = torch.cat((target_pos, target_neg))
 
-            #print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.size())
+            # print("PPLM", encoded_sentences.size(), sent_proj.size(), targets.size())
 
-            pplm_loss = cosine_loss(encoded_sentences, sent_proj,targets.to(encoded_sentences.device))
+            pplm_loss = cosine_loss(encoded_sentences, sent_proj, targets.to(encoded_sentences.device))
             loss += pplm_loss
             self._metrics["pplm_loss"](pplm_loss)
         return loss
@@ -732,7 +737,6 @@ class KnowledgeableStoriesModel(Model):
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
         with torch.set_grad_enabled(not self._lm_memory_train_sentence):
-
             tokens = passages["tokens"].to(self._lm_device)
 
             loss = torch.tensor(0.0).to(self._default_cuda_device)
@@ -744,14 +748,14 @@ class KnowledgeableStoriesModel(Model):
             passage_mask = self._passage_masks(lm_mask)
             max_pass = torch.sum(passage_mask)
 
-            #print("Masks", lm_mask.size())
+            # print("Masks", lm_mask.size())
 
             encoded_sentences = encoded_sentences[0: max_pass]
-            tokens = tokens[:,0:max_pass,:]
+            tokens = tokens[:, 0:max_pass, :]
 
             rand_indices = torch.randperm(max_pass)
-            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences,max_pass), : ]
-            tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences,max_pass), : ]
+            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences, max_pass), :]
+            tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences, max_pass), :]
 
             lm_mask = self.create_lm_mask(tokens)
             lm_mask = torch.cat((torch.ones(lm_mask.size(0), lm_mask.size(1), 1).bool().to(lm_mask.device), lm_mask),
@@ -765,7 +769,7 @@ class KnowledgeableStoriesModel(Model):
         past = self._lm_memory_encode_past_train(encoded_sentences)
 
         lm_loss, lm_logits, _ = self._lm_model(tokens,
-                       labels=tokens, past=past, attention_mask=lm_mask)
+                                               labels=tokens, past=past, attention_mask=lm_mask)
 
         lm_loss *= self._loss_weights["lm_memory_loss"]
         loss += lm_loss.to(0)
@@ -792,7 +796,7 @@ class KnowledgeableStoriesModel(Model):
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
         past = past.to(self._lm_device)
-        #print("Past", past.size())
+        # print("Past", past.size())
         past_split = torch.split(past.unsqueeze(1), self._lm_memory_hidden_size, dim=2)
         # print("Past Split", [p.size() for p in past_split])
         past = list(zip(past_split, past_split))
@@ -1238,7 +1242,8 @@ class KnowledgeableStoriesModel(Model):
 
         return encoded_sentences_batch
 
-    def generate_sentences(self, previous_tokens, sentence_embedding=None, do_sample=True, trace_log_probs=False, gen_num_of_sequences=10,
+    def generate_sentences(self, previous_tokens, sentence_embedding=None, do_sample=True, trace_log_probs=False,
+                           gen_num_of_sequences=10,
                            gen_num_of_sequences_max_retry=100, gen_config=None):
 
         if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
@@ -1246,15 +1251,14 @@ class KnowledgeableStoriesModel(Model):
         else:
             flat_previous_tokens = previous_tokens
 
-
         if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
-            logit =  torch.log(sentence_embedding / (1 - sentence_embedding))
-            #print("Logit",logit.size())
+            logit = torch.log(sentence_embedding / (1 - sentence_embedding))
+            # print("Logit",logit.size())
             past = self._lm_memory_encode_past_pred(logit)
-            #print("Past", [p.size() for p in past])
+            # print("Past", [p.size() for p in past])
         else:
-            past=None
+            past = None
 
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
@@ -1291,7 +1295,9 @@ class KnowledgeableStoriesModel(Model):
                     pad_token_id=50256,
                     bad_words_ids=self._bad_words_ids,
                     trace_log_probs=trace_log_probs,
-                    num_return_sequences=gen_num_of_sequences,
+                    repetition_penalty=gen_config["repetition_penalty"],
+                    no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
+                    num_return_sequences=gen_num_of_sequences
                 )
             else:
                 output_sequences = self._generate_no_beam_search(
@@ -1299,13 +1305,15 @@ class KnowledgeableStoriesModel(Model):
                     do_sample=do_sample,
                     past=past,
                     min_length=gen_config["min_length"],
-                    max_length=128,
+                    max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
                     bad_words_ids=self._bad_words_ids,
+                    repetition_penalty=gen_config["repetition_penalty"],
+                    no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
                     trace_log_probs=trace_log_probs,
                     num_return_sequences=gen_num_of_sequences,
                 )
@@ -1328,11 +1336,11 @@ class KnowledgeableStoriesModel(Model):
                 if len(generated_sequence) > 0:
 
                     if generated_sequence[0] in self._eos_token_ids:
-                        pass#continue
+                        pass  # continue
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
                         pass
-                        #generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
+                        # generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
                         #    torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
@@ -1351,7 +1359,7 @@ class KnowledgeableStoriesModel(Model):
                             sequences_tensor_list.append(generated_sequence)
 
                             if log_prob is not None:
-                                #print("Log probs size", log_prob.size())
+                                # print("Log probs size", log_prob.size())
                                 log_probs_tensor_list.append(torch.sum(log_prob[0:len(generated_sequence)]))
 
         # print(f"Generated: {generated_sequences}")
@@ -1398,17 +1406,19 @@ class KnowledgeableStoriesModel(Model):
                                  max_length: int = None,
                                  min_length: int = None,
                                  trace_log_probs: bool = False,
-                                 do_sample : bool = True,
+                                 do_sample: bool = True,
                                  temperature: int = 1.0,
                                  top_k: int = 50,
                                  top_p: int = 0.95,
                                  pad_token_id: int = 50256,
-                                 eos_token_ids = None,
-                                 bad_words_ids = None,
+                                 eos_token_ids=None,
+                                 bad_words_ids=None,
+                                 repetition_penalty: float = 1.2,
+                                 no_repeat_ngram_size: int = 5,
                                  num_return_sequences: int = 10,
                                  ):
 
-        #print("Past", [p.size() for p in past])
+        # print("Past", [p.size() for p in past])
 
         with torch.set_grad_enabled(trace_log_probs):
 
@@ -1453,9 +1463,9 @@ class KnowledgeableStoriesModel(Model):
                 else:
                     # If passed is provided then need to concat to create history
                     outputs = self._lm_model.transformer(**model_inputs)
-                    #print("Transformer Outputs", outputs)
-                    #print("Output lengths", len(outputs))
-                    #print("Hidden", outputs[0].size())
+                    # print("Transformer Outputs", outputs)
+                    # print("Output lengths", len(outputs))
+                    # print("Hidden", outputs[0].size())
 
                     if first_token:
 
@@ -1463,18 +1473,17 @@ class KnowledgeableStoriesModel(Model):
 
                         for p, o in zip(past, outputs[1]):
                             p_exp = p.expand(p.size(0), o.size(1), p.size(2), p.size(3),
-                                                   p.size(4))
-                            #print("Expanded", p_exp.size(), o.size())
+                                             p.size(4))
+                            # print("Expanded", p_exp.size(), o.size())
 
-                            p = torch.cat((p_exp,o), dim=-2)
-                            #print("Cat", p.size())
+                            p = torch.cat((p_exp, o), dim=-2)
+                            # print("Cat", p.size())
                             past_cat.append(p)
 
                         past = past_cat
 
                     model_inputs = self._lm_model.prepare_inputs_for_generation(input_ids, past=past)
                     outputs = self._lm_model(**model_inputs)
-
 
                 first_token = False
 
@@ -1484,11 +1493,22 @@ class KnowledgeableStoriesModel(Model):
                 if self._lm_model._do_output_past(outputs):
                     past = outputs[1]
 
+                if repetition_penalty != 1.0:
+                    self._lm_model.enforce_repetition_penalty_(next_token_logits, batch_size, 1, input_ids,
+                                                               repetition_penalty)
+
                 if bad_words_ids is not None:
                     # calculate a list of banned tokens according to bad words
-                    #print("Bad words", input_ids, bad_words_ids)
+                    # print("Bad words", input_ids, bad_words_ids)
                     banned_tokens = calc_banned_bad_words_ids(input_ids, bad_words_ids)
 
+                    for batch_idx in range(batch_size):
+                        next_token_logits[batch_idx, banned_tokens[batch_idx]] = -float("inf")
+
+                if no_repeat_ngram_size > 0:
+                    # calculate a list of banned tokens to prevent repetitively generating the same ngrams
+                    # from fairseq: https://github.com/pytorch/fairseq/blob/a07cb6f40480928c9e0548b737aadd36ee66ac76/fairseq/sequence_generator.py#L345
+                    banned_tokens = calc_banned_ngram_tokens(input_ids, batch_size, no_repeat_ngram_size, cur_len)
                     for batch_idx in range(batch_size):
                         next_token_logits[batch_idx, banned_tokens[batch_idx]] = -float("inf")
 

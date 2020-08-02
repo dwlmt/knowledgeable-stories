@@ -74,6 +74,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_do_sample = parse_bool(os.getenv("STORY_WRITER_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
+        no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=5))
 
         self._bad_words_ids = []
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="* \n "))
@@ -97,7 +98,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                                    "max_length": gen_max_length,  "min_length": 2, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": self._bad_words_ids}
+                                   "bad_words_ids": self._bad_words_ids,  "no_repeat_ngram_size": no_repeat_ngram_size}
 
         self._sent_id_generated_tensor_dict = {}
 
@@ -253,9 +254,12 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 combined_story_sequences.append(copy.deepcopy(story_context) + [sent])
 
+            print("Generated Sentences", generated_sentences)
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
             encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
+            print("Encoded Sentences")
+
             encoded_sentences = torch.sigmoid(encoded_sentences)
             for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
                 self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()

@@ -9,7 +9,7 @@ class EvalTdvaeCloze(object):
     """Evaluate TDVAE Cloze
 
     """
-    def eval(self, prediction_json: str, output_file: str):
+    def eval(self, prediction_json: str, output_file: str, accuracy_field: str = "accuracy"):
         """ Evaluate TDVAE
 
             @param prediction_json: Source with the prediction json data.
@@ -24,9 +24,9 @@ class EvalTdvaeCloze(object):
             for i, obj in tqdm(enumerate(reader)):
 
                 if i == 0:
-                    sum_dict = obj["accuracy"]
+                    sum_dict = obj[accuracy_field]
                 else:
-                    accuracy = obj["accuracy"]
+                    accuracy = obj[accuracy_field]
                     sum_dict = {k: sum_dict.get(k, 0) + accuracy.get(k, 0) for k in set(sum_dict) | set(accuracy)}
 
                 total_rows += 1
