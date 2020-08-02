@@ -19,7 +19,6 @@ from torch.nn import CrossEntropyLoss
 from torch.nn.utils.rnn import pad_sequence
 from transformers import top_k_top_p_filtering
 from transformers.modeling_auto import AutoModelWithLMHead
-from transformers.modeling_tf_utils import _create_next_token_logits_penalties
 from transformers.modeling_utils import calc_banned_bad_words_ids, calc_banned_ngram_tokens
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
