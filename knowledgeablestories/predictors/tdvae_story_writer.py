@@ -243,6 +243,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         for story_context in story_contexts:
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
+            print("Rollout X", rollout_x.size())
             generated_sentences = self.generate_sentences(token_ids, rollout_x[-1,steps-1])
 
             for sent in generated_sentences:
@@ -271,6 +272,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             steps += 1
 
             # print("New story context", filtered_story_sequences)
+            print("Rollout x recurse", rollout_x)
             self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id, rollout_x)
 
         return filtered_story_sequences
