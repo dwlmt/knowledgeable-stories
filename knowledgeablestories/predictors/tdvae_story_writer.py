@@ -258,7 +258,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 print("Rollout resize", rollout_x.size(),len(story_contexts))
                 rollout_local = rollout_x[:, i , :, :]
             else:
-                rollout_local = rollout_x[:, 0, :, :]
+                rollout_local = rollout_x
 
             print("Rollout local", rollout_local.size())
 
