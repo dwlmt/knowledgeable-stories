@@ -1409,7 +1409,7 @@ class KnowledgeableStoriesModel(Model):
                                  temperature: int = 1.0,
                                  top_k: int = 50,
                                  top_p: int = 0.95,
-                                 pad_token_id: int = 50256,
+                                 pad_token_id: int = 0,
                                  eos_token_ids=None,
                                  bad_words_ids=None,
                                  repetition_penalty: float = 1.2,
