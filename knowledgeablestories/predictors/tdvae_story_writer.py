@@ -256,13 +256,15 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             if len(rollout_x) == 4:
                 print("Rollout resize", rollout_x.size(),len(story_contexts))
-                rollout_local = rollout_x[:, 0 , :, :] #rollout_local = rollout_x[:, i , :, :]
+                rollout_local = rollout_x[:, i , :, :]
             else:
                 rollout_local = rollout_x
 
-            rollout_expanded.append(torch.unsqueeze(rollout_local, dim=1))
+            print("Rollout local", rollout_local.size())
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
+
+            rollout_expanded.append(torch.unsqueeze(rollout_local, dim=1))
 
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
