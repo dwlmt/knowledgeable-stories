@@ -80,7 +80,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145]])#, [50257]])  # bad_words_ids
 
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
@@ -272,7 +272,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             steps += 1
 
             # print("New story context", filtered_story_sequences)
-            print("Rollout x recurse", rollout_x)
+            print("Rollout x recurse", rollout_x.size())
             self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id, rollout_x)
 
         return filtered_story_sequences

@@ -108,13 +108,18 @@ class KnowledgeableStoriesModel(Model):
                              "hierarchy_accuracy_top_k": [1, 5]}
 
         if generation_config is None:
-            dont_generate_token_ids = [[50256], [5145, 5145], [50257]]
+            self._bad_words_ids = []
+            bad_words = str(os.getenv("BAD_WORDS_IDS",
+                                      default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
+            for t in bad_words.split():
+                self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
+            self._bad_words_ids.extend([[50256], [5145, 5145]])  # , [50257]])  # bad_words_ids
 
-            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.95, "min_length": 3,
-                                 "max_length": 100, "min_length": 2, "do_sample": True,
+            generation_config = {"temperature": 1.0, "top_k": 50, "top_p": 0.95, "min_length": 2,
+                                 "max_length": 100,  "do_sample": True,
                                  "num_beams": 1, "eos_token_ids": END_OF_TEXT_TOKEN_IDS[0],
                                  "repetition_penalty": 1.2, "length_penalty": 1.0,
-                                 "bad_words_ids": dont_generate_token_ids}
+                                 "bad_words_ids": self._bad_words_ids}
 
         if dataset_config is None:
             dataset_config = {"atomic": {}, "swag_know_lm": {},
@@ -1340,7 +1345,7 @@ class KnowledgeableStoriesModel(Model):
                         continue
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
+                        pass#generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
                         # logger.info(generated_sequence)
