@@ -260,7 +260,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             else:
                 rollout_local = rollout_x
 
-            rollout_expanded.append(torch.unsqueeze(rollout_local), dim=1)
+            rollout_expanded.append(torch.unsqueeze(rollout_local, dim=1))
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
