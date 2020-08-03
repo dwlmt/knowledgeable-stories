@@ -1353,7 +1353,7 @@ class KnowledgeableStoriesModel(Model):
 
                         if not generated_text.isspace() and sum(
                                 [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
-                            generated_sequences.append({"text": generated_text, "tokens": generated_sequence.tolist()})
+                            generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
 
                             sequences_tensor_list.append(generated_sequence)
 
