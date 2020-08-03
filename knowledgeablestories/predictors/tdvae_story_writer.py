@@ -185,8 +185,10 @@ class TdvaeStoryWriterPredictor(Predictor):
         print("Filter beam", rollout_x.size())
 
         if len(rollout_x.size()) == 3:
-            rollout_x = torch.unsqueeze(rollout_x, dim=0)
-            rollout_x = rollout_x.expand(len(story_sequences), rollout_x.size(1), rollout_x.size(2), rollout_x.size(3))
+            rollout_x = torch.unsqueeze(rollout_x, dim=1)
+            rollout_x = rollout_x.expand(rollout_x.size(0), len(story_sequences), rollout_x.size(2), rollout_x.size(3))
+
+        rollout_x = rollout_x.permute(1,0,2,3)
 
         print("Rollout x expanded", rollout_x)
 
@@ -251,6 +253,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             if len(rollout_x) == 4:
                 rollout_local = rollout_x[:, i , :, :]
+            else:
+                rollout_local = rollout_x
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
