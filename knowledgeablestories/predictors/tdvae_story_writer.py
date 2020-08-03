@@ -246,12 +246,11 @@ class TdvaeStoryWriterPredictor(Predictor):
         combined_story_sequences = []
 
         print("Rollout X", rollout_x.size())
-        print("Story Contexts", len(story_contexts))
+        print("Story Contexts",story_contexts, len(story_contexts))
 
         for i, story_context in enumerate(story_contexts):
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
-
 
             if len(rollout_x) == 4:
                 rollout_local = rollout_x[:, i , :, :]
