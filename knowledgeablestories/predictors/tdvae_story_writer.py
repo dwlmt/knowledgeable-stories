@@ -22,10 +22,8 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
-
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
-
 
 @Predictor.register('tdvae_story_writer')
 class TdvaeStoryWriterPredictor(Predictor):
@@ -70,7 +68,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_top_k = int(os.getenv("STORY_WRITER_GEN_TOP_K", default=0))
         gen_top_p = float(os.getenv("STORY_WRITER_GEN_TOP_P", default=0.90))
         gen_length_penalty = float(os.getenv("STORY_WRITER_GEN_LENGTH_PENALTY", default=1.0))
-        gen_max_length = int(os.getenv("STORY_WRITER_GEN_MAX_LENGTH", default=1024))
+        gen_max_length = int(os.getenv("STORY_WRITER_GEN_MAX_LENGTH", default=1023))
         gen_do_sample = parse_bool(os.getenv("STORY_WRITER_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
