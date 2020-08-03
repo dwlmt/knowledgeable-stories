@@ -129,7 +129,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "iterate_forever": false,
       "batches_per_epoch": TRAINING_ITERATION_SIZE,
       "sampling_rates":  [2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,
-      2.0/42.0,4.0/42.0,4.0/42.0,4.0/42.0],
+      2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0],
      "iterators": {
        "writing_prompts_lm": {
           "type": "basic",
@@ -213,7 +213,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
       "iterate_forever": false,
       "batches_per_epoch": VALIDATION_ITERATION_SIZE,
       "sampling_rates":  [2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0,
-      2.0/42.0,4.0/42.0,4.0/42.0,4.0/42.0],
+      2.0/42.0,4.0/42.0,2.0/42.0,4.0/42.0],
      "iterators": {
        "writing_prompts_lm": {
           "type": "basic",
