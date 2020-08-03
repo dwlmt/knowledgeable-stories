@@ -264,7 +264,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
-            rollout_expanded.append(torch.unsqueeze(rollout_local, dim=1))
+            rollout_local = torch.unsqueeze(rollout_local, dim=1).expand(rollout_local.size(0), len(generated_sentences), rollout_local.size(1), rollout_local.size(2))
+            rollout_expanded.append(rollout_local)
 
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
