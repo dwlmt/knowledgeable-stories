@@ -78,7 +78,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [0], [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])  # bad_words_ids
 
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
@@ -255,7 +255,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             if len(rollout_x) == 4:
                 print("Rollout resize", rollout_x.size(),len(story_contexts))
-                rollout_local = rollout_x[:, i , :, :] #rollout_local = rollout_x[:, i , :, :]
+                rollout_local = rollout_x[:, 0 , :, :] #rollout_local = rollout_x[:, i , :, :]
             else:
                 rollout_local = rollout_x
 
