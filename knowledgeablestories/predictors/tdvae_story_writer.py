@@ -254,7 +254,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
 
-            if len(rollout_x) == 4:
+            if len(rollout_x.size()) == 4:
                 print("Rollout resize", rollout_x.size(),len(story_contexts))
                 rollout_local = rollout_x[:, i , :, :]
             else:
