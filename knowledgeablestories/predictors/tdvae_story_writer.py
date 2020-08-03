@@ -78,7 +78,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])  # bad_words_ids
 
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
@@ -152,7 +152,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                 rollout_xs = torch.cat(rollout_xs, dim=0)
                 # story_contexts = story_contexts[: num_sentences]
 
-                story_contexts = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
+                print("Story contexts new tree", story_contexts, len(story_contexts))
+                story_contexts, _ = self.generate_tree(story_contexts, story_length, 1, sentence_id, rollout_xs)
 
                 story_length += 1
 
@@ -288,7 +289,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             print("Rollout x recurse", rollout_x.size())
             self.generate_tree(filtered_story_sequences, sentence_num, steps, sentence_id, rollout_x)
 
-        return filtered_story_sequences
+        return filtered_story_sequences, rollout_x
 
     def sentence_tokens_to_padded_tensor(self, generated_sentences):
         def lengths(x):
