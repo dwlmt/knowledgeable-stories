@@ -1342,10 +1342,7 @@ class KnowledgeableStoriesModel(Model):
                     first_index = self._generation_config["max_length"]
                     for end_token in self._eos_token_ids:
                         try:
-                            if end_token not in self._keep_eos_ids:
-                                first_index = min(generated_sequence.index(end_token), first_index)
-                            else:
-                                first_index = min(generated_sequence.index(end_token) + 1, first_index)
+                           first_index = min(generated_sequence.index(end_token) + 1, first_index)
                         except ValueError:
                             pass
 
