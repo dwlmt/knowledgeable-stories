@@ -249,6 +249,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         print("Rollout X", rollout_x.size())
         print("Story Contexts",story_contexts, len(story_contexts))
 
+        rollout_expanded = []
         for i, story_context in enumerate(story_contexts):
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
@@ -258,6 +259,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                 rollout_local = rollout_x[:, 0 , :, :] #rollout_local = rollout_x[:, i , :, :]
             else:
                 rollout_local = rollout_x
+
+            rollout_expanded.append(torch.unsqueeze(rollout_local), dim=1)
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
@@ -279,6 +282,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
+        rollout_x = torch.cat(rollout_expanded, dim=1)
+        print("Rollout Cat", rollout_x.size())
         # print("Stories in progress", flat_story_sequences)
 
         filtered_story_sequences = self.filter_beam(filtered_story_sequences, rollout_x)
