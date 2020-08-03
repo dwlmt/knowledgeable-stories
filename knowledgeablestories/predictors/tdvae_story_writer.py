@@ -163,7 +163,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                     story = story[0:story_length]
                     new_story_contexts.append(story)
 
-                # Use the dict to remove duplicate path continutions.
+                # Use the dict to remove duplicate path continuations.
                 duplicate_dict = OrderedDict()
                 for story in new_story_contexts:
                     duplicate_dict[story[-1]["sentence_id"]] = story

@@ -1337,12 +1337,10 @@ class KnowledgeableStoriesModel(Model):
                 if len(generated_sequence) > 0:
 
                     if generated_sequence[0] in self._eos_token_ids:
-                        pass  # continue
+                        continue
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        pass
-                        # generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(
-                        #    torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
+                        generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
 
                     if len(generated_sequence) > 0:
                         # logger.info(generated_sequence)
