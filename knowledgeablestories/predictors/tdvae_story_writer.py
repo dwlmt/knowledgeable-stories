@@ -181,6 +181,8 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def filter_beam(self, story_sequences, rollout_x):
 
+        rollout_x_orig = rollout_x
+
         print("Filter beam", rollout_x.size())
 
         if len(rollout_x.size()) == 3:
@@ -229,12 +231,13 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                             beam_dict[i] += dist
 
-                beam_dist, story_sequences = (list(t) for t in zip(
-                    *sorted(zip(beam_dict.values(), story_sequences), key=lambda x: x[0])))
+                beam_dist, story_sequences, sorted_indices = (list(t) for t in zip(
+                    *sorted(zip(beam_dict.values(), story_sequences, [r for r in range(len(story_sequences))]), key=lambda x: x[0])))
                 # (list(t) for t in zip(*sorted(zip(beam_dict.values(), story_sequences))))
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
+                print("Sorted indices", beam_dist, rollout_x_orig.size(), rollout_x.size())
 
                 story_sequences = story_sequences[0: self._beam_n]
 
