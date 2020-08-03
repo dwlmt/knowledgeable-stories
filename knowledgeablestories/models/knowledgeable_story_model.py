@@ -1264,8 +1264,6 @@ class KnowledgeableStoriesModel(Model):
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
-            if flat_previous_tokens[-1] != END_OF_SENTENCE_TOKEN_ID:
-                flat_previous_tokens = flat_previous_tokens + [END_OF_SENTENCE_TOKEN_ID]
 
         previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
 
@@ -1339,13 +1337,15 @@ class KnowledgeableStoriesModel(Model):
                     if generated_sequence[0] in self._eos_token_ids:
                         continue
 
+                    generated_sequence = generated_sequence.tolist()
+
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        pass#generated_sequence = torch.cat((generated_sequence, torch.unsqueeze(torch.tensor(END_OF_SENTENCE_TOKEN_ID, device=generated_sequence.device), dim=0)))
+                        generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                     if len(generated_sequence) > 0:
                         # logger.info(generated_sequence)
 
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence.tolist(),
+                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
                                                                            clean_up_tokenization_spaces=True,
                                                                            skip_special_tokens=True)
 

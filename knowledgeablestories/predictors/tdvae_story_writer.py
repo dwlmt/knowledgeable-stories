@@ -68,7 +68,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_top_k = int(os.getenv("STORY_WRITER_GEN_TOP_K", default=0))
         gen_top_p = float(os.getenv("STORY_WRITER_GEN_TOP_P", default=0.90))
         gen_length_penalty = float(os.getenv("STORY_WRITER_GEN_LENGTH_PENALTY", default=1.0))
-        gen_max_length = int(os.getenv("STORY_WRITER_GEN_MAX_LENGTH", default=1023))
+        gen_max_length = int(os.getenv("STORY_WRITER_GEN_MAX_LENGTH", default=1024))
         gen_do_sample = parse_bool(os.getenv("STORY_WRITER_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
@@ -78,7 +78,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145]])#, [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
 
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> . ... .."))
@@ -188,7 +188,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         rollout_x = rollout_x.permute(1,0,2,3)
 
-        print("Rollout x expanded", rollout_x)
+        print("Rollout x expanded", rollout_x.size())
 
         prior_sentence_length = rollout_x.size(1)
 

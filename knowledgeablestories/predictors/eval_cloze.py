@@ -154,7 +154,6 @@ class EvalClozePredictor(Predictor):
             change_dict["mutation_positions"] = []
             change_dict["swap_positions"] = []
             change_dict["drop_positions"] = []
-            change_dict["story_indices"] = [r for r in range(total_story_len)]
 
             all_stories = [copy.deepcopy(original_sentences)]
             print(original_sentences, original_sentences[0].keys())
@@ -185,7 +184,6 @@ class EvalClozePredictor(Predictor):
                             if self._neg_examples_num_drop > 0:
                                 change_dict["drop_positions"].extend([r + mut_rand + 1 for r in range(self._neg_examples_num_drop)])
 
-                                del change_dict["story_indices"][mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
                                 del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
                                 copy_story_sentences = copy.deepcopy(original_sentences)
@@ -204,7 +202,6 @@ class EvalClozePredictor(Predictor):
 
                             print("Swapped", swap_a_idx, swap_b_idx)
 
-                            orig_b_idx = swap_b_idx
                             orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
 
                             mutated_story_sentences[swap_b_idx: swap_b_idx + self._neg_examples_num_block] = mutated_story_sentences[swap_a_idx]
@@ -321,6 +318,7 @@ class EvalClozePredictor(Predictor):
                 story_prediction_list.append(pred_dict)
 
             inputs["aggregated_prediction_metrics"] = story_prediction_list
+            #inputs["aggregated_prediction_metrics"] = sorted_prediction_list
             inputs["stories"] = all_processed_stories
 
             correct = story_prediction_list[0]
