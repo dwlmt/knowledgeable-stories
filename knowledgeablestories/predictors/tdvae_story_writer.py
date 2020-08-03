@@ -182,9 +182,13 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def filter_beam(self, story_sequences, rollout_x):
 
+        print("Filter beam", rollout_x.size())
+
         if len(rollout_x.size()) == 3:
             rollout_x = torch.unsqueeze(rollout_x, dim=0)
             rollout_x = rollout_x.expand(len(story_sequences), rollout_x.size(1), rollout_x.size(2), rollout_x.size(3))
+
+        print("Rollout x expanded", rollout_x)
 
         prior_sentence_length = rollout_x.size(1)
 
@@ -240,11 +244,15 @@ class TdvaeStoryWriterPredictor(Predictor):
         # print("Input story contexts", story_contexts)
 
         combined_story_sequences = []
-        for story_context in story_contexts:
+        for i, story_context in enumerate(story_contexts):
             # print("Story context:", story_context)
             token_ids = [t["tokens"] for t in story_context]
             print("Rollout X", rollout_x.size())
-            generated_sentences = self.generate_sentences(token_ids, rollout_x[-1,steps-1])
+
+            if len(rollout_x) == 4:
+                rollout_local = rollout_x[:, i , :, :]
+
+            generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
             for sent in generated_sentences:
                 sent["sentence_num"] = sentence_num + steps
