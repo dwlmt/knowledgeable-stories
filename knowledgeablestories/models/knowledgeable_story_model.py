@@ -792,6 +792,10 @@ class KnowledgeableStoriesModel(Model):
         return past
 
     def _lm_memory_encode_past_pred(self, encoded_sentences):
+
+        if self._lm_memory_dense is None:
+            return None
+
         print("Encoded Sentences", encoded_sentences.size())
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
         past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
