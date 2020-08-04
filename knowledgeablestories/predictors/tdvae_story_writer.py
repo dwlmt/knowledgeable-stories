@@ -242,6 +242,8 @@ class TdvaeStoryWriterPredictor(Predictor):
                 ret_rollout_x = rollout_x_orig[: , torch.tensor(sorted_indices,device=rollout_x_orig.device, dtype=torch.int), :, :]
 
                 story_sequences = story_sequences[0: self._beam_n]
+        else:
+            ret_rollout_x = rollout_x_orig
 
         return story_sequences, ret_rollout_x
 
