@@ -239,9 +239,10 @@ class TdvaeStoryWriterPredictor(Predictor):
                 print("Sorted beam distances", beam_dist)
                 print("Sorted indices", sorted_indices, rollout_x_orig.size(), rollout_x.size())
 
-                ret_rollout_x = rollout_x_orig[: , torch.tensor(sorted_indices,device=rollout_x_orig.device, dtype=torch.int), :, :]
+                ret_rollout_x = rollout_x_orig[: , torch.tensor(sorted_indices,device=rollout_x_orig.device, dtype=torch.long), :, :]
 
                 story_sequences = story_sequences[0: self._beam_n]
+                ret_rollout_x = ret_rollout_x[0: self._beam_n]
         else:
             ret_rollout_x = rollout_x_orig
 
