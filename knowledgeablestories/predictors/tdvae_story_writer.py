@@ -202,6 +202,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 # Place holder, just randomly select for now.
                 random.shuffle(story_sequences)
                 story_sequences = story_sequences[0: self._beam_n]
+                ret_rollout_x = rollout_x_orig[:, 0: self._beam_n, :, :]
             else:
                 beam_dict = OrderedDict()
                 for i, (story, rollout_x_story), in enumerate(
