@@ -22,8 +22,10 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
+
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
+
 
 @Predictor.register('tdvae_story_writer')
 class TdvaeStoryWriterPredictor(Predictor):
@@ -75,11 +77,11 @@ class TdvaeStoryWriterPredictor(Predictor):
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=4))
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
+        bad_words = str(os.getenv("BAD_WORDS_IDS",
+                                  default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [0]])  # bad_words_ids
-
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> <|endoftext|> . ... .."))
 
@@ -93,10 +95,10 @@ class TdvaeStoryWriterPredictor(Predictor):
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
-                                   "max_length": gen_max_length,  "min_length": 2, "do_sample": gen_do_sample,
+                                   "max_length": gen_max_length, "min_length": 2, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
-                                   "bad_words_ids": self._bad_words_ids,  "no_repeat_ngram_size": no_repeat_ngram_size}
+                                   "bad_words_ids": self._bad_words_ids, "no_repeat_ngram_size": no_repeat_ngram_size}
 
         self._sent_id_generated_tensor_dict = {}
 
@@ -189,7 +191,7 @@ class TdvaeStoryWriterPredictor(Predictor):
             rollout_x = torch.unsqueeze(rollout_x, dim=1)
             rollout_x = rollout_x.expand(rollout_x.size(0), len(story_sequences), rollout_x.size(2), rollout_x.size(3))
 
-        rollout_x = rollout_x.permute(1,0,2,3)
+        rollout_x = rollout_x.permute(1, 0, 2, 3)
 
         print("Rollout x expanded", rollout_x.size())
 
@@ -200,9 +202,19 @@ class TdvaeStoryWriterPredictor(Predictor):
         if len(story_sequences) > self._beam_n:
             if self._random:
                 # Place holder, just randomly select for now.
-                random.shuffle(story_sequences)
+
+                loc_rand = random.Random(random.randint(0, 10 ** 8))
+
+                loc_rand.shuffle(story_sequences)
                 story_sequences = story_sequences[0: self._beam_n]
-                ret_rollout_x = rollout_x_orig[:, 0: self._beam_n, :, :]
+
+                rollout_select_range = [r for r in range(len(story_sequences))]
+                loc_rand.shuffle(rollout_select_range)
+                rollout_select_range = rollout_select_range[0: self._beam_n]
+
+                ret_rollout_x = rollout_x_orig[:,
+                                torch.tensor(rollout_select_range, dtype=torch.long, device=rollout_x_orig.device), :,
+                                :]
             else:
                 beam_dict = OrderedDict()
                 for i, (story, rollout_x_story), in enumerate(
@@ -225,22 +237,25 @@ class TdvaeStoryWriterPredictor(Predictor):
                             generated_sentence_tensor = self._sent_id_generated_tensor_dict[sentence["sentence_id"]]
                             generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
-                            #print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                            dist = 1.0 - self._cosine_similarity(torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
-                                                     torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
+                            # print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
+                            dist = 1.0 - self._cosine_similarity(
+                                torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                                torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
                             # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
 
                             beam_dict[i] += dist
 
                 beam_dist, story_sequences, sorted_indices = (list(t) for t in zip(
-                    *sorted(zip(beam_dict.values(), story_sequences, [r for r in range(len(story_sequences))]), key=lambda x: x[0])))
+                    *sorted(zip(beam_dict.values(), story_sequences, [r for r in range(len(story_sequences))]),
+                            key=lambda x: x[0])))
                 # (list(t) for t in zip(*sorted(zip(beam_dict.values(), story_sequences))))
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
                 print("Sorted indices", sorted_indices, rollout_x_orig.size(), rollout_x.size())
 
-                ret_rollout_x = rollout_x_orig[: , torch.tensor(sorted_indices,device=rollout_x_orig.device, dtype=torch.long), :, :]
+                ret_rollout_x = rollout_x_orig[:,
+                                torch.tensor(sorted_indices, device=rollout_x_orig.device, dtype=torch.long), :, :]
 
                 story_sequences = story_sequences[0: self._beam_n]
                 ret_rollout_x = ret_rollout_x[0: self._beam_n]
@@ -256,7 +271,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         combined_story_sequences = []
 
         print("Rollout X", rollout_x.size())
-        print("Story Contexts",story_contexts, len(story_contexts))
+        print("Story Contexts", story_contexts, len(story_contexts))
 
         rollout_expanded = []
         for i, story_context in enumerate(story_contexts):
@@ -264,8 +279,8 @@ class TdvaeStoryWriterPredictor(Predictor):
             token_ids = [t["tokens"] for t in story_context]
 
             if len(rollout_x.size()) == 4:
-                print("Rollout resize", rollout_x.size(),len(story_contexts))
-                rollout_local = rollout_x[:, i , :, :]
+                print("Rollout resize", rollout_x.size(), len(story_contexts))
+                rollout_local = rollout_x[:, i, :, :]
             else:
                 rollout_local = rollout_x
 
@@ -273,7 +288,9 @@ class TdvaeStoryWriterPredictor(Predictor):
 
             generated_sentences = self.generate_sentences(token_ids, rollout_local[-1, steps - 1])
 
-            rollout_local = torch.unsqueeze(rollout_local, dim=1).expand(rollout_local.size(0), len(generated_sentences), rollout_local.size(1), rollout_local.size(2))
+            rollout_local = torch.unsqueeze(rollout_local, dim=1).expand(rollout_local.size(0),
+                                                                         len(generated_sentences),
+                                                                         rollout_local.size(1), rollout_local.size(2))
             rollout_expanded.append(rollout_local)
 
             for sent in generated_sentences:
@@ -344,7 +361,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def generate_sentences(self, previous_tokens, sentence_embeddings):
 
-        #print("Rollout X", sentence_embeddings.size())
+        # print("Rollout X", sentence_embeddings.size())
 
         generated_sequences, _, _ = self._model.generate_sentences(
             previous_tokens=previous_tokens,
