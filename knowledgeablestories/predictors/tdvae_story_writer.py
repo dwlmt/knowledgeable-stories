@@ -237,11 +237,13 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                 print("Sorted beam stories", story_sequences)
                 print("Sorted beam distances", beam_dist)
-                print("Sorted indices", beam_dist, rollout_x_orig.size(), rollout_x.size())
+                print("Sorted indices", sorted_indices, rollout_x_orig.size(), rollout_x.size())
+
+                ret_rollout_x = rollout_x_orig[: , torch.tensor(sorted_indices,device=rollout_x_orig.device, dtype=torch.int), :, :]
 
                 story_sequences = story_sequences[0: self._beam_n]
 
-        return story_sequences
+        return story_sequences, ret_rollout_x
 
     def generate_tree(self, story_contexts, sentence_num: int, steps: int, sentence_id: int, rollout_x: torch.Tensor):
 
@@ -292,7 +294,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         print("Rollout Cat", rollout_x.size())
         # print("Stories in progress", flat_story_sequences)
 
-        filtered_story_sequences = self.filter_beam(filtered_story_sequences, rollout_x)
+        filtered_story_sequences, rollout_x = self.filter_beam(filtered_story_sequences, rollout_x)
 
         if steps <= self._rollout_steps:
             steps += 1
