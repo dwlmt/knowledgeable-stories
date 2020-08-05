@@ -489,6 +489,8 @@ class KnowledgeablePredictor(Predictor):
 
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
+            print("Generated Sentences", generated_sequences)
+
             if len(generated_sequences) > 2:
 
                 self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
