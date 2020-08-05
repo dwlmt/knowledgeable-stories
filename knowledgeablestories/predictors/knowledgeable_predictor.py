@@ -81,8 +81,8 @@ class KnowledgeablePredictor(Predictor):
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
         # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
-        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=101))
-        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=20))
+        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=10))
+        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
 
         # Use cosine for probability, when false use
         self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="True"))
@@ -93,7 +93,7 @@ class KnowledgeablePredictor(Predictor):
         # Config for text generation
         gen_temp = float(os.getenv("PREDICTOR_GEN_TEMP", default=1.0))
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=0))
-        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
+        gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.90))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
         gen_min_length = int(os.getenv("PREDICTOR_GEN_MIN_LENGTH", default=3))
@@ -102,11 +102,8 @@ class KnowledgeablePredictor(Predictor):
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=4))
 
-
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
-
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
-
         eos_text_token_ids = [764]
         for t in eos_tokens.split():
             eos_text_token_ids.extend(self._tokenizer._tokenizer.encode(t))
@@ -134,7 +131,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
-        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=100))
+        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=200))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
 
@@ -924,11 +921,13 @@ class KnowledgeablePredictor(Predictor):
             retries += 1
 
             if self._model._fusion_dense is None:
-                output_sequences = self._model.generate_text(previous_tokens_tensor,
-                                                             num_of_sequences=min(
-                                                                 self._gen_num_of_sequences - len(generated_sequences),
-                                                                 self._gen_max_per_batch),
-                                                             override_gen_config=self._generation_config)
+                output_sequences, _, _ = self._model.generate_sentences(
+                    previous_tokens=previous_tokens,
+                    gen_config=self._generation_config,
+                    do_sample=True,
+                    trace_log_probs=False,
+                    gen_num_of_sequences=self._gen_num_of_sequences)
+
             else:
 
                 orig_device = None
@@ -945,7 +944,6 @@ class KnowledgeablePredictor(Predictor):
 
                 output_sequences = self._generate_no_beam_search(
                     input_ids=previous_tokens_tensor,
-                    do_sample=True,
                     min_length=gen_config["min_length"],
                     max_length=gen_config["max_length"],
                     temperature=gen_config["temperature"],
@@ -953,10 +951,6 @@ class KnowledgeablePredictor(Predictor):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=self._bad_words_ids,
-                    repetition_penalty=gen_config["repetition_penalty"],
-                    no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
-                    trace_log_probs=False,
                     num_return_sequences=num_return_sequences,
                 )
 
