@@ -81,8 +81,8 @@ class KnowledgeablePredictor(Predictor):
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
         # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
-        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=10))
-        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=10))
+        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=50))
+        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=50))
 
         # Use cosine for probability, when false use
         self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="True"))
@@ -131,7 +131,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
-        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=200))
+        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=500))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=10))
 
