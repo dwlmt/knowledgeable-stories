@@ -286,7 +286,7 @@ class KnowledgeableStoriesModel(Model):
             os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [50257], [0]])  # bad_words_ids
 
         if initializer is not None:
             initializer(self)
@@ -1296,7 +1296,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=self._bad_words_ids,
+                    bad_words_ids=gen_config["bad_words_ids"],
                     trace_log_probs=trace_log_probs,
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
@@ -1314,7 +1314,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=self._bad_words_ids,
+                    bad_words_ids=gen_config["bad_words_ids"],
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
                     trace_log_probs=trace_log_probs,
