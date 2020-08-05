@@ -54,7 +54,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="l2"))
 
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=5))
-        self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=10))
+        self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=20))
         self._rollout_steps = int(os.getenv("STORY_WRITER_ROLLOUT_STEPS", default=5))
         self._length_to_generate = int(os.getenv("STORY_WRITER_GENERATE_LENGTH", default=20))
         self._forward_batch = int(os.getenv("STORY_WRITER_FORWARD_BATCH", default=5))
