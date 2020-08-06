@@ -131,7 +131,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._retain_full_output = parse_bool(os.getenv("PREDICTOR_RETAIN_FULL_OUTPUT", default="False"))
 
-        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=500))
+        self._gen_num_of_sequences = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES", default=10))
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
@@ -929,7 +929,7 @@ class KnowledgeablePredictor(Predictor):
                     gen_config=self._generation_config,
                     do_sample=True,
                     trace_log_probs=False,
-                    gen_num_of_sequences=self._gen_num_of_sequences)
+                    gen_num_of_sequences=min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch))
 
             else:
 
