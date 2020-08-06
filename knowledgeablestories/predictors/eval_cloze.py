@@ -128,6 +128,8 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples_num_drop = int(os.getenv("NEGATIVE_EXAMPLES_NUM_DROP", default=0))
 
+        self._top_n_evaluation = [3, 5, 10, 20]
+
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
 
@@ -216,10 +218,7 @@ class EvalClozePredictor(Predictor):
             for i, sentences in enumerate(all_stories):
                 all_processed_sentences = []
 
-                def perplexity_score(sentences, exclude_positions=None):
-
-                    if exclude_positions is not None and len(exclude_positions) > 0:
-                        sentences = [s for (i,s) in enumerate(sentences) if i not in exclude_positions]
+                def perplexity_score(sentences):
 
                     #print("Sentences",sentences)
                     with torch.no_grad():
@@ -251,11 +250,15 @@ class EvalClozePredictor(Predictor):
 
                 print(sentences)
                 sentence_text = []
-                for sent in sentences:
+                for i, sent in enumerate(sentences):
                     if 'text' in sent:
+                        if i in change_dict["dropped_positions"]:
+                            continue
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
-                perplexity = perplexity_score(sentence_text_flat, change_dict["dropped_positions"])
+
+                print(sentence_text_flat)
+                perplexity = perplexity_score(sentence_text_flat)
                 sentences[0]["prediction_metrics"] = {}
                 sentences[0]["prediction_metrics"][-1] = {}
                 sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
@@ -341,6 +344,9 @@ class EvalClozePredictor(Predictor):
             inputs["aggregated_prediction_metrics"] = story_prediction_list
             inputs["stories"] = all_processed_stories
 
+            inputs["changes"] = change_dict
+            inputs["ranked"] = ranked_dict
+
             correct = story_prediction_list[0]
             incorrect_list = story_prediction_list[1:]
             correct_dict = {}
@@ -350,8 +356,17 @@ class EvalClozePredictor(Predictor):
                 else:
                     correct_dict[k] = 0
             inputs["gold_smaller"] = correct_dict
-            inputs["changes"] = change_dict
-            inputs["ranked"] = ranked_dict
+
+            ranked_results = {}
+            for k, value_list in inputs["ranked"]:
+
+                mutated = len([v for v in value_list if "mutated" == True]) > 0
+
+                #if mutated:
+                #    for j in self._
+                swapped = len([v for v in value_list if "swapped" == True]) > 0
+
+            inputs["ranked_results"] = ranked_results
 
 
             return inputs
