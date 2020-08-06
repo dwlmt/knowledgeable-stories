@@ -953,7 +953,7 @@ class KnowledgeablePredictor(Predictor):
                     top_k=gen_config["top_k"],
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
-                    pad_token_id=50256,
+                    pad_token_id=0,
                     num_return_sequences=num_return_sequences,
                 )
 
