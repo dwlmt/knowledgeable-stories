@@ -153,7 +153,7 @@ class EvalClozePredictor(Predictor):
             change_dict["story_length"] = total_story_len
             change_dict["mutation_positions"] = []
             change_dict["swapped_positions"] = []
-            change_dict["droped_positions"] = []
+            change_dict["dropped_positions"] = []
 
             all_stories = [copy.deepcopy(original_sentences)]
             print(original_sentences, original_sentences[0].keys())
