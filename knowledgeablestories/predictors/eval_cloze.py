@@ -355,19 +355,33 @@ class EvalClozePredictor(Predictor):
                     correct_dict[k] = 1
                 else:
                     correct_dict[k] = 0
-            inputs["gold_smaller"] = correct_dict
+            inputs["whole_story_smaller"] = correct_dict
 
             ranked_results = {}
             for k, value_list in inputs["ranked"]:
 
                 mutated = len([v for v in value_list if "mutated" == True]) > 0
 
-                #if mutated:
-                #    for j in self._
+                if mutated:
+                    for j in self._top_n_evaluation:
+                        top_list = value_list[0: min(j, len(value_list))]
+                        ranked_results[f"mutated_{k}_top_{j}_top"] = len([v for v in top_list if "mutated" == True]) > 0
+
+                        bottom_list = value_list[-min(j, len(value_list)):]
+                        ranked_results[f"mutated_{k}_top_{j}_bottom"] = len([v for v in bottom_list if "mutated" == True]) > 0
+
                 swapped = len([v for v in value_list if "swapped" == True]) > 0
 
-            inputs["ranked_results"] = ranked_results
+                if swapped:
+                    for j in self._top_n_evaluation:
+                        top_list = value_list[0: min(j, len(value_list))]
+                        ranked_results[f"swapped_{k}_top_{j}_top"] = len([v for v in top_list if "swapped" == True]) > 0
 
+                        bottom_list = value_list[-min(j, len(value_list)):]
+                        ranked_results[f"swapped_{k}_top_{j}_bottom"] = len(
+                            [v for v in bottom_list if "swapped" == True]) > 0
+
+            inputs["ranked_results"] = ranked_results
 
             return inputs
 

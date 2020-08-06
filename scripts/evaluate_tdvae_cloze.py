@@ -4,12 +4,10 @@ import fire
 from jsonlines import jsonlines
 from tqdm import tqdm
 
-
 class EvalTdvaeCloze(object):
     """Evaluate TDVAE Cloze
-
     """
-    def eval(self, prediction_json: str, output_file: str, accuracy_field: str = "accuracy"):
+    def eval(self, prediction_json: str, output_file: str, accuracy_field: str = "whole_story_smaller"):
         """ Evaluate TDVAE
 
             @param prediction_json: Source with the prediction json data.
