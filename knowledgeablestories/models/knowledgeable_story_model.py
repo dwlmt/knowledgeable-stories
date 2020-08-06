@@ -479,7 +479,7 @@ class KnowledgeableStoriesModel(Model):
                             self.encode_passages(encoded_sentences_cat, passage_mask)
 
                         if self._passage_dense is not None:
-                            encoded_sentences_cat = self._passage_dense(encoded_sentences_cat)
+                            encoded_sentences_cat = self._passage_dense(encoded_sentences_cat.cuda())
 
                         if "passage_disc_loss" in self._loss_weights:
                             if self._sentence_disc and not prediction_mode:
