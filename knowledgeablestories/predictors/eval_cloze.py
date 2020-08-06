@@ -152,8 +152,8 @@ class EvalClozePredictor(Predictor):
             change_dict = {}
             change_dict["story_length"] = total_story_len
             change_dict["mutation_positions"] = []
-            change_dict["swap_positions"] = []
-            change_dict["drop_positions"] = []
+            change_dict["swapped_positions"] = []
+            change_dict["droped_positions"] = []
 
             all_stories = [copy.deepcopy(original_sentences)]
             print(original_sentences, original_sentences[0].keys())
@@ -182,7 +182,7 @@ class EvalClozePredictor(Predictor):
                                 mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
 
                             if self._neg_examples_num_drop > 0:
-                                change_dict["drop_positions"].extend([r + mut_rand + 1 for r in range(self._neg_examples_num_drop)])
+                                change_dict["dropped_positions"].extend([r + mut_rand + 1 for r in range(self._neg_examples_num_drop)])
 
                                 #del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
@@ -255,14 +255,14 @@ class EvalClozePredictor(Predictor):
                     if 'text' in sent:
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
-                perplexity = perplexity_score(sentence_text_flat, change_dict["drop_positions"])
+                perplexity = perplexity_score(sentence_text_flat, change_dict["dropped_positions"])
                 sentences[0]["prediction_metrics"] = {}
                 sentences[0]["prediction_metrics"][-1] = {}
                 sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
 
                 print("Perplexity",perplexity)
 
-                exclude_positions = change_dict["drop_positions"]
+                exclude_positions = change_dict["dropped_positions"]
 
                 if exclude_positions is not None and len(exclude_positions) > 0:
                     sentences_after_excluded = [s for (i, s) in enumerate(sentences) if i not in exclude_positions]
