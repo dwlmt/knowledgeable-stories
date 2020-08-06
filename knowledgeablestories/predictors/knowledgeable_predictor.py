@@ -487,6 +487,7 @@ class KnowledgeablePredictor(Predictor):
             # Get the encoding for the last sentence only.
             passages_encoded = torch.unsqueeze(passages_encoded[-1],dim=0)
 
+            print("Input tokens", input_tokens)
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
             print("Generated Sentences", generated_sequences)
@@ -599,7 +600,7 @@ class KnowledgeablePredictor(Predictor):
                     if len(value.size()) > 0:
                         gen_seq["parent_relation_metrics"][k] = value.cpu()
                     else:
-                        gen_seq["parent_relation_metrics"][k] = value.item()
+                        gen_seq["parent_relation_metrics"][k] = value.item().cpu()
 
     def _calc_leaf_probs(self, context_encoded_representation, encoded_sentences_tensor, existing_sentences_encoded,
                          final_encoded_representation, generated_sequences, input_tokens, log_prob_tensor_list,
