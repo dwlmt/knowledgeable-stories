@@ -184,10 +184,10 @@ class EvalClozePredictor(Predictor):
                             if self._neg_examples_num_drop > 0:
                                 change_dict["drop_positions"].extend([r + mut_rand + 1 for r in range(self._neg_examples_num_drop)])
 
-                                del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
+                                #del mutated_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
                                 copy_story_sentences = copy.deepcopy(original_sentences)
-                                del copy_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
+                                #del copy_story_sentences[mut_rand + 1 : mut_rand + 1 + self._neg_examples_num_drop]
 
                                 all_stories[0] = copy_story_sentences
 
@@ -216,7 +216,10 @@ class EvalClozePredictor(Predictor):
             for i, sentences in enumerate(all_stories):
                 all_processed_sentences = []
 
-                def perplexity_score(sentences):
+                def perplexity_score(sentences, exclude_positions=None):
+
+                    if exclude_positions is not None and len(exclude_positions) > 0:
+                        sentences = [s for (i,s) in enumerate(sentences) if i not in exclude_positions]
 
                     #print("Sentences",sentences)
                     with torch.no_grad():
@@ -252,14 +255,21 @@ class EvalClozePredictor(Predictor):
                     if 'text' in sent:
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
-                perplexity = perplexity_score(sentence_text_flat)
+                perplexity = perplexity_score(sentence_text_flat, change_dict["drop_positions"])
                 sentences[0]["prediction_metrics"] = {}
                 sentences[0]["prediction_metrics"][-1] = {}
                 sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
 
                 print("Perplexity",perplexity)
 
-                for sentence_batch in list(more_itertools.chunked(sentences, self._split_batch_size)):
+                exclude_positions = change_dict["drop_positions"]
+
+                if exclude_positions is not None and len(exclude_positions) > 0:
+                    sentences_after_excluded = [s for (i, s) in enumerate(sentences) if i not in exclude_positions]
+                else:
+                    sentences_after_excluded = sentences
+
+                for sentence_batch in list(more_itertools.chunked(sentences_after_excluded, self._split_batch_size)):
 
                     copied_inputs = copy.deepcopy(inputs)
 
@@ -277,7 +287,7 @@ class EvalClozePredictor(Predictor):
                         self._surprise_tdvae_metrics(sentence_batch, cached_dict)
                         self._suspense_tdvae_metrics(sentence_batch, cached_dict)
                     else:
-                        self._next_step_metrics(sentence_batch, cached_dict)
+                        self._next_step_metrics(sentence_batch, cached_dict, )
 
                     all_processed_sentences.extend(sentence_batch)
 
@@ -293,8 +303,13 @@ class EvalClozePredictor(Predictor):
             for story in all_processed_stories:
 
                 pred_dict = {}
+                ranked_dict = {}
 
-                for sent in story:
+                for i, sent in enumerate(story):
+
+                    if "prediction_metric" not in sent:
+                        continue
+
                     prediction_metric = sent["prediction_metrics"]
 
                     print(prediction_metric)
@@ -310,15 +325,20 @@ class EvalClozePredictor(Predictor):
                             if key not in pred_dict:
                                 pred_dict[key] = 0.0
 
+                            if key not in ranked_dict:
+                                ranked_dict["key"] = []
+
                             try:
                                 pred_dict[key] += float(val_pred)
+                                ranked_dict[key].append({"sentence_number": i, "value": val_pred, "mutated": i in change_dict["mutation_positions"],
+                                                         "swapped": i in change_dict["swapped_positions"]})
+                                ranked_dict[key] = sorted(ranked_dict[key], key = lambda i: i['value'], )
                             except:
                                 pass
 
                 story_prediction_list.append(pred_dict)
 
             inputs["aggregated_prediction_metrics"] = story_prediction_list
-            #inputs["aggregated_prediction_metrics"] = sorted_prediction_list
             inputs["stories"] = all_processed_stories
 
             correct = story_prediction_list[0]
@@ -330,7 +350,9 @@ class EvalClozePredictor(Predictor):
                 else:
                     correct_dict[k] = 0
             inputs["gold_smaller"] = correct_dict
-            inputs["change_dict"] = change_dict
+            inputs["changes"] = change_dict
+            inputs["ranked"] = ranked_dict
+
 
             return inputs
 
