@@ -966,8 +966,10 @@ class KnowledgeablePredictor(Predictor):
 
                 generated_sequence = generated_sequence["tokens"]
 
-                if self._model._fusion_dense is None:
+                if not self._model._fusion_dense is None:
                     generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
+
+                print(generated_sequence)
 
                 if generated_sequence[0] not in self._eos_token_ids:
 
