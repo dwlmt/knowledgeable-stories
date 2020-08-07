@@ -74,6 +74,8 @@ class KnowledgeablePredictor(Predictor):
         self._random_test_vector = parse_bool(os.getenv("RANDOM_TEST_VECTOR", default="False"))
         self._shuffle_sentences = parse_bool(os.getenv("SHUFFLE_SENTENCES", default="False"))
 
+        self._calc_leaf_metrics = parse_bool(os.getenv("CALCULATE_LEAF_METRICS", default="True"))
+
         # Whether is a TD-VAE model
         self._tdvae = parse_bool(os.getenv("TDVAE", default="False"))
 
@@ -527,7 +529,7 @@ class KnowledgeablePredictor(Predictor):
             num_levels_rollout -= 1
             return
 
-        # If needed then filter the beem for the whole level.
+        # If needed then filter the beam for the whole level.
         filtered_list, log_prob_tensor = self.filter_beam(all_level_list, log_prob_tensor_list)
 
         # Early return if it fails to generate any valid sequences.
@@ -540,7 +542,8 @@ class KnowledgeablePredictor(Predictor):
 
         self._vader_polarity(filtered_list)
 
-        #self.calculate_leaf_metrics(filtered_list, num_levels_rollout, parent)
+        if self._calc_leaf_metrics:
+            self.calculate_leaf_metrics(filtered_list, num_levels_rollout, parent)
 
         # Filter the generate from list if required.
 
