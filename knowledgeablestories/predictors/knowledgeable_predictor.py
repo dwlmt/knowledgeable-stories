@@ -960,8 +960,6 @@ class KnowledgeablePredictor(Predictor):
                 if orig_device is not None:
                     output_sequences = output_sequences.to(orig_device)
 
-            if len(output_sequences) > 2:
-                output_sequences.squeeze_()
             for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
                 generated_sequence = generated_sequence.tolist()
                 # Remove the prompt.
