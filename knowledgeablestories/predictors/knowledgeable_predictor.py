@@ -961,8 +961,8 @@ class KnowledgeablePredictor(Predictor):
                     output_sequences = output_sequences.to(orig_device)
 
             for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
-                generated_sequence = generated_sequence.tolist()
-                # Remove the prompt.
+
+                print(generated_sequence_idx, generated_sequence)
 
                 generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
 
