@@ -600,7 +600,7 @@ class KnowledgeablePredictor(Predictor):
                     if len(value.size()) > 0:
                         gen_seq["parent_relation_metrics"][k] = value.cpu()
                     else:
-                        gen_seq["parent_relation_metrics"][k] = value.item().cpu()
+                        gen_seq["parent_relation_metrics"][k] = value.item()
 
     def _calc_leaf_probs(self, context_encoded_representation, encoded_sentences_tensor, existing_sentences_encoded,
                          final_encoded_representation, generated_sequences, input_tokens, log_prob_tensor_list,
