@@ -664,7 +664,7 @@ class KnowledgeablePredictor(Predictor):
             print("Encoded Sentences", merged_sentences_encoded.size())
             gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
             print("Encoded Passages", final_encoded_representation.size())
-            gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation.cpu(),dim=0)
+            gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation[0].cpu(),dim=0)
 
         metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                        "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
@@ -691,7 +691,7 @@ class KnowledgeablePredictor(Predictor):
 
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
             print("Encoded passages tensor", gen_seq["encoded_passages_tensor"].size())
-            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"][i],dim=0)
+            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"],dim=0)
 
             if torch.cuda.is_available():
                 context_representation = context_representation.cuda()
