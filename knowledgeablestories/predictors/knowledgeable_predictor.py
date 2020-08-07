@@ -647,6 +647,7 @@ class KnowledgeablePredictor(Predictor):
         else:
             chain_log_prob, chain_prob = self._chain_probs_from_parent(parent, probs, log_probs)
         log_prob_tensor_list.append(chain_log_prob)
+        print("Generated Sequences Len", len(generated_sequences))
         for i, gen_seq in enumerate(generated_sequences, start=0):
             gen_seq["parent"] = parent
 
@@ -664,6 +665,7 @@ class KnowledgeablePredictor(Predictor):
             gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
             print("Encoded Passages", final_encoded_representation.size())
             gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation.cpu(),dim=0)
+
         metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                        "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                        "context_representation": torch.unsqueeze(context_encoded_representation,
