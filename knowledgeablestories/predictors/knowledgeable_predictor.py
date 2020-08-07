@@ -676,6 +676,8 @@ class KnowledgeablePredictor(Predictor):
             generated_sequences.append(gold_sentence)
 
     def calculate_leaf_metrics(self, filtered_list, num_levels_rollout, parent):
+
+        print(filtered_list, len(filtered_list))
         for i, gen_seq in enumerate(filtered_list):
 
             gen_seq["index"] = i
