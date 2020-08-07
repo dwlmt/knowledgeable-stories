@@ -540,7 +540,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._vader_polarity(filtered_list)
 
-        self.calculate_leaf_metrics(filtered_list, num_levels_rollout, parent)
+        #self.calculate_leaf_metrics(filtered_list, num_levels_rollout, parent)
 
         # Filter the generate from list if required.
 
