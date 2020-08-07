@@ -81,8 +81,8 @@ class KnowledgeablePredictor(Predictor):
         self._encoders_batch_size = int(os.getenv("PREDICTOR_ENCODERS_BATCH_SIZE", default=5))
 
         # How many of the sampled sentences to keep and how many to generate from. Split as may want these to be different.
-        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=50))
-        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=50))
+        self._beam_size_keep = int(os.getenv("PREDICTOR_BEAM_SIZE_KEEP", default=250))
+        self._beam_size_gen = int(os.getenv("PREDICTOR_BEAM_SIZE_GEN", default=20))
 
         # Use cosine for probability, when false use
         self._encoder_cosine = parse_bool(os.getenv("PREDICTOR_COSINE", default="True"))
