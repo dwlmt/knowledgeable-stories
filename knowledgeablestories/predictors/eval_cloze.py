@@ -310,7 +310,7 @@ class EvalClozePredictor(Predictor):
 
                 for i, sent in enumerate(story):
 
-                    if "prediction_metric" not in sent:
+                    if "prediction_metrics" not in sent:
                         continue
 
                     prediction_metric = sent["prediction_metrics"]
