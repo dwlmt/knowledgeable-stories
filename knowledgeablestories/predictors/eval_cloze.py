@@ -359,7 +359,7 @@ class EvalClozePredictor(Predictor):
             inputs["whole_story_smaller"] = correct_dict
 
             ranked_results = {}
-            for k, value_list in inputs["ranked"]:
+            for k, value_list in inputs["ranked"].items():
 
                 mutated = len([v for v in value_list if "mutated" == True]) > 0
 
