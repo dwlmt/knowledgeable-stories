@@ -335,7 +335,8 @@ class EvalClozePredictor(Predictor):
                                 pred_dict[key] += float(val_pred)
                                 ranked_dict[key].append({"sentence_number": i, "value": val_pred, "mutated": i in change_dict["mutation_positions"],
                                                          "swapped": i in change_dict["swapped_positions"]})
-                                ranked_dict[key] = sorted(ranked_dict[key], key = lambda i: i['value'], )
+                                ranked_dict[key].sort(key = lambda i: i['value'], )
+                                print(ranked_dict)
                             except:
                                 pass
 
