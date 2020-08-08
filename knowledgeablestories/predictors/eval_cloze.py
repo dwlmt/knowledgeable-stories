@@ -337,8 +337,7 @@ class EvalClozePredictor(Predictor):
                                                          "swapped": i in change_dict["swapped_positions"]})
                                 ranked_dict[key].sort(key = lambda i: i['value'], )
                                 print(ranked_dict)
-                            except:
-                                pass
+                            except Exception as e: print("Ranked dict error: ", e)
 
                 story_prediction_list.append(pred_dict)
 
