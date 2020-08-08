@@ -329,14 +329,15 @@ class EvalClozePredictor(Predictor):
                                 pred_dict[key] = 0.0
 
                             if key not in ranked_dict:
-                                ranked_dict["key"] = []
+                                ranked_dict[key] = []
 
                             try:
                                 pred_dict[key] += float(val_pred)
                                 ranked_dict[key].append({"sentence_number": i, "value": val_pred, "mutated": i in change_dict["mutation_positions"],
                                                          "swapped": i in change_dict["swapped_positions"]})
-                                ranked_dict[key].sort(key = lambda i: i['value'], )
                                 print(ranked_dict)
+                                ranked_dict[key].sort(key = lambda i: i['value'], )
+
                             except Exception as e: print("Ranked dict error: ", e)
 
                 story_prediction_list.append(pred_dict)
