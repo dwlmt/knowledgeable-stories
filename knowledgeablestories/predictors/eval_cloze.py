@@ -172,9 +172,9 @@ class EvalClozePredictor(Predictor):
                             mut_rand = randint(0, len(mutated_story_sentences) - self._neg_examples_num_block - self._neg_examples_num_drop)
                             change_dict["mutation_positions"].append(mut_rand)
 
-                            for i in range(self._neg_examples_num_block):
+                            for j in range(self._neg_examples_num_block):
 
-                                context_text = mutated_story_sentences[0:mut_rand + i]
+                                context_text = mutated_story_sentences[0:mut_rand + j]
                                 context_tokens = [self._tokenizer._tokenizer.encode(c["text"]) for c in context_text]
 
                                 generated_sentence = self.generate_sentences(context_tokens, 1)[0]
@@ -215,7 +215,7 @@ class EvalClozePredictor(Predictor):
 
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
             '''
-            for i, sentences in enumerate(all_stories):
+            for j, sentences in enumerate(all_stories):
                 all_processed_sentences = []
 
                 def perplexity_score(sentences):
@@ -250,9 +250,9 @@ class EvalClozePredictor(Predictor):
 
                 print(sentences)
                 sentence_text = []
-                for i, sent in enumerate(sentences):
+                for j, sent in enumerate(sentences):
                     if 'text' in sent:
-                        if i in change_dict["dropped_positions"]:
+                        if j in change_dict["dropped_positions"]:
                             continue
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 sentence_text_flat = " ".join(sentence_text)
@@ -268,7 +268,7 @@ class EvalClozePredictor(Predictor):
                 exclude_positions = change_dict["dropped_positions"]
 
                 if exclude_positions is not None and len(exclude_positions) > 0:
-                    sentences_after_excluded = [s for (i, s) in enumerate(sentences) if i not in exclude_positions]
+                    sentences_after_excluded = [s for (j, s) in enumerate(sentences) if j not in exclude_positions]
                 else:
                     sentences_after_excluded = sentences
 
@@ -294,21 +294,21 @@ class EvalClozePredictor(Predictor):
 
                     all_processed_sentences.extend(sentence_batch)
 
-                if i == 0:
+                if j == 0:
                     inputs["sentences"] = all_processed_sentences
                 else:
-                    inputs[f"mutated_{i}"] = all_processed_sentences
+                    inputs[f"mutated_{j}"] = all_processed_sentences
 
                 all_processed_stories.append(all_processed_sentences)
 
             keys_dict = {}
             story_prediction_list = []
-            for story in all_processed_stories:
+            for i, story in enumerate(all_processed_stories):
 
                 pred_dict = {}
                 ranked_dict = {}
 
-                for i, sent in enumerate(story):
+                for j, sent in enumerate(story):
 
                     if "prediction_metrics" not in sent:
                         continue
@@ -333,10 +333,12 @@ class EvalClozePredictor(Predictor):
 
                             try:
                                 pred_dict[key] += float(val_pred)
-                                ranked_dict[key].append({"sentence_number": i, "value": val_pred, "mutated": i in change_dict["mutation_positions"],
-                                                         "swapped": i in change_dict["swapped_positions"]})
-                                print(ranked_dict)
-                                ranked_dict[key].sort(key = lambda i: i['value'], )
+
+                                if i > 0: # 0 is always the gold standard so no mutations or swaps.
+                                    ranked_dict[key].append({"sentence_number": j, "value": val_pred, "mutated": j in change_dict["mutation_positions"],
+                                                             "swapped": j in change_dict["swapped_positions"]})
+                                    print(ranked_dict)
+                                    ranked_dict[key].sort(key = lambda i: i['value'], )
 
                             except Exception as e: print("Ranked dict error: ", e)
 
