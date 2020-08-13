@@ -202,6 +202,12 @@ class EvalClozePredictor(Predictor):
                             change_dict["swapped_positions"].append(swap_a_idx)
                             change_dict["swapped_positions"].append(swap_b_idx)
 
+                            change_dict["dropped_positions"].extend(
+                                [max(swap_a_idx - self._neg_examples_num_drop, 0) + r  for r in range(self._neg_examples_num_drop)])
+                            change_dict["dropped_positions"].extend(
+                                [max(swap_b_idx - self._neg_examples_num_drop, 0) + r for r in
+                                 range(self._neg_examples_num_drop)])
+
                             print("Swapped", swap_a_idx, swap_b_idx)
 
                             orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
@@ -363,7 +369,7 @@ class EvalClozePredictor(Predictor):
             ranked_results = {}
             for k, value_list in inputs["ranked"].items():
 
-                mutated = len([v for v in value_list if "mutated" == True]) > 0
+                mutated = len([v for v in value_list if v["mutated"] == True]) > 0
 
                 if mutated:
                     for j in self._top_n_evaluation:
@@ -373,7 +379,7 @@ class EvalClozePredictor(Predictor):
                         bottom_list = value_list[-min(j, len(value_list)):]
                         ranked_results[f"mutated_{k}_top_{j}_bottom"] = len([v for v in bottom_list if "mutated" == True]) > 0
 
-                swapped = len([v for v in value_list if "swapped" == True]) > 0
+                swapped = len([v for v in value_list if v["swapped"] == True]) > 0
 
                 if swapped:
                     for j in self._top_n_evaluation:
