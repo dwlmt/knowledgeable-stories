@@ -208,7 +208,7 @@ class EvalClozePredictor(Predictor):
                                 [max(swap_b_idx - self._neg_examples_num_drop, 0) + r for r in
                                  range(self._neg_examples_num_drop)])
 
-                            print("Swapped", swap_a_idx, swap_b_idx)
+                            #print("Swapped", swap_a_idx, swap_b_idx)
 
                             orig_b = mutated_story_sentences[swap_b_idx : swap_b_idx + self._neg_examples_num_block]
 
@@ -216,7 +216,7 @@ class EvalClozePredictor(Predictor):
                             mutated_story_sentences[swap_a_idx: swap_a_idx + self._neg_examples_num_block] = orig_b
 
                     mutated_story_sentences = [s for s in mutated_story_sentences if isinstance(s, dict)]
-                    print(mutated_story_sentences, mutated_story_sentences[0].keys())
+                    #print(mutated_story_sentences, mutated_story_sentences[0].keys())
                     all_stories.append(mutated_story_sentences)
 
             ''' Copy and chunk the sentences into batches to allow the predictions to be run on longer texts.
@@ -238,7 +238,7 @@ class EvalClozePredictor(Predictor):
 
                         perplexity_sum_total = 0.0
                         num_of_batches = 0
-                        print("Tensor Input", tensor_input)
+                        #print("Tensor Input", tensor_input)
                         for tensor_input_batch in torch.split(tensor_input, self._lm_num_context_tokens):
 
                             tensor_input_batch = torch.tensor(tensor_input_batch)
@@ -321,7 +321,7 @@ class EvalClozePredictor(Predictor):
 
                     prediction_metric = sent["prediction_metrics"]
 
-                    print(prediction_metric)
+                    #print(prediction_metric)
 
                     for k_pred, val in prediction_metric.items():
 
@@ -343,7 +343,7 @@ class EvalClozePredictor(Predictor):
                                 if i > 0: # 0 is always the gold standard so no mutations or swaps.
                                     ranked_dict[key].append({"sentence_number": j, "value": val_pred, "mutated": j in change_dict["mutation_positions"],
                                                              "swapped": j in change_dict["swapped_positions"]})
-                                    print("Ranked Dict", ranked_dict)
+                                    #print("Ranked Dict", ranked_dict)
                                     ranked_dict[key].sort(key = lambda i: i['value'], )
 
                             except Exception as e: print("Ranked dict error: ", e)
