@@ -374,21 +374,21 @@ class EvalClozePredictor(Predictor):
                 if mutated:
                     for j in self._top_n_evaluation:
                         top_list = value_list[0: min(j, len(value_list))]
-                        ranked_results[f"mutated_{k}_top_{j}_top"] = len([v for v in top_list if "mutated" == True]) > 0
+                        ranked_results[f"mutated_{k}_top_{j}"] = len([v for v in top_list if v["mutated"] == True]) > 0
 
                         bottom_list = value_list[-min(j, len(value_list)):]
-                        ranked_results[f"mutated_{k}_top_{j}_bottom"] = len([v for v in bottom_list if "mutated" == True]) > 0
+                        ranked_results[f"mutated_{k}_top_{j}"] = len([v for v in bottom_list if v["mutated"] == True]) > 0
 
                 swapped = len([v for v in value_list if v["swapped"] == True]) > 0
 
                 if swapped:
                     for j in self._top_n_evaluation:
                         top_list = value_list[0: min(j, len(value_list))]
-                        ranked_results[f"swapped_{k}_top_{j}_top"] = len([v for v in top_list if "swapped" == True]) > 0
+                        ranked_results[f"swapped_{k}_top_{j}"] = len([v for v in top_list if v["swapped"] == True]) > 0
 
                         bottom_list = value_list[-min(j, len(value_list)):]
-                        ranked_results[f"swapped_{k}_top_{j}_bottom"] = len(
-                            [v for v in bottom_list if "swapped" == True]) > 0
+                        ranked_results[f"swapped_{k}_bottom_{j}"] = len(
+                            [v for v in bottom_list if v["swapped"] == True]) > 0
 
             inputs["ranked_results"] = ranked_results
 
