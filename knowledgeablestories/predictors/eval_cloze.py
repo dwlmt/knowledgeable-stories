@@ -128,7 +128,7 @@ class EvalClozePredictor(Predictor):
 
         self._neg_examples_num_drop = int(os.getenv("NEGATIVE_EXAMPLES_NUM_DROP", default=0))
 
-        self._top_n_evaluation = [3, 5, 10, 20]
+        self._top_n_evaluation = [1, 3, 5, 10, 20]
 
         if self._override_lm:
             self._model.init_lm_model(self._model._lm_name, self._model._embedder_vocab_size, True)
@@ -179,7 +179,7 @@ class EvalClozePredictor(Predictor):
 
                                 generated_sentence = self.generate_sentences(context_tokens, 1)[0]
 
-                                print("Mutate random", mut_rand, context_text, context_tokens, generated_sentence)
+                                #print("Mutate random", mut_rand, context_text, context_tokens, generated_sentence)
                                 mutated_story_sentences[mut_rand]["text"] = generated_sentence["text"]
                                 mutated_story_sentences[mut_rand]["tokens"] = generated_sentence["tokens"]
 
@@ -269,7 +269,7 @@ class EvalClozePredictor(Predictor):
                 sentences[0]["prediction_metrics"][-1] = {}
                 sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
 
-                print("Perplexity",perplexity)
+                #print("Perplexity",perplexity)
 
                 exclude_positions = change_dict["dropped_positions"]
 
@@ -488,7 +488,7 @@ class EvalClozePredictor(Predictor):
             reference_points[i]["tdvae_z1"] = curr_z1[i][0]
             reference_points[i]["passages_encoded"] = curr_passages[i]
             reference_points[i]["sentences_encoded"] = curr_sentences[i]
-            print("Sentence reference points", curr_sentences[i].size())
+            #print("Sentence reference points", curr_sentences[i].size())
 
         for s in sentence_batch:
             if "prediction_metrics" not in s:
