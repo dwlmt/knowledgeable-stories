@@ -74,7 +74,7 @@ class EvalClozePredictor(Predictor):
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=0))
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
-        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
+        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=100))
 
         self._max_context_lm_tokens = int(os.getenv("PREDICTOR_MAX_CONTEXT_LM_TOKENS", default=924))
 
@@ -342,6 +342,7 @@ class EvalClozePredictor(Predictor):
 
                                 if i > 0: # 0 is always the gold standard so no mutations or swaps.
                                     ranked_dict[key].append({"sentence_number": j, "value": val_pred, "mutated": j in change_dict["mutation_positions"],
+                                                             "mutated_after": (j + 1 + self._neg_examples_num_drop) in change_dict["mutation_positions"],
                                                              "swapped": j in change_dict["swapped_positions"]})
                                     #print("Ranked Dict", ranked_dict)
                                     ranked_dict[key].sort(key = lambda i: i['value'], )
@@ -377,7 +378,16 @@ class EvalClozePredictor(Predictor):
                         ranked_results[f"mutated_{k}_top_{j}"] = len([v for v in top_list if v["mutated"] == True]) > 0
 
                         bottom_list = value_list[-min(j, len(value_list)):]
-                        ranked_results[f"mutated_{k}_top_{j}"] = len([v for v in bottom_list if v["mutated"] == True]) > 0
+                        ranked_results[f"mutated_{k}_bottom_{j}"] = len([v for v in bottom_list if v["mutated"] == True]) > 0
+
+                        ranked_results[f"mutated_after_{k}_top_{j}"] = len([v for v in top_list if v["mutated_after"] == True]) > 0
+
+                        bottom_list = value_list[-min(j, len(value_list)):]
+                        ranked_results[f"mutated_{k}_bottom_{j}"] = len(
+                            [v for v in bottom_list if v["mutated"] == True]) > 0
+
+                        ranked_results[f"mutated_after_{k}_bottom_{j}"] = len(
+                            [v for v in bottom_list if v["mutated_after"] == True]) > 0
 
                 swapped = len([v for v in value_list if v["swapped"] == True]) > 0
 
