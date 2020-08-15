@@ -29,12 +29,12 @@ class EvalTdvaeCloze(object):
                     accuracy = obj[accuracy_field]
                     sum_dict = {k: sum_dict.get(k, 0) + accuracy.get(k, 0) for k in set(sum_dict) | set(accuracy)}
 
-                for rank_key, rank_val in obj["ranked_results"]:
+                for rank_key, rank_val in obj["ranked_results"].items():
 
                     if rank_key not in ranked_results_counts:
                         ranked_results_counts[rank_key] = 0
 
-                    ranked_results_counts += 0
+                    ranked_results_counts += int(rank_val)
 
                 total_rows += 1
 
@@ -42,6 +42,8 @@ class EvalTdvaeCloze(object):
         for k, v in sum_dict.items():
             accuracy_dict[k] = float(v) / float(total_rows)
 
+        for k, v in ranked_results_counts.items():
+            ranked_results_counts[k] = float(v) / float(total_rows)
 
         with open(output_file, 'w') as csvfile:
             csv_writer = csv.writer(csvfile)
