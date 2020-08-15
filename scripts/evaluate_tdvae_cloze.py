@@ -34,7 +34,7 @@ class EvalTdvaeCloze(object):
                     if rank_key not in ranked_results_counts:
                         ranked_results_counts[rank_key] = 0
 
-                    ranked_results_counts += int(rank_val)
+                    ranked_results_counts[rank_key] += int(rank_val)
 
                 total_rows += 1
 
