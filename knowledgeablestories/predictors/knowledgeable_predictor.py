@@ -194,6 +194,7 @@ class KnowledgeablePredictor(Predictor):
 
                 cached_dict = self.convert_output_to_tensors(output_dict)
                 current_tokens = cached_dict["tokens"]
+                print("Tokens", current_tokens)
 
                 passages_encoded_tensor = cached_dict["passages_encoded"]
 
@@ -1139,6 +1140,7 @@ class KnowledgeablePredictor(Predictor):
                     cached_dict[field] = stripped_tokens
                 else:
                     cached_dict[field] = torch.FloatTensor(output_dict[field]).cpu()
+                    print(f"{field}",cached_dict[field].size())
 
         return cached_dict
 
