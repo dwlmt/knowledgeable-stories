@@ -342,7 +342,7 @@ class EvalClozePredictor(Predictor):
 
                                 if i > 0: # 0 is always the gold standard so no mutations or swaps.
                                     ranked_dict[key].append({"sentence_number": j, "value": val_pred, "mutated": j in change_dict["mutation_positions"],
-                                                             "mutated_after": (j + 1 + self._neg_examples_num_drop) in change_dict["mutation_positions"],
+                                                             "mutated_after": (j - 1 - self._neg_examples_num_drop) in change_dict["mutation_positions"],
                                                              "swapped": j in change_dict["swapped_positions"]})
                                     #print("Ranked Dict", ranked_dict)
                                     ranked_dict[key].sort(key = lambda i: i['value'], )
