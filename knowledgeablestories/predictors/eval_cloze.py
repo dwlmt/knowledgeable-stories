@@ -74,7 +74,7 @@ class EvalClozePredictor(Predictor):
         gen_top_k = int(os.getenv("PREDICTOR_GEN_TOP_K", default=0))
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
-        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=100))
+        gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1024))
 
         self._max_context_lm_tokens = int(os.getenv("PREDICTOR_MAX_CONTEXT_LM_TOKENS", default=924))
 
