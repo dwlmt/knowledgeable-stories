@@ -1129,6 +1129,8 @@ class KnowledgeableStoriesModel(Model):
 
     def prediction_distance_metrics(self, passages_encoded):
 
+        print("Predictions distances", passages_encoded.size())
+
         output_dict = {}
 
         predictions_metrics_dict = {}
@@ -1138,6 +1140,7 @@ class KnowledgeableStoriesModel(Model):
                                         i:, ]
             encoded_target_correct = passages_encoded[:passages_encoded.shape[0] - i, :]
 
+            print("Predictions distances", passages_encoded.size())
             sim = self._similarity_distances(encoded_sentences_correct, encoded_target_correct)
 
             predictions_metrics_dict[f"{i}"] = sim

@@ -17,7 +17,7 @@ class KnowledgeableBeamStoryWriterPredictor(KnowledgeablePredictor):
     def __init__(self, model: Model, dataset_reader: DatasetReader) -> None:
         super().__init__(model=model, dataset_reader=dataset_reader)
 
-        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=10))
+        self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=1))
 
     def predict_json(self, inputs: JsonDict) -> JsonDict:
 
