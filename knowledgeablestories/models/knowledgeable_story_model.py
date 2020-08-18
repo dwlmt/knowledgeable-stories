@@ -1133,6 +1133,9 @@ class KnowledgeableStoriesModel(Model):
 
         output_dict = {}
 
+        if passages_encoded.size(0) == 1:
+            return output_dict
+
         predictions_metrics_dict = {}
         i = 1
         with torch.no_grad():
@@ -1140,7 +1143,7 @@ class KnowledgeableStoriesModel(Model):
                                         i:, ]
             encoded_target_correct = passages_encoded[:passages_encoded.shape[0] - i, :]
 
-            print("Predictions distances", passages_encoded.size())
+            print("Similarity distances", encoded_sentences_correct.size(), encoded_target_correct.size())
             sim = self._similarity_distances(encoded_sentences_correct, encoded_target_correct)
 
             predictions_metrics_dict[f"{i}"] = sim

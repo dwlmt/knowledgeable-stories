@@ -904,6 +904,7 @@ class KnowledgeablePredictor(Predictor):
         return encoded_sentences_tensor, context_tensor, final_tensor
 
     def _add_distance_metrics(self, passages_encoded_tensor, sentence_batch):
+
         if torch.cuda.is_available():
             passages_encoded_tensor = passages_encoded_tensor.cuda()
         distance_metrics = self._model.prediction_distance_metrics(passages_encoded_tensor)
