@@ -487,6 +487,9 @@ class KnowledgeablePredictor(Predictor):
             if "sentences" not in parent:
                 parent["sentences"] = []
 
+            if "prediction_metrics" not in parent:
+                parent["prediction_metrics"] = {}
+
             # Get the encoding for the last sentence only.
             passages_encoded = torch.unsqueeze(passages_encoded[-1],dim=0)
 
