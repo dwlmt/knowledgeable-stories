@@ -498,35 +498,35 @@ class KnowledgeablePredictor(Predictor):
 
             print("Generated Sentences", generated_sequences)
 
-            if len(generated_sequences) > 2:
+            #if len(generated_sequences) > 2:
 
-                self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
+            self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
 
-                existing_sentences_encoded = existing_sentences_encoded[
-                                             max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
-                                             ...]
+            existing_sentences_encoded = existing_sentences_encoded[
+                                         max(0, existing_sentences_encoded.size(0) - self._split_batch_size):,
+                                         ...]
 
-                encoded_sentences_tensor, context_encoded_representation, final_encoded_representation = self._encode_representations(
-                    generated_sequences, existing_sentences_encoded)
+            encoded_sentences_tensor, context_encoded_representation, final_encoded_representation = self._encode_representations(
+                generated_sequences, existing_sentences_encoded)
 
-                if encoded_sentences_tensor is None:
-                    continue
+            if encoded_sentences_tensor is None:
+                continue
 
-                # For multistep rollout use the base context distance for comaprison.
-                # if "parent_relation_metrics" in parent and "context_representation" in parent["parent_relation_metrics"]:
-                #    context_encoded_representation = parent["parent_relation_metrics"]["context_representation"]
+            # For multistep rollout use the base context distance for comaprison.
+            # if "parent_relation_metrics" in parent and "context_representation" in parent["parent_relation_metrics"]:
+            #    context_encoded_representation = parent["parent_relation_metrics"]["context_representation"]
 
-                final_encoded_representation, metric_dict = self._calc_leaf_probs(context_encoded_representation,
-                                                                                  encoded_sentences_tensor,
-                                                                                  existing_sentences_encoded,
-                                                                                  final_encoded_representation,
-                                                                                  generated_sequences, input_tokens,
-                                                                                  log_prob_tensor_list,
-                                                                                  num_levels_rollout, parent)
+            final_encoded_representation, metric_dict = self._calc_leaf_probs(context_encoded_representation,
+                                                                              encoded_sentences_tensor,
+                                                                              existing_sentences_encoded,
+                                                                              final_encoded_representation,
+                                                                              generated_sequences, input_tokens,
+                                                                              log_prob_tensor_list,
+                                                                              num_levels_rollout, parent)
 
-                self._unpack_metrics(generated_sequences, metric_dict)
+            self._unpack_metrics(generated_sequences, metric_dict)
 
-                all_level_list.extend(generated_sequences)
+            all_level_list.extend(generated_sequences)
 
         # Early return if it fails to generate any valid sequences.
         if len(all_level_list) <= 3:
