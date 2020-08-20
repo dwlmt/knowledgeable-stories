@@ -529,9 +529,9 @@ class KnowledgeablePredictor(Predictor):
             all_level_list.extend(generated_sequences)
 
         # Early return if it fails to generate any valid sequences.
-        if len(all_level_list) <= 3:
-            num_levels_rollout -= 1
-            return
+        #if len(all_level_list) <= 3:
+        #    num_levels_rollout -= 1
+        #    return
 
         # If needed then filter the beam for the whole level.
         filtered_list, log_prob_tensor = self.filter_beam(all_level_list, log_prob_tensor_list)
