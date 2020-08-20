@@ -536,11 +536,6 @@ class KnowledgeablePredictor(Predictor):
         # If needed then filter the beam for the whole level.
         filtered_list, log_prob_tensor = self.filter_beam(all_level_list, log_prob_tensor_list)
 
-        # Early return if it fails to generate any valid sequences.
-        if len(filtered_list) <= 3:
-            num_levels_rollout -= 1
-            return
-
         log_prob_tensor = self._recalculate_beam_probs(all_level_list, filtered_list, generated_sequences,
                                                        log_prob_tensor, num_levels_rollout)
 
