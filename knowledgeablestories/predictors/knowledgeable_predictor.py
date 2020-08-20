@@ -19,6 +19,7 @@ from torch.distributions import Categorical
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from knowledgeablestories.dataset_readers.special_tokens import token_tags
+from knowledgeablestories.models.knowledgeable_story_model import END_OF_TEXT_TOKEN_IDS
 
 END_OF_TEXT_TOKEN_ID = 50256
 
@@ -137,7 +138,7 @@ class KnowledgeablePredictor(Predictor):
         self._gen_num_of_sequences_max_retry = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_RETRY", default=100))
         self._gen_max_per_batch = int(os.getenv("PREDICTOR_GEN_NUM_SEQUENCES_MAX_PER_BATCH", default=5))
 
-        self._max_previous_lm_tokens = int(os.getenv("PREDICTOR_MAX_PREVIOUS_LM_TOKENS", default=924))
+        self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
         self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
 
@@ -914,18 +915,6 @@ class KnowledgeablePredictor(Predictor):
 
     def generate_sentences(self, previous_tokens, passages_encoded=None):
 
-        if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
-            flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
-        else:
-            flat_previous_tokens = previous_tokens
-
-        if len(flat_previous_tokens) > self._max_previous_lm_tokens:
-            flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
-
-        previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
-        if torch.cuda.is_available():
-            previous_tokens_tensor = previous_tokens_tensor.cuda()
-
         generated_sequences = []
         retries = 0
 
@@ -943,29 +932,9 @@ class KnowledgeablePredictor(Predictor):
 
             else:
 
-                orig_device = None
-                if self._model._lm_device is not None:
-                    orig_device = previous_tokens_tensor.device
-                    previous_tokens_tensor = previous_tokens_tensor.to(self._model._lm_device)
-                    self._model._lm_model = self._model._lm_model.to(self._model._lm_device)
-                else:
-                    self._model._lm_model = self._model._lm_model.to(previous_tokens_tensor.device)
-
-                gen_config = self._generation_config
-
-                num_return_sequences = min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch)
-
-                output_sequences = self._generate_no_beam_search(
-                    input_ids=previous_tokens_tensor,
-                    min_length=gen_config["min_length"],
-                    max_length=gen_config["max_length"],
-                    temperature=gen_config["temperature"],
-                    top_k=gen_config["top_k"],
-                    top_p=gen_config["top_p"],
-                    eos_token_ids=self._eos_token_ids,
-                    pad_token_id=0,
-                    num_return_sequences=num_return_sequences,
-                )
+                flat_previous_tokens, orig_device, output_sequences = self._old_fusion_generation(generated_sequences,
+                                                                                                  output_sequences,
+                                                                                                  previous_tokens)
 
                 if orig_device is not None:
                     output_sequences = output_sequences.to(orig_device)
@@ -1011,6 +980,41 @@ class KnowledgeablePredictor(Predictor):
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
+
+    def _old_fusion_generation(self, generated_sequences, output_sequences, previous_tokens):
+        if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
+            flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
+        else:
+            flat_previous_tokens = previous_tokens
+
+        flat_previous_tokens = [f for f in flat_previous_tokens if f not in END_OF_TEXT_TOKEN_IDS]
+        if len(flat_previous_tokens) > self._max_previous_lm_tokens:
+            flat_previous_tokens = flat_previous_tokens[
+                                   len(flat_previous_tokens) - self._max_previous_lm_tokens:]
+        previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
+        if torch.cuda.is_available():
+            previous_tokens_tensor = previous_tokens_tensor.cuda()
+        orig_device = None
+        if self._model._lm_device is not None:
+            orig_device = previous_tokens_tensor.device
+            previous_tokens_tensor = previous_tokens_tensor.to(self._model._lm_device)
+            self._model._lm_model = self._model._lm_model.to(self._model._lm_device)
+        else:
+            self._model._lm_model = self._model._lm_model.to(previous_tokens_tensor.device)
+        gen_config = self._generation_config
+        num_return_sequences = min(self._gen_num_of_sequences - len(generated_sequences), self._gen_max_per_batch)
+        output_sequences = self._generate_no_beam_search(
+            input_ids=previous_tokens_tensor,
+            min_length=gen_config["min_length"],
+            max_length=gen_config["max_length"],
+            temperature=gen_config["temperature"],
+            top_k=gen_config["top_k"],
+            top_p=gen_config["top_p"],
+            eos_token_ids=self._eos_token_ids,
+            pad_token_id=0,
+            num_return_sequences=num_return_sequences,
+        )
+        return flat_previous_tokens, orig_device, output_sequences
 
     def _generate_no_beam_search(
             self,
