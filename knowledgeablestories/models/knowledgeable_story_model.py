@@ -1271,7 +1271,7 @@ class KnowledgeableStoriesModel(Model):
         else:
             past = None
 
-        flat_previous_tokens = [f for f in flat_previous_tokens if f != 0]
+        flat_previous_tokens = [f for f in flat_previous_tokens if f not in END_OF_TEXT_TOKEN_IDS]
         if len(flat_previous_tokens) > self._max_previous_lm_tokens:
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
