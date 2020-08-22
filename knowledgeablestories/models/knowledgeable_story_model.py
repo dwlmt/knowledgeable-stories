@@ -262,7 +262,7 @@ class KnowledgeableStoriesModel(Model):
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
 
-        self._dont_repeat_length = int(os.getenv("GENERATE_DONT_REPEAT", default=8))
+        self._dont_repeat_length = int(os.getenv("GENERATE_DONT_REPEAT", default=6))
 
         self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=15))
 
