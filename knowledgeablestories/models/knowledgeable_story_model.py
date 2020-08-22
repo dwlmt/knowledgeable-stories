@@ -26,7 +26,7 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.modules.td_vae import TDVAE
 from knowledgeablestories.modules.variational_autoencoder import DenseVAE
 
-END_OF_TEXT_TOKEN_IDS = (50256, 0)
+END_OF_TEXT_TOKEN_IDS = (50256, 0, 50257)
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
