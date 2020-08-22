@@ -285,11 +285,12 @@ class KnowledgeableStoriesModel(Model):
         self._eos_token_ids = eos_text_token_ids + [50256]
 
         self._bad_words_ids = []
-        bad_words = str(
-            os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
-        for t in bad_words.split():
+        bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "{cite web}", "!?!?", "?!?!", "WP",
+                     "[WP]", "README", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+        for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [50257], [0]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])
 
         if initializer is not None:
             initializer(self)
