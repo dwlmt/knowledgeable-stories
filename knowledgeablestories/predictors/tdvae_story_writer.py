@@ -84,7 +84,8 @@ class TdvaeStoryWriterPredictor(Predictor):
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
         self._bad_words_ids.extend([[50256], [5145, 5145], [0], [50257]])
 
-        eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> <|endoftext|> . ... .."))
+        # <|endofsentence|> <|endoftext|>
+        eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default=". ... .."))
 
         eos_text_token_ids = [764]
         for t in eos_tokens.split():
