@@ -115,17 +115,19 @@ class KnowledgeablePredictor(Predictor):
         self._keep_eos_ids = eos_text_token_ids
 
         self._bad_words_ids = []
-        bad_words = str(
-            os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \n \r {cite web} !?!? ?!?!  README 0 1 2 3 4 5 6 7 8 9 "))
+        bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "\n", "\r", "{cite web}", "!?!?", "?!?!", "WP",
+                     "[WP]",
+                     "README", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
-        for t in bad_words.split():
+        for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [50257]])
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
-                                   "max_length": gen_max_length,  "min_length": gen_min_length, "do_sample": gen_do_sample,
+                                   "max_length": gen_max_length, "min_length": gen_min_length,
+                                   "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": self._bad_words_ids, "no_repeat_ngram_size": no_repeat_ngram_size}
@@ -359,7 +361,6 @@ class KnowledgeablePredictor(Predictor):
                 z1 = curr_sampled_z1[i][0]
 
                 for k, (z1_layer, z2_layer) in enumerate(zip(z1, z2)):
-
                     cosine, dot_product, kl_z1_from_z2, kl_z2_from_z1, l1, l2, wasserstein = self.extract_z_distances(
                         z1_layer, z2_layer)
 
@@ -492,14 +493,14 @@ class KnowledgeablePredictor(Predictor):
                 parent["prediction_metrics"] = {}
 
             # Get the encoding for the last sentence only.
-            passages_encoded = torch.unsqueeze(passages_encoded[-1],dim=0)
+            passages_encoded = torch.unsqueeze(passages_encoded[-1], dim=0)
 
             print("Input tokens", input_tokens)
             generated_sequences = self.generate_sentences(input_tokens, passages_encoded=passages_encoded)
 
             print("Generated Sentences", generated_sequences)
 
-            #if len(generated_sequences) > 2:
+            # if len(generated_sequences) > 2:
 
             self._add_gold(generated_sequences, num_levels_rollout, original_sentences, story_idx)
 
@@ -530,7 +531,7 @@ class KnowledgeablePredictor(Predictor):
             all_level_list.extend(generated_sequences)
 
         # Early return if it fails to generate any valid sequences.
-        #if len(all_level_list) <= 3:
+        # if len(all_level_list) <= 3:
         #    num_levels_rollout -= 1
         #    return
 
@@ -634,7 +635,7 @@ class KnowledgeablePredictor(Predictor):
 
         target_representation = target_representation.to(context_encoded_representation.device)
 
-        print("Logits", context_encoded_representation.size(),target_representation.size())
+        print("Logits", context_encoded_representation.size(), target_representation.size())
         logits = self._model.calculate_logits(torch.unsqueeze(context_encoded_representation, dim=0),
                                               target_representation,
                                               self._encoder_cosine)
@@ -664,14 +665,14 @@ class KnowledgeablePredictor(Predictor):
             print("Encoded Sentences", merged_sentences_encoded.size())
             gen_seq["encoded_sentences_tensor"] = merged_sentences_encoded.cpu()
             print("Encoded Passages", final_encoded_representation.size())
-            gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation[0].cpu(),dim=0)
+            gen_seq["encoded_passages_tensor"] = torch.squeeze(final_encoded_representation[0].cpu(), dim=0)
 
         metric_dict = {"logit": torch.squeeze(logits, dim=0), "prob": probs, "log_prob": log_probs,
                        "chain_prob": chain_prob, "chain_log_prob": chain_log_prob,
                        "context_representation": torch.unsqueeze(context_encoded_representation,
                                                                  dim=0).expand_as(
                            final_encoded_representation),
-                      }
+                       }
         return final_encoded_representation, metric_dict
 
     def _add_gold(self, generated_sequences, num_levels_rollout, original_sentences, story_idx):
@@ -691,7 +692,7 @@ class KnowledgeablePredictor(Predictor):
 
             context_representation = torch.unsqueeze(gen_seq["context_representation"], dim=0)
             print("Encoded passages tensor", gen_seq["encoded_passages_tensor"].size())
-            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"],dim=0)
+            encoded_passages = torch.unsqueeze(gen_seq["encoded_passages_tensor"], dim=0)
 
             if torch.cuda.is_available():
                 context_representation = context_representation.cuda()
@@ -701,7 +702,7 @@ class KnowledgeablePredictor(Predictor):
 
             l1 = self._l1_distance(context_representation, encoded_passages)
             l2 = self._l2_distance(context_representation, encoded_passages)
-            dot_product = torch.squeeze(context_representation,dim=0).dot(torch.squeeze(encoded_passages,dim=0))
+            dot_product = torch.squeeze(context_representation, dim=0).dot(torch.squeeze(encoded_passages, dim=0))
 
             context_sentiment = parent["sentiment"]
             sentiment_variance = (context_sentiment - gen_seq["sentiment"]) ** 2.0
@@ -928,7 +929,8 @@ class KnowledgeablePredictor(Predictor):
                     gen_config=self._generation_config,
                     do_sample=True,
                     trace_log_probs=False,
-                    gen_num_of_sequences=min(self._gen_num_of_sequences - len(generated_sequences),self._gen_max_per_batch))
+                    gen_num_of_sequences=min(self._gen_num_of_sequences - len(generated_sequences),
+                                             self._gen_max_per_batch))
 
             else:
 
@@ -1054,11 +1056,11 @@ class KnowledgeablePredictor(Predictor):
         sent_lengths = input_ids.new(effective_batch_size).fill_(max_length)
 
         def gen_sentence(input_ids, cur_len):
-            #print("Input Ids", input_ids)
-            #print("Length", cur_len)
+            # print("Input Ids", input_ids)
+            # print("Length", cur_len)
             while cur_len < max_length - 1:
 
-                #print("Input Ids", input_ids, len(input_ids))
+                # print("Input Ids", input_ids, len(input_ids))
                 outputs = self._model._lm_model.transformer(input_ids)
 
                 next_token_hidden = outputs[0][-1, :]
@@ -1067,12 +1069,11 @@ class KnowledgeablePredictor(Predictor):
                     next_token_hidden = torch.unsqueeze(next_token_hidden[-1], dim=0)
 
                     fused = torch.cat(
-                        (next_token_hidden, passages_encoded.to(next_token_hidden.device)),dim=-1)
+                        (next_token_hidden, passages_encoded.to(next_token_hidden.device)), dim=-1)
                     self._model._fusion_dense = self._model._fusion_dense.to(fused.device)
                     next_token_hidden = self._model._fusion_dense(fused)
 
                 next_token_logits = self._model._lm_model.lm_head(next_token_hidden)
-
 
                 # set eos token prob to zero if min_length is not reached
                 if eos_token_ids is not None and cur_len < min_length:
@@ -1085,7 +1086,7 @@ class KnowledgeablePredictor(Predictor):
                 # Top-p/top-k filtering
                 from transformers import top_k_top_p_filtering
                 next_token_logits = top_k_top_p_filtering(next_token_logits, top_k=top_k,
-                                                                                top_p=top_p)
+                                                          top_p=top_p)
                 # Sample
                 import torch.nn.functional as F
                 probs = F.softmax(next_token_logits, dim=-1)
@@ -1143,7 +1144,7 @@ class KnowledgeablePredictor(Predictor):
                     cached_dict[field] = stripped_tokens
                 else:
                     cached_dict[field] = torch.FloatTensor(output_dict[field]).cpu()
-                    print(f"{field}",cached_dict[field].size())
+                    print(f"{field}", cached_dict[field].size())
 
         return cached_dict
 

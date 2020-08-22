@@ -77,11 +77,14 @@ class TdvaeStoryWriterPredictor(Predictor):
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=8))
 
         self._bad_words_ids = []
-        bad_words = str(os.getenv("BAD_WORDS_IDS",
-                                  default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README 0 1 2 3 4 5 6 7 8 9 "))
-        for t in bad_words.split():
+        self._bad_words_ids = []
+        bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "\n", "\r", "{cite web}", "!?!?", "?!?!", "WP",
+                     "[WP]",
+                     "README", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+        for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])  # bad_words_ids
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])
 
         eos_tokens = str(os.getenv("STORY_WRITER_EOS_TOKENS", default="<|endofsentence|> <|endoftext|> . ... .."))
 
