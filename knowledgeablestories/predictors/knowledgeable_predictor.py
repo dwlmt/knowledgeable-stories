@@ -120,7 +120,7 @@ class KnowledgeablePredictor(Predictor):
 
         for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
-        self._bad_words_ids.extend([[50256], [5145, 5145], [0]])
+        self._bad_words_ids.extend([[50256], [5145, 5145], [0], [50257]])
 
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("PREDICTOR_GEN_MIN_CHAR_LEN", default=4))
