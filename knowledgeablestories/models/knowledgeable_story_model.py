@@ -1268,7 +1268,7 @@ class KnowledgeableStoriesModel(Model):
 
         dont_repeat_tokens = []
         if self._dont_repeat_length > 0:
-            dont_repeat_tokens = windowed(flat_previous_tokens, self._dont_repeat_length, fillvalue=52057)
+            dont_repeat_tokens = list(windowed(flat_previous_tokens, self._dont_repeat_length, fillvalue=52057))
 
         if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
