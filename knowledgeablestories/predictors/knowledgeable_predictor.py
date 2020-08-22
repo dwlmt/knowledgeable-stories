@@ -116,7 +116,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._bad_words_ids = []
         bad_words = str(
-            os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \\n \\r {cite web} !?!? ?!?!  README"))
+            os.getenv("BAD_WORDS_IDS", default="***  /u/ /r/ http:// https:// www. \n \r {cite web} !?!? ?!?!  README 0 1 2 3 4 5 6 7 8 9 "))
 
         for t in bad_words.split():
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
