@@ -1369,7 +1369,7 @@ class KnowledgeableStoriesModel(Model):
                             generated_sequence = generated_sequence[: first_index]
 
                     if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                        pass #generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                        generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
                 if len(generated_sequence) > 0:
                         # logger.info(generated_sequence)
