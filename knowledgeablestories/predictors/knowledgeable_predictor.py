@@ -105,7 +105,8 @@ class KnowledgeablePredictor(Predictor):
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=6))
 
-        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". <|endofsentence|> <|endoftext|> .. ..."))
+        #<|endofsentence|> <|endoftext|>
+        eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". .. ..."))
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
         eos_text_token_ids = [764]
         for t in eos_tokens.split():
