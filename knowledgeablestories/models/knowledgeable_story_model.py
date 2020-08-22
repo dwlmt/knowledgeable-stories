@@ -13,6 +13,7 @@ from allennlp.modules import Seq2SeqEncoder, Seq2VecEncoder, FeedForward
 from allennlp.nn import RegularizerApplicator, InitializerApplicator
 from allennlp.nn.util import get_final_encoder_states, masked_log_softmax, logger
 from allennlp.training.metrics import CategoricalAccuracy, Perplexity, BLEU, Average
+from more_itertools import windowed
 from torch import nn
 from torch.distributions import Categorical
 from torch.nn import CrossEntropyLoss
@@ -260,6 +261,9 @@ class KnowledgeableStoriesModel(Model):
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
         self._max_previous_lm_tokens = int(os.getenv("MAX_PREVIOUS_LM_TOKENS", default=924))
+
+
+        self._dont_repeat_length = int(os.getenv("GENERATE_DONT_REPEAT", default=6))
 
         self._min_sentence_character_length = int(os.getenv("GEN_MIN_CHAR_LEN", default=15))
 
@@ -1262,6 +1266,10 @@ class KnowledgeableStoriesModel(Model):
         else:
             flat_previous_tokens = previous_tokens
 
+        dont_repeat_tokens = []
+        if self._dont_repeat_length > 0:
+            dont_repeat_tokens = windowed(flat_previous_tokens, self._dont_repeat_length, fillvalue=52057)
+
         if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
             logit = torch.log(sentence_embedding / (1 - sentence_embedding))
@@ -1303,7 +1311,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=gen_config["bad_words_ids"],
+                    bad_words_ids=gen_config["bad_words_ids"] + dont_repeat_tokens,
                     trace_log_probs=trace_log_probs,
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
@@ -1321,7 +1329,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=gen_config["bad_words_ids"],
+                    bad_words_ids=gen_config["bad_words_ids"] + dont_repeat_tokens,
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
                     trace_log_probs=trace_log_probs,
