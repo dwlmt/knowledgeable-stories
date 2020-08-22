@@ -79,7 +79,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
         self._bad_words_ids = []
         bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "{cite web}", "!?!?", "?!?!", "WP",
-                     "[WP]", "README", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+                     "[WP]", "README"]
 
         for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
