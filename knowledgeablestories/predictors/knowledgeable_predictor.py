@@ -99,7 +99,7 @@ class KnowledgeablePredictor(Predictor):
         gen_top_p = float(os.getenv("PREDICTOR_GEN_TOP_P", default=0.925))
         gen_length_penalty = float(os.getenv("PREDICTOR_GEN_LENGTH_PENALTY", default=1.0))
         gen_max_length = int(os.getenv("PREDICTOR_GEN_MAX_LENGTH", default=1023))
-        gen_min_length = int(os.getenv("PREDICTOR_GEN_MIN_LENGTH", default=3))
+        gen_min_length = int(os.getenv("PREDICTOR_GEN_MIN_LENGTH", default=5))
         gen_do_sample = parse_bool(os.getenv("PREDICTOR_GEN_DO_SAMPLE", default="True"))
         gen_num_beams = int(os.getenv("PREDICTOR_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))

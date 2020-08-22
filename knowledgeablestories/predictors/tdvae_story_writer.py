@@ -75,6 +75,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         gen_num_beams = int(os.getenv("STORY_WRITER_GEN_NUM_BEAMS", default=1))
         repetition_penalty = float(os.getenv("STORY_WRITER_GEN_REPETITION_PENALTY", default=1.2))
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=6))
+        gen_min_length = int(os.getenv("PREDICTOR_GEN_MIN_LENGTH", default=5))
 
         self._bad_words_ids = []
         bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "{cite web}", "!?!?", "?!?!", "WP",
@@ -97,7 +98,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         # Make sure Alpha numeric characters are generated so degenerate sentences aren't included.
         self._min_sentence_character_length = int(os.getenv("STORY_WRITER_GEN_MIN_CHAR_LEN", default=4))
         self._generation_config = {"temperature": gen_temp, "top_k": gen_top_k, "top_p": gen_top_p,
-                                   "max_length": gen_max_length, "min_length": 2, "do_sample": gen_do_sample,
+                                   "max_length": gen_max_length, "min_length": gen_min_length, "do_sample": gen_do_sample,
                                    "length_penalty": gen_length_penalty, "repetition_penalty": repetition_penalty,
                                    "num_beams": gen_num_beams, "eos_token_ids": self._eos_token_ids[0],
                                    "bad_words_ids": self._bad_words_ids, "no_repeat_ngram_size": no_repeat_ngram_size}
