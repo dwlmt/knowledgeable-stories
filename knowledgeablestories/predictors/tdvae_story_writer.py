@@ -325,6 +325,9 @@ class TdvaeStoryWriterPredictor(Predictor):
         print("Rollout Cat", rollout_x.size())
         # print("Stories in progress", flat_story_sequences)
 
+        if len(filtered_story_sequences) == 0:
+            return filtered_story_sequences, rollout_x
+
         filtered_story_sequences, rollout_x = self.filter_beam(filtered_story_sequences, rollout_x)
 
         if steps <= self._rollout_steps:
