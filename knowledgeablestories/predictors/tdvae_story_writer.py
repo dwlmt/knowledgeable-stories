@@ -51,7 +51,7 @@ class TdvaeStoryWriterPredictor(Predictor):
         self._l2_distance = nn.PairwiseDistance(p=2)
         self._l1_distance = nn.PairwiseDistance(p=1)
 
-        self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="l2"))
+        self._distance_measure = str(os.getenv("STORY_WRITER_DISTANCE_MEASURE", default="cosine"))
 
         self._keep_top_n = int(os.getenv("STORY_WRITER_KEEP_TOP_N", default=5))
         self._beam_n = int(os.getenv("STORY_WRITER_BEAM_N", default=20))

@@ -1266,9 +1266,11 @@ class KnowledgeableStoriesModel(Model):
         else:
             flat_previous_tokens = previous_tokens
 
+        """
         dont_repeat_tokens = []
         if self._dont_repeat_length > 0:
             dont_repeat_tokens = list(windowed(flat_previous_tokens, self._dont_repeat_length, fillvalue=52057))
+        """
 
         if sentence_embedding is not None:
             # Inverse sigmoid as TD-VAE projections have sigmoid applied.
@@ -1311,7 +1313,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=gen_config["bad_words_ids"] + dont_repeat_tokens,
+                    bad_words_ids=gen_config["bad_words_ids"],# + dont_repeat_tokens,
                     trace_log_probs=trace_log_probs,
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
@@ -1329,7 +1331,7 @@ class KnowledgeableStoriesModel(Model):
                     top_p=gen_config["top_p"],
                     eos_token_ids=self._eos_token_ids,
                     pad_token_id=50256,
-                    bad_words_ids=gen_config["bad_words_ids"] + dont_repeat_tokens,
+                    bad_words_ids=gen_config["bad_words_ids"],# + dont_repeat_tokens,
                     repetition_penalty=gen_config["repetition_penalty"],
                     no_repeat_ngram_size=gen_config["no_repeat_ngram_size"],
                     trace_log_probs=trace_log_probs,
