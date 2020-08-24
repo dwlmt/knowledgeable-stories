@@ -22,6 +22,8 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 
 END_OF_SENTENCE_TOKEN_ID = 50257
 
+SENTENCE_DIM = 2048
+
 
 def parse_bool(b):
     return b == "True" or b == "TRUE" or b == "true" or b == "1"
@@ -306,11 +308,16 @@ class TdvaeStoryWriterPredictor(Predictor):
             print("Generated Sentences", generated_sentences)
             sentence_tokens_tensor = self.sentence_tokens_to_padded_tensor(generated_sentences)
 
-            encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
+            try:
+                encoded_sentences = self.encode_sentences(sentence_tokens_tensor).detach()
 
-            encoded_sentences = torch.sigmoid(encoded_sentences)
-            for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
-                self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
+                encoded_sentences = torch.sigmoid(encoded_sentences)
+                for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
+                    self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
+            except RuntimeError as err:
+                print("Runtime error", err)
+                for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
+                    self._sent_id_generated_tensor_dict[sent["sentence_id"]] = torch.rand(SENTENCE_DIM).cpu()
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
