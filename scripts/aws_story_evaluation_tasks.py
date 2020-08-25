@@ -82,8 +82,8 @@ class StoryEvaluationTasks(object):
                     models_rows.append(model_row_dict)
 
             if len(models_rows) == number_of_models:
-
-                random.shuffle(models_rows)
+                from random import shuffle
+                shuffle(models_rows)
 
             for i, r in enumerate(models_rows, start=1):
                 csv_row_dict[f"story_{i}"] = r["passage"]
