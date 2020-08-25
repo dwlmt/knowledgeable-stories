@@ -67,23 +67,27 @@ class StoryEvaluationTasks(object):
         csv_rows = []
 
         for p_key, p_val in prompt_dict.items():
-            row_dict = {}
-            row_dict["story_id"] = p_key
-            row_dict["prompt"] = p_val["passage"]
+            csv_row_dict = {}
+            csv_row_dict["story_id"] = p_key
+            csv_row_dict["prompt"] = p_val["passage"]
 
             models_rows = []
 
             for model_key, model_val in models_dict.items():
-                model_row_dict = {"type": model_key, "passage": model_val["passage"]}
-                models_rows.append(model_row_dict)
+
+                if p_key in model_val:
+
+                    model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"]}
+
+                    models_rows.append(model_row_dict)
 
             if len(models_rows) == number_of_models:
 
                 random.shuffle(models_rows)
 
             for i, r in enumerate(models_rows, start=1):
-                row_dict[f"story_{i}"] = r["passage"]
-                row_dict[f"story_{i}_type"] = r["type"]
+                csv_row_dict[f"story_{i}"] = r["passage"]
+                csv_row_dict[f"story_{i}_type"] = r["type"]
 
 
         with open(output_file, 'w', newline='') as csv_file:
