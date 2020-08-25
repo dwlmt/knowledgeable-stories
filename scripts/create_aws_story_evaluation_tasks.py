@@ -1,5 +1,7 @@
+import argparse
 import collections
 import csv
+import os
 from random import random
 from typing import List, OrderedDict
 
@@ -8,8 +10,6 @@ import more_itertools
 from jsonlines import jsonlines
 from tqdm import tqdm
 
-import typer
-
 def cleanup_text(param):
     if param is None or len(param) == 0:
         return param
@@ -17,12 +17,18 @@ def cleanup_text(param):
         param = param.replace(r, "")
     return param
 
-app = typer.Typer()
 
-@app.command()
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        print(f"Create directory: {directory}")
+        os.makedirs(directory)
+
 def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
            output_file: str, debug_prefix: bool = False):
-    typer.echo("Input", models_json, models_types)
+    print("Input", models_json, models_types)
+
+    ensure_dir(output_file)
 
     if isinstance(models_json, str):
         models_json = [models_json]
@@ -63,9 +69,9 @@ def create(self, prompts_json: str, gold_json: str, models_json: List[str], mode
 
         models_dict[t] = m_dict
 
-    typer.echo(f"Prompts: {prompt_dict.values()}")
-    typer.echo(f"Gold: {gold_dict.values()}")
-    typer.echo(f"Models: {models_dict.values()}")
+    print(f"Prompts: {prompt_dict.values()}")
+    print(f"Gold: {gold_dict.values()}")
+    print(f"Models: {models_dict.values()}")
 
     csv_rows = []
 
@@ -102,9 +108,35 @@ def create(self, prompts_json: str, gold_json: str, models_json: List[str], mode
         csv_writer.writeheader()
 
         for row in csv_rows:
-            typer.echo(f"Row: {row}")
+            print(f"Row: {row}")
             csv_writer.writerow(row)
 
-if __name__ == "__main__":
-    app()
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
+parser = argparse.ArgumentParser(
+    description='Run stats from  the prediction output, clustering and stats for the annotations and predictions.')
+parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
+parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
+parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
+parser.add_argument('--models-json', required=True, type=str, nargs="+", description="The models generated json output.")
+parser.add_argument('--models-types', required=True, type=str, nargs="+", description="Types for the models.")
+parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
+                        const=True, default=False,
+                        help="Add a debug prefix.")
+
+
+args = parser.parse_args()
+
+create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_file=args.output_file,
+       models_json=args.models_json, models_types=args.modes_types, debug_prefix=args.debug_prefix)
+
 
