@@ -19,7 +19,7 @@ def cleanup_text(param):
 
 class StoryEvaluationTasks(object):
     def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
-               output_file: str):
+               output_file: str, debug_prefix: bool = False):
 
         if isinstance(models_json, str):
             models_json = [models_json]
@@ -88,6 +88,9 @@ class StoryEvaluationTasks(object):
                 for i, r in enumerate(models_rows, start=1):
                     csv_row_dict[f"story_{i}"] = r["passage"]
                     csv_row_dict[f"story_{i}_type"] = r["type"]
+
+                    if debug_prefix:
+                        csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {type} : " + csv_row_dict[f"story_{i}"]
 
                 csv_rows.append(csv_row_dict)
 
