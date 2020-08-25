@@ -21,6 +21,8 @@ class StoryEvaluationTasks(object):
     def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
                output_file: str, debug_prefix: bool = False):
 
+        print("Input",models_json, models_types)
+
         if isinstance(models_json, str):
             models_json = [models_json]
 
