@@ -17,7 +17,15 @@ def cleanup_text(param):
 
 
 class StoryEvaluationTasks(object):
-    def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str]):
+    def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
+               output_file: str):
+
+        if isinstance(models_json, str):
+            models_json = [models_json]
+
+        if isinstance(models_types, str):
+            models_types = [models_types]
+
         assert len(models_json) == len(models_types), "Models and types provided must be the same length."
 
         number_of_fields = len(models_json) + 1
