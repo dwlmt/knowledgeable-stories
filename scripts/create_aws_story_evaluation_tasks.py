@@ -127,8 +127,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
-parser.add_argument('--models-json', required=True, type=str, nargs="+", description="The models generated json output.")
-parser.add_argument('--models-types', required=True, type=str, nargs="+", description="Types for the models.")
+parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
+parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
 parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
                         const=True, default=False,
                         help="Add a debug prefix.")
