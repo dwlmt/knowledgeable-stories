@@ -91,7 +91,7 @@ class StoryEvaluationTasks(object):
 
                 csv_rows.append(csv_row_dict)
 
-
+        print("CSV Rows", csv_rows)
         with open(output_file, 'w', newline='') as csv_file:
             csv_writer = csv.writer(csv_file, delimiter=',',
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
