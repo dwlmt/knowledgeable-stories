@@ -1,5 +1,6 @@
 import collections
 import csv
+from random import random
 from typing import List, OrderedDict
 
 import fire
@@ -28,7 +29,7 @@ class StoryEvaluationTasks(object):
 
         assert len(models_json) == len(models_types), "Models and types provided must be the same length."
 
-        number_of_fields = len(models_json) + 1
+        number_of_models = len(models_json) + 1
 
         prompt_dict = collections.OrderedDict()
         gold_dict = collections.OrderedDict()
@@ -62,6 +63,33 @@ class StoryEvaluationTasks(object):
         print(f"Prompts: {prompt_dict.values()}")
         print(f"Gold: {gold_dict.values()}")
         print(f"Models: {models_dict.values()}")
+
+        csv_rows = []
+
+        for p_key, p_val in prompt_dict.items():
+            row_dict = {}
+            row_dict["story_id"] = p_key
+            row_dict["prompt"] = p_val["passage"]
+
+            models_rows = []
+
+            for model_key, model_val in models_dict.items():
+                model_row_dict = {"type": model_key, "passage": model_val["passage"]}
+                models_rows.append(model_row_dict)
+
+            if len(models_rows) == number_of_models:
+
+                random.shuffle(models_rows)
+
+            for i, r in enumerate(models_rows, start=1):
+                row_dict[f"story_{i}"] = r["passage"]
+                row_dict[f"story_{i}_type"] = r["type"]
+
+
+        with open(output_file, 'w', newline='') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=',',
+                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            csv_writer.writerows(csv_rows)
 
 if __name__ == '__main__':
     fire.Fire(StoryEvaluationTasks)
