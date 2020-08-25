@@ -17,7 +17,7 @@ def cleanup_text(param):
         param = param.replace(r, "")
     return param
 
-app = typer.Typer("AWS commands for generating story CSV and evaluation.")
+app = typer.Typer()
 
 @app.command()
 def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
