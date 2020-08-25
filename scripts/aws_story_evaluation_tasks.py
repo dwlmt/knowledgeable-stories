@@ -67,7 +67,7 @@ class StoryEvaluationTasks(object):
         csv_rows = []
 
         for p_key, p_val in prompt_dict.items():
-            csv_row_dict = {}
+            csv_row_dict = collections.OrderedDict()
             csv_row_dict["story_id"] = p_key
             csv_row_dict["prompt"] = p_val["passage"]
 
@@ -93,9 +93,12 @@ class StoryEvaluationTasks(object):
 
         print("CSV Rows", csv_rows)
         with open(output_file, 'w', newline='') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=',',
-                                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            csv_writer.writerows(csv_rows)
+
+            csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys())
+            csv_writer.writeheader()
+
+            for row in csv_rows:
+                csv_writer.writerow(row)
 
 if __name__ == '__main__':
     fire.Fire(StoryEvaluationTasks)
