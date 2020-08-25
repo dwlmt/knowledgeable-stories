@@ -85,9 +85,11 @@ class StoryEvaluationTasks(object):
                 from random import shuffle
                 shuffle(models_rows)
 
-            for i, r in enumerate(models_rows, start=1):
-                csv_row_dict[f"story_{i}"] = r["passage"]
-                csv_row_dict[f"story_{i}_type"] = r["type"]
+                for i, r in enumerate(models_rows, start=1):
+                    csv_row_dict[f"story_{i}"] = r["passage"]
+                    csv_row_dict[f"story_{i}_type"] = r["type"]
+
+                csv_rows.append(csv_row_dict)
 
 
         with open(output_file, 'w', newline='') as csv_file:
