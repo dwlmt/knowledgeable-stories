@@ -100,7 +100,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 csv_row_dict[f"story_{i}_type"] = r["type"]
 
                 if debug_prefix:
-                    csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {type} : " + csv_row_dict[f"story_{i}"]
+                    csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {r['type']} : " + csv_row_dict[f"story_{i}"]
 
             csv_rows.append(csv_row_dict)
 
