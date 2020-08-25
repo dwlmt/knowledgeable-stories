@@ -20,6 +20,8 @@ def cleanup_text(param):
 
 def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
+    if directory is None or len(directory) == 0:
+        return
     if not os.path.exists(directory):
         print(f"Create directory: {directory}")
         os.makedirs(directory)
