@@ -91,13 +91,13 @@ class StoryEvaluationTasks(object):
 
                 csv_rows.append(csv_row_dict)
 
-        print("CSV Rows", csv_rows)
         with open(output_file, 'w', newline='') as csv_file:
 
-            csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys())
+            csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys(),quoting=csv.QUOTE_NONNUMERIC)
             csv_writer.writeheader()
 
             for row in csv_rows:
+                print(f"Row: {row}")
                 csv_writer.writerow(row)
 
 if __name__ == '__main__':
