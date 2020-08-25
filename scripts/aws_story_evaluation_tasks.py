@@ -29,7 +29,7 @@ class StoryEvaluationTasks(object):
         if isinstance(models_types, str):
             models_types = [models_types]
 
-        assert len(models_json) == len(models_types), "Models and types provided must be the same length."
+        #assert len(models_json) == len(models_types), "Models and types provided must be the same length."
 
         number_of_models = len(models_json) + 1
 
