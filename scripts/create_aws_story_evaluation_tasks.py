@@ -137,6 +137,6 @@ parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
 args = parser.parse_args()
 
 create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_file=args.output_file,
-       models_json=args.models_json, models_types=args.modes_types, debug_prefix=args.debug_prefix)
+       models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix)
 
 
