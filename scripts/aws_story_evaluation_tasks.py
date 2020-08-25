@@ -45,7 +45,7 @@ class StoryEvaluationTasks(object):
 
                     sentences = []
                     for s in obj["generated"][0]["sentences"]:
-                        sentences.append(cleanup_text(s))
+                        sentences.append(cleanup_text(s["text"]))
 
                     m_dict[obj["story_id"]]["passage"] = " ".join(sentences)
 
