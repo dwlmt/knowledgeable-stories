@@ -802,7 +802,12 @@ class KnowledgeableStoriesModel(Model):
 
         print("Encoded Sentences", encoded_sentences.size())
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
-        past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
+        try:
+            past = self._lm_memory_dense(encoded_sentences.to(self._lm_memory_cuda_device).unsqueeze(dim=0))
+        except RuntimeError as err:
+            print("Runtime error", err)
+            return None
+
         print("Past", past.size())
         past = past.to(self._lm_device)
         # print("Past", past.size())
