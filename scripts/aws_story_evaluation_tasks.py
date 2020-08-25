@@ -8,6 +8,7 @@ import more_itertools
 from jsonlines import jsonlines
 from tqdm import tqdm
 
+import typer
 
 def cleanup_text(param):
     if param is None or len(param) == 0:
@@ -16,94 +17,94 @@ def cleanup_text(param):
         param = param.replace(r, "")
     return param
 
+app = typer.Typer("AWS commands for generating story CSV and evaluation.")
 
-class StoryEvaluationTasks(object):
-    def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
-               output_file: str, debug_prefix: bool = False):
+@app.command()
+def create(self, prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
+           output_file: str, debug_prefix: bool = False):
+    typer.echo("Input", models_json, models_types)
 
-        print("Input",models_json, models_types)
+    if isinstance(models_json, str):
+        models_json = [models_json]
 
-        if isinstance(models_json, str):
-            models_json = [models_json]
+    if isinstance(models_types, str):
+        models_types = [models_types]
 
-        if isinstance(models_types, str):
-            models_types = [models_types]
+    # assert len(models_json) == len(models_types), "Models and types provided must be the same length."
 
-        #assert len(models_json) == len(models_types), "Models and types provided must be the same length."
+    number_of_models = len(models_json) + 1
 
-        number_of_models = len(models_json) + 1
+    prompt_dict = collections.OrderedDict()
+    gold_dict = collections.OrderedDict()
 
-        prompt_dict = collections.OrderedDict()
-        gold_dict = collections.OrderedDict()
+    models_dict = collections.OrderedDict()
 
-        models_dict = collections.OrderedDict()
+    with jsonlines.open(prompts_json) as reader:
+        for obj in reader:
+            prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
 
-        with jsonlines.open(prompts_json) as reader:
+    with jsonlines.open(gold_json) as reader:
+        for obj in reader:
+            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
+
+    models_dict["gold"] = gold_dict
+    for m, t in zip(models_json, models_types):
+
+        m_dict = collections.OrderedDict()
+        with jsonlines.open(m) as reader:
             for obj in reader:
-                prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
+                m_dict[obj["story_id"]] = {"story_id": obj["story_id"]}
 
-        with jsonlines.open(gold_json) as reader:
-            for obj in reader:
-                gold_dict[obj["story_id"]] =  {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
+                sentences = []
+                for s in obj["generated"][0]["sentences"]:
+                    sentences.append(cleanup_text(s["text"]))
 
-        models_dict["gold"] = gold_dict
-        for m, t in zip(models_json, models_types):
+                m_dict[obj["story_id"]]["passage"] = " ".join(sentences)
 
-            m_dict = collections.OrderedDict()
-            with jsonlines.open(m) as reader:
-                for obj in reader:
-                    m_dict[obj["story_id"]] = {"story_id": obj["story_id"]}
+        models_dict[t] = m_dict
 
-                    sentences = []
-                    for s in obj["generated"][0]["sentences"]:
-                        sentences.append(cleanup_text(s["text"]))
+    typer.echo(f"Prompts: {prompt_dict.values()}")
+    typer.echo(f"Gold: {gold_dict.values()}")
+    typer.echo(f"Models: {models_dict.values()}")
 
-                    m_dict[obj["story_id"]]["passage"] = " ".join(sentences)
+    csv_rows = []
 
-            models_dict[t] = m_dict
+    for p_key, p_val in prompt_dict.items():
+        csv_row_dict = collections.OrderedDict()
+        csv_row_dict["story_id"] = p_key
+        csv_row_dict["prompt"] = p_val["passage"]
 
-        print(f"Prompts: {prompt_dict.values()}")
-        print(f"Gold: {gold_dict.values()}")
-        print(f"Models: {models_dict.values()}")
+        models_rows = []
 
-        csv_rows = []
+        for model_key, model_val in models_dict.items():
 
-        for p_key, p_val in prompt_dict.items():
-            csv_row_dict = collections.OrderedDict()
-            csv_row_dict["story_id"] = p_key
-            csv_row_dict["prompt"] = p_val["passage"]
+            if p_key in model_val:
+                model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"]}
 
-            models_rows = []
+                models_rows.append(model_row_dict)
 
-            for model_key, model_val in models_dict.items():
+        if len(models_rows) == number_of_models:
+            from random import shuffle
+            shuffle(models_rows)
 
-                if p_key in model_val:
+            for i, r in enumerate(models_rows, start=1):
+                csv_row_dict[f"story_{i}"] = r["passage"]
+                csv_row_dict[f"story_{i}_type"] = r["type"]
 
-                    model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"]}
+                if debug_prefix:
+                    csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {type} : " + csv_row_dict[f"story_{i}"]
 
-                    models_rows.append(model_row_dict)
+            csv_rows.append(csv_row_dict)
 
-            if len(models_rows) == number_of_models:
-                from random import shuffle
-                shuffle(models_rows)
+    with open(output_file, 'w', newline='') as csv_file:
 
-                for i, r in enumerate(models_rows, start=1):
-                    csv_row_dict[f"story_{i}"] = r["passage"]
-                    csv_row_dict[f"story_{i}_type"] = r["type"]
+        csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys(), quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer.writeheader()
 
-                    if debug_prefix:
-                        csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {type} : " + csv_row_dict[f"story_{i}"]
+        for row in csv_rows:
+            typer.echo(f"Row: {row}")
+            csv_writer.writerow(row)
 
-                csv_rows.append(csv_row_dict)
+if __name__ == "__main__":
+    app()
 
-        with open(output_file, 'w', newline='') as csv_file:
-
-            csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys(),quoting=csv.QUOTE_NONNUMERIC)
-            csv_writer.writeheader()
-
-            for row in csv_rows:
-                print(f"Row: {row}")
-                csv_writer.writerow(row)
-
-if __name__ == '__main__':
-    fire.Fire(StoryEvaluationTasks)
