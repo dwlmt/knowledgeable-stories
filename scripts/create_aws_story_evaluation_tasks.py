@@ -53,14 +53,16 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     models_dict = collections.OrderedDict()
 
+    prompt_split = []
     with jsonlines.open(prompts_json) as reader:
         for obj in reader:
             prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
+            prompt_split = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
 
     with jsonlines.open(gold_json) as reader:
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
-            sentences = sentences[0: story_length]
+            sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
 
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": " ". join(sentences)}
 
@@ -76,7 +78,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 for s in obj["generated"][0]["sentences"]:
                     sentences.append(cleanup_text(s["text"]))
 
-                sentences = sentences[0: story_length]
+                sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
                 m_dict[obj["story_id"]]["passage"] = " ".join(sentences)
 
         models_dict[t] = m_dict
@@ -139,7 +141,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
-parser.add_argument('--story-length', required=False, type=int, default=27, help="Story length. ")
+parser.add_argument('--story-length', required=False, type=int, default=25, help="Story length. ")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
 parser.add_argument('--extra-columns', required=False, type=str, nargs="+", default=["i","r","j"], help="Extra columns.")
