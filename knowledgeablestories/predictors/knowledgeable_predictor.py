@@ -854,9 +854,14 @@ class KnowledgeablePredictor(Predictor):
 
             encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
 
-            if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
-                encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
-                encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+            try:
+                if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
+                    encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
+                    encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
+            except RuntimeError as err:
+                # Just randomise if there is a cuda error.
+                print("Runtime error", err, encoded_sentences_batch)
+                encoded_sentences_batch = torch.cat((torch.rand_like(encoded_sentences_batch), torch.rand_like(encoded_sentences_batch)), dim=-1)
 
             if self._random_test_vector:
                 encoded_sentences_batch = torch.rand_like(encoded_sentences_batch)
