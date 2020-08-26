@@ -9,6 +9,8 @@ import fire
 import more_itertools
 from jsonlines import jsonlines
 from tqdm import tqdm
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
+
 
 def cleanup_text(param):
     if param is None or len(param) == 0:
@@ -27,10 +29,14 @@ def ensure_dir(file_path):
         os.makedirs(directory)
 
 def create(prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
-           output_file: str, debug_prefix: bool = False):
+           output_file: str, debug_prefix: bool = False,
+           story_length=25,
+           extra_columns=[]):
     print("Input", models_json, models_types)
 
     ensure_dir(output_file)
+
+    sentence_splitter: SentenceSplitter = SpacySentenceSplitter()
 
     if isinstance(models_json, str):
         models_json = [models_json]
@@ -53,7 +59,10 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     with jsonlines.open(gold_json) as reader:
         for obj in reader:
-            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
+            sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
+            sentences = sentences[0: story_length]
+
+            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": " ". join(sentences)}
 
     models_dict["gold"] = gold_dict
     for m, t in zip(models_json, models_types):
@@ -67,6 +76,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 for s in obj["generated"][0]["sentences"]:
                     sentences.append(cleanup_text(s["text"]))
 
+                sentences = sentences[0: story_length]
                 m_dict[obj["story_id"]]["passage"] = " ".join(sentences)
 
         models_dict[t] = m_dict
@@ -106,7 +116,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     with open(output_file, 'w', newline='') as csv_file:
 
-        csv_writer = csv.DictWriter(csv_file, fieldnames=csv_rows[0].keys(), quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer = csv.DictWriter(csv_file, fieldnames=list(csv_rows[0].keys()) + extra_columns, quoting=csv.QUOTE_NONNUMERIC)
         csv_writer.writeheader()
 
         for row in csv_rows:
@@ -129,8 +139,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
+parser.add_argument('--story-length', required=False, type=int, default=27, help="Story length. ")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
+parser.add_argument('--extra-columns', required=False, type=str, nargs="+", default=["i","r","j"], help="Extra columns.")
 parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
                         const=True, default=False,
                         help="Add a debug prefix.")
@@ -139,6 +151,7 @@ parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
 args = parser.parse_args()
 
 create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_file=args.output_file,
-       models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix)
+       models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
+       story_length=args.story_length, extra_columns=args.extra_columns)
 
 
