@@ -243,12 +243,15 @@ class TdvaeStoryWriterPredictor(Predictor):
                             generated_sentence_tensor = torch.sigmoid(generated_sentence_tensor)
 
                             # print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
-                            dist = 1.0 - self._cosine_similarity(
-                                torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
-                                torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
-                            # dist = generated_sentence_tensor.cuda().dot(rollout_x_sentence.cuda()).cpu().item()
+                            try:
+                                dist = 1.0 - self._cosine_similarity(
+                                    torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
+                                    torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
 
-                            beam_dict[i] += dist
+                                beam_dict[i] += dist
+                            except RuntimeError as err:
+                                print("Runtime error", err)
+                                beam_dict[i] += 1.0
 
                 beam_dist, story_sequences, sorted_indices = (list(t) for t in zip(
                     *sorted(zip(beam_dict.values(), story_sequences, [r for r in range(len(story_sequences))]),
@@ -316,8 +319,6 @@ class TdvaeStoryWriterPredictor(Predictor):
                     self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
             except RuntimeError as err:
                 print("Runtime error", err)
-                for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
-                    self._sent_id_generated_tensor_dict[sent["sentence_id"]] = torch.rand(SENTENCE_DIM).cpu()
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 
