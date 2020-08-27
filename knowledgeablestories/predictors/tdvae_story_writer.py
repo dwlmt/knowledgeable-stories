@@ -250,7 +250,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                                 beam_dict[i] += dist
                             except RuntimeError as err:
-                                print("Runtime error", err, generated_sentence_tensor)
+                                print("Runtime error", err)
                                 beam_dict[i] += 1.0
 
                 beam_dist, story_sequences, sorted_indices = (list(t) for t in zip(
@@ -318,7 +318,7 @@ class TdvaeStoryWriterPredictor(Predictor):
                 for sent, encoded_sentence in zip(generated_sentences, encoded_sentences):
                     self._sent_id_generated_tensor_dict[sent["sentence_id"]] = encoded_sentence.cpu()
             except RuntimeError as err:
-                print("Runtime error", err, encoded_sentence)
+                print("Runtime error", err)
 
         filtered_story_sequences = combined_story_sequences  # list(more_itertools.flatten(combined_story_sequences))
 

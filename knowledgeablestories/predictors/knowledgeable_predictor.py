@@ -860,7 +860,7 @@ class KnowledgeablePredictor(Predictor):
                     encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
             except RuntimeError as err:
                 # Just randomise if there is a cuda error.
-                print("Runtime error", err, encoded_sentences_batch)
+                print("Runtime error", err)
                 encoded_sentences_batch = torch.cat((torch.rand_like(encoded_sentences_batch), torch.rand_like(encoded_sentences_batch)), dim=-1)
 
             if self._random_test_vector:
