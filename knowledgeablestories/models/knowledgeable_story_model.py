@@ -1291,9 +1291,12 @@ class KnowledgeableStoriesModel(Model):
             flat_previous_tokens = flat_previous_tokens[len(flat_previous_tokens) - self._max_previous_lm_tokens:]
 
 
-        previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
-
-        previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
+        previous_tokens_tensor = None
+        try:
+            previous_tokens_tensor = torch.unsqueeze(torch.LongTensor(flat_previous_tokens), dim=0)
+            previous_tokens_tensor = previous_tokens_tensor.to(self._lm_device)
+        except RuntimeError as err:
+            print("Runtime error", err)
 
         generated_sequences = []
         sequences_tensor_list = []
