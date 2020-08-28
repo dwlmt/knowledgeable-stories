@@ -300,6 +300,10 @@ class EvalClozePredictor(Predictor):
 
                     all_processed_sentences.extend(sentence_batch)
 
+                    del instance
+                    del output_dict
+                    del cached_dict
+
                 if j == 0:
                     inputs["sentences"] = all_processed_sentences
                 else:
