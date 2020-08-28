@@ -22,6 +22,7 @@ from knowledgeablestories.dataset_readers.special_tokens import token_tags
 from knowledgeablestories.models.knowledgeable_story_model import END_OF_TEXT_TOKEN_IDS
 
 END_OF_TEXT_TOKEN_ID = 50256
+SENTENCE_DIM = 2048
 
 torch.set_printoptions(profile="full")
 
@@ -105,7 +106,7 @@ class KnowledgeablePredictor(Predictor):
         repetition_penalty = float(os.getenv("PREDICTOR_GEN_REPETITION_PENALTY", default=1.2))
         no_repeat_ngram_size = int(os.getenv("PREDICTOR_NO_REPEAT_NGRAM_SIZE", default=6))
 
-        #<|endofsentence|> <|endoftext|>
+        # <|endofsentence|> <|endoftext|>
         eos_tokens = str(os.getenv("PREDICTOR_EOS_TOKENS", default=". .. ..."))
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
         eos_text_token_ids = [764]
@@ -117,7 +118,7 @@ class KnowledgeablePredictor(Predictor):
 
         self._bad_words_ids = []
         bad_words = ["***", "/u/", "/r/", "http://", "https://", "www.", "{cite web}", "!?!?", "?!?!", "WP",
-                     "[WP]","README"]
+                     "[WP]", "README"]
 
         for t in bad_words:
             self._bad_words_ids.append(self._tokenizer._tokenizer.encode(t))
@@ -852,16 +853,16 @@ class KnowledgeablePredictor(Predictor):
             if lm_hidden_state.numel() < 1:
                 return None, None, None
 
-            encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
-
             try:
+                encoded_sentences_batch = self._model.encode_sentences(lm_hidden_state, lm_mask)
                 if self._model._sentence_2_seq2vec_encoder is not None or self._model._sentence_2_seq2seq_encoder is not None:
                     encoded_sentences_batch_2 = self._model.encode_sentences_2(lm_hidden_state, lm_mask)
                     encoded_sentences_batch = torch.cat((encoded_sentences_batch, encoded_sentences_batch_2), dim=-1)
             except RuntimeError as err:
                 # Just randomise if there is a cuda error.
                 print("Runtime error", err)
-                encoded_sentences_batch = torch.cat((torch.rand_like(encoded_sentences_batch), torch.rand_like(encoded_sentences_batch)), dim=-1)
+                encoded_sentences_batch = torch.cat((torch.rand(lm_hidden_state.size(0), SENTENCE_DIM),
+                                                     torch.rand(lm_hidden_state.size(0), SENTENCE_DIM)), dim=-1)
 
             if self._random_test_vector:
                 encoded_sentences_batch = torch.rand_like(encoded_sentences_batch)
