@@ -77,7 +77,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 else:
                     story_id = obj["input"]["story_id"]
 
-                m_dict[obj["story_id"]] = {"story_id": story_id]}
+                m_dict[obj["story_id"]] = {"story_id": story_id}
 
                 sentences = []
                 for s in obj["generated"][0]["sentences"]:
