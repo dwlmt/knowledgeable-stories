@@ -85,9 +85,9 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 if "sentences" in obj_sentences:
                     obj_sentences = obj_sentences["sentences"]
 
-                    for sentence in obj_sentences:
-                        print(m,t,sentence)
-                        sentences.append(cleanup_text(sentence["text"]))
+                for sentence in obj_sentences:
+                    print(m,t,sentence)
+                    sentences.append(cleanup_text(sentence["text"]))
 
                 #sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
                 m_dict[story_id]["passage"] = " ".join(sentences)
