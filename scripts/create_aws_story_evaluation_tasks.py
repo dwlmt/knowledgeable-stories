@@ -133,7 +133,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         csv_writer.writeheader()
 
         for row in csv_rows:
-            print(f"Row: {row}")
+            #print(f"Row: {row}")
             csv_writer.writerow(row)
 
 def str2bool(v):
