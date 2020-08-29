@@ -81,11 +81,9 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
                 sentences = []
                 print(m,  obj["generated"])
-                for s in obj["generated"][0]:
-                    if "sentences" in s:
-                        obj_sentences = s["sentences"]
-                    else:
-                        obj_sentences = s
+                obj_sentences = obj["generated"][0]
+                if "sentences" in obj_sentences:
+                    obj_sentences = obj_sentences["sentences"]
 
                     for sentence in obj_sentences:
                         print(sentence)
