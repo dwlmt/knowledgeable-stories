@@ -80,6 +80,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 m_dict[story_id] = {"story_id": story_id}
 
                 sentences = []
+                print(m,  obj["generated"])
                 for s in obj["generated"][0]["sentences"]:
                     sentences.append(cleanup_text(s["text"]))
 
