@@ -72,7 +72,12 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         m_dict = collections.OrderedDict()
         with jsonlines.open(m) as reader:
             for obj in reader:
-                m_dict[obj["story_id"]] = {"story_id": obj["story_id"]}
+                if "story_id" in obj:
+                    story_id = obj["story_id"]
+                else:
+                    story_id = obj["input"]["story_id"]
+
+                m_dict[obj["story_id"]] = {"story_id": story_id]}
 
                 sentences = []
                 for s in obj["generated"][0]["sentences"]:
