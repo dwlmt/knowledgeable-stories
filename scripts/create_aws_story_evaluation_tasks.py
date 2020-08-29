@@ -88,6 +88,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                         obj_sentences = s
 
                     for sentence in obj_sentences:
+                        print(sentence)
                         sentences.append(cleanup_text(sentence["text"]))
 
                 sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
