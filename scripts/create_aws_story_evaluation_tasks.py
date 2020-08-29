@@ -81,7 +81,12 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
                 sentences = []
                 print(m,  obj["generated"])
-                for s in obj["generated"][0]["sentences"]:
+                for s in obj["generated"][0]:
+                    if "sentences" in s:
+                        sentences = s["sentences"]
+                    else:
+                        sentences = s
+
                     sentences.append(cleanup_text(s["text"]))
 
                 sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
