@@ -56,13 +56,14 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     prompt_split = []
     with jsonlines.open(prompts_json) as reader:
         for obj in reader:
-            prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
-            prompt_split = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
+            clean_passage = cleanup_text(obj["passage"])
+            prompt_split = sentence_splitter.split_sentences(clean_passage)
+            prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": clean_passage, "sentences": prompt_split}
 
     with jsonlines.open(gold_json) as reader:
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
-            sentences = prompt_split + sentences
+            sentences = gold_dict[obj["story_id"]] + sentences
             sentences = sentences[ : story_length]
 
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": " ". join(sentences)}
