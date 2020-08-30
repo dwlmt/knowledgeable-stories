@@ -667,7 +667,7 @@ class EvalClozePredictor(Predictor):
 
     def generate_sentences(self, previous_tokens, num_of_sequences):
 
-        if previous_tokens is not None and isinstance(previous_tokens[0], (list, tuple)):
+        if previous_tokens is not None and len(previous_tokens) > 0 and isinstance(previous_tokens[0], (list, tuple)):
             flat_previous_tokens = list(more_itertools.flatten(previous_tokens))
         else:
             flat_previous_tokens = previous_tokens
