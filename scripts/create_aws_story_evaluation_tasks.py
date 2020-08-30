@@ -53,16 +53,17 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     models_dict = collections.OrderedDict()
 
-    #prompt_split = []
+    prompt_split = []
     with jsonlines.open(prompts_json) as reader:
         for obj in reader:
             prompt_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": cleanup_text(obj["passage"])}
-            #prompt_split = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
+            prompt_split = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
 
     with jsonlines.open(gold_json) as reader:
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
-            #sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
+            sentences = prompt_split + sentences
+            sentences = sentences[ : story_length]
 
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": " ". join(sentences)}
 
@@ -89,7 +90,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                     print(m,t,sentence)
                     sentences.append(cleanup_text(sentence["text"]))
 
-                #sentences = sentences[len(prompt_split): story_length + len(prompt_split)]
+                sentences = sentences[: story_length]
                 m_dict[story_id]["passage"] = " ".join(sentences)
 
         models_dict[t] = m_dict
