@@ -39,6 +39,14 @@ def evaluate(aws_results, output_dir):
     print(df)
     print("Columns", df.columns)
 
+    mapping_dict = {}
+
+    first_row = df.loc[[0]]
+    print(first_row)
+    deanonymised_list = []
+
+    # Deanomise types
+
 
 def load_dfs(aws_results):
     df_list = []
