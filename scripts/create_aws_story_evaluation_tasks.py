@@ -157,7 +157,7 @@ parser.add_argument('--output-file', required=True, type=str, help="The gold sta
 parser.add_argument('--story-length', required=False, type=int, default=25, help="Story length. ")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
-parser.add_argument('--extra-columns', required=False, type=str, nargs="+", default=["i","r","j"], help="Extra columns.")
+parser.add_argument('--extra-columns', required=False, type=str, nargs="+", default=[], help="Extra columns.")
 parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
                         const=True, default=False,
                         help="Add a debug prefix.")
