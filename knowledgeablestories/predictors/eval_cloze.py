@@ -261,13 +261,14 @@ class EvalClozePredictor(Predictor):
                         if j in change_dict["dropped_positions"]:
                             continue
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
-                sentence_text_flat = " ".join(sentence_text)
+                #sentence_text_flat = " ".join(sentence_text)
 
-                print(sentence_text_flat)
-                perplexity = perplexity_score(sentence_text_flat)
-                sentences[0]["prediction_metrics"] = {}
-                sentences[0]["prediction_metrics"][-1] = {}
-                sentences[0]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
+                for i, window_sent in enumerate(list(more_itertools.windowed(sentence_text, fillvalue=[" "], step=2))):
+                    perplexity = perplexity_score(" ".join(window_sent))
+                    if i < len(sentences):
+                        sentences[i]["prediction_metrics"] = {}
+                        sentences[i]["prediction_metrics"][-1] = {}
+                        sentences[i]["prediction_metrics"][-1]["lm_perplexity"] = perplexity
 
                 #print("Perplexity",perplexity)
 
