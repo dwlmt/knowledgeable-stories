@@ -20,22 +20,34 @@ def ensure_dir(file_path):
         print(f"Create directory: {directory}")
         os.makedirs(directory)
 
+ASSIGNMENT_COL = 'AssignmentId'
+WORKER_COL = 'WorkerId'
+HIT_COL = 'HITId'
+
 def evaluate(aws_results, output_dir):
+
+    pandas.set_option('display.max_rows', None)
+    pandas.set_option('display.max_columns', None)
+
     print(f"Evaluate AWS results from: {aws_results}")
 
     ensure_dir(output_dir)
     print(f"Save AWS evaluation to: {output_dir}")
 
-    df_list = []
-
-    for res in aws_results:
-        df = pandas.read_csv(res)
-        df_list.append(df)
-
-    df = pandas.concat(df_list)
+    df = load_dfs(aws_results)
 
     print(df)
     print("Columns", df.columns)
+
+
+def load_dfs(aws_results):
+    df_list = []
+    for res in aws_results:
+        df = pandas.read_csv(res)
+        df_list.append(df)
+    df = pandas.concat(df_list)
+    return df
+
 
 parser = argparse.ArgumentParser(
     description='Post process and produce the evaluation metrics from AWS.')
