@@ -66,16 +66,16 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
                 for t in ["overall","coherence","relevance","style","suspense"]:
                     value = json_answers[f"{t}_ranking_{r}"]
-                    if value == i:
+                    if int(value) == i:
                         print(f"{t}_ranking",value)
-                        d_dict[f"{t}_ranking"] = value
+                        d_dict[f"{t}_ranking"] = int(value)
 
             deanonymised_list.append(d_dict)
 
 
     print(deanonymised_list)
     story_df = pandas.DataFrame(deanonymised_list)
-    print(story_df)
+    #print(story_df)
 
 
 def load_dfs(aws_results):
