@@ -1,6 +1,7 @@
 import argparse
 import collections
 import csv
+import json
 import os
 from random import random
 from typing import List, OrderedDict
@@ -23,8 +24,9 @@ def ensure_dir(file_path):
 ASSIGNMENT_COL = 'AssignmentId'
 WORKER_COL = 'WorkerId'
 HIT_COL = 'HITId'
+ANSWER_COL = 'Answer.taskAnswers'
 
-def evaluate(aws_results, output_dir):
+def evaluate(aws_results, output_dir, number_of_story_types):
 
     pandas.set_option('display.max_rows', None)
     pandas.set_option('display.max_columns', None)
@@ -39,13 +41,27 @@ def evaluate(aws_results, output_dir):
     print(df)
     print("Columns", df.columns)
 
-    mapping_dict = {}
-
-    first_row = df.loc[[0]]
-    print(first_row)
     deanonymised_list = []
 
-    # Deanomise types
+    for index, row in df.iterrows():
+
+        for i in range(number_of_story_types, start=1):
+
+            d_dict = {}
+
+            d_dict["story_type"] = row[f"Input.story_{i}_type"]
+            d_dict["story_text"] = row[f"Input.story_{i}"]
+            d_dict[WORKER_COL] = row[WORKER_COL]
+            d_dict[ASSIGNMENT_COL] = row[ASSIGNMENT_COL]
+            d_dict[HIT_COL] = row[HIT_COL]
+
+            json_answers = json.loads(row[ANSWER_COL])
+            print(json_answers)
+
+            deanonymised_list.append(d_dict)
+
+
+    print(deanonymised_list)
 
 
 def load_dfs(aws_results):
@@ -62,9 +78,10 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('--aws-results', required=True, type=str, nargs="+", help="List of AWS results.")
 parser.add_argument('--output-dir', required=True, type=str, help="The output dir for the results.")
+parser.add_argument('--number-of-story-types', required=False, type=int, default=5, help="Number of stories in the AWS evaluation.")
 
 args = parser.parse_args()
 
-evaluate(aws_results=args.aws_results, output_dir=args.output_dir)
+evaluate(aws_results=args.aws_results, output_dir=args.output_dir, number_of_story_types=args.number_of_story_types)
 
 
