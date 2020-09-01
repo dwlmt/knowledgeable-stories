@@ -263,7 +263,7 @@ class EvalClozePredictor(Predictor):
                         sentence_text.append(f"{sent['text']} <|endofsentence|>")
                 #sentence_text_flat = " ".join(sentence_text)
 
-                for i, window_sent in enumerate(list(more_itertools.windowed(sentence_text, fillvalue=[" "], step=2))):
+                for i, window_sent in enumerate(list(more_itertools.windowed(sentence_text, n=2, fillvalue=[" "]))):
                     perplexity = perplexity_score(" ".join(window_sent))
                     if i < len(sentences):
                         sentences[i]["prediction_metrics"] = {}
