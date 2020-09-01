@@ -51,12 +51,23 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
             d_dict["story_type"] = row[f"Input.story_{i}_type"]
             d_dict["story_text"] = row[f"Input.story_{i}"]
+            d_dict["prompt"] = row['Input.prompt']
             d_dict[WORKER_COL] = row[WORKER_COL]
             d_dict[ASSIGNMENT_COL] = row[ASSIGNMENT_COL]
             d_dict[HIT_COL] = row[HIT_COL]
 
-            json_answers = json.loads(row[ANSWER_COL])
+            json_answers = json.loads(row[ANSWER_COL])[0]
             print(json_answers)
+
+            d_dict["rationale"] = json_answers["rationale"]
+
+            # Swap around the ranking to story ranking.
+            for r in  range(1, number_of_story_types + 1):
+
+                for t in ["overall","coherence","relevance","style","suspense"]:
+                    value = json_answers[f"{t}_ranking_{r}"]
+                    if value == r:
+                        d_dict[f"{t}_ranking"] = value
 
             deanonymised_list.append(d_dict)
 
