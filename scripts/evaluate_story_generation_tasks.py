@@ -89,6 +89,10 @@ def evaluate(aws_results, output_dir, number_of_story_types):
     story_df = pandas.DataFrame(deanonymised_list)
     story_df.to_csv(f"{output_dir}/processed.csv")
 
+    summary_statistics = story_df.describe()
+    print(summary_statistics)
+    story_df.to_csv(f"{output_dir}/summary_stats.csv")
+
 
 def load_dfs(aws_results):
     df_list = []
