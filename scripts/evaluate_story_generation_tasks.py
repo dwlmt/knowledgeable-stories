@@ -91,15 +91,15 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
     story_type_summary_statistics = story_df.groupby('story_type').describe().unstack(1)
     print(story_type_summary_statistics)
-    story_df.to_csv(f"{output_dir}/story_type_summary_stats.csv")
+    story_type_summary_statistics.to_csv(f"{output_dir}/story_type_summary_stats.csv")
 
     worker_summary_statistics = story_df.groupby(WORKER_COL).describe().unstack(1)
     print(worker_summary_statistics)
-    story_df.to_csv(f"{output_dir}/worker_summary_stats.csv")
+    worker_summary_statistics.to_csv(f"{output_dir}/worker_summary_stats.csv")
 
     hit_summary_statistics = story_df.groupby(HIT_COL).describe().unstack(1)
     print(hit_summary_statistics)
-    story_df.to_csv(f"{output_dir}/hit_summary_stats.csv")
+    story_type_summary_statistics.to_csv(f"{output_dir}/hit_summary_stats.csv")
 
 
 
