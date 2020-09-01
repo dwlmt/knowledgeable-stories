@@ -26,6 +26,15 @@ WORKER_COL = 'WorkerId'
 HIT_COL = 'HITId'
 ANSWER_COL = 'Answer.taskAnswers'
 
+COPY_COLUMNS = ['HITTypeId', 'Title', 'Description', 'Keywords', 'Reward',
+       'CreationTime', 'MaxAssignments', 'RequesterAnnotation',
+       'AssignmentDurationInSeconds', 'AutoApprovalDelayInSeconds',
+       'Expiration', 'NumberOfSimilarHITs', 'LifetimeInSeconds',
+       'AssignmentId', 'WorkerId', 'AssignmentStatus', 'AcceptTime',
+       'SubmitTime', 'AutoApprovalTime', 'ApprovalTime', 'RejectionTime',
+       'RequesterFeedback', 'WorkTimeInSeconds', 'LifetimeApprovalRate',
+       'Last30DaysApprovalRate', 'Last7DaysApprovalRate', 'Approve', 'Reject']
+
 def evaluate(aws_results, output_dir, number_of_story_types):
 
     pandas.set_option('display.max_rows', None)
@@ -55,6 +64,9 @@ def evaluate(aws_results, output_dir, number_of_story_types):
             d_dict[WORKER_COL] = row[WORKER_COL]
             d_dict[ASSIGNMENT_COL] = row[ASSIGNMENT_COL]
             d_dict[HIT_COL] = row[HIT_COL]
+
+            for c in COPY_COLUMNS:
+                d_dict[c] = row[c]
 
             json_answers = json.loads(row[ANSWER_COL])[0]
             print(json_answers)
