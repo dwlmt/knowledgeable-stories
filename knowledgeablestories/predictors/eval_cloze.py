@@ -687,50 +687,53 @@ class EvalClozePredictor(Predictor):
 
             retries += 1
 
-            output_sequences = self._model.generate_text(previous_tokens_tensor,
+            try:
+                output_sequences = self._model.generate_text(previous_tokens_tensor,
                                                          num_of_sequences=min(
                                                              self._gen_num_of_sequences - len(generated_sequences),
                                                              self._gen_max_per_batch),
                                                          override_gen_config=self._generation_config)
 
-            if len(output_sequences.shape) > 2:
-                output_sequences.squeeze_()
-            for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
-                generated_sequence = generated_sequence.tolist()
-                # Remove the prompt.
+                if len(output_sequences.shape) > 2:
+                    output_sequences.squeeze_()
+                for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
+                    generated_sequence = generated_sequence.tolist()
+                    # Remove the prompt.
 
-                generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
+                    generated_sequence = list(generated_sequence[len(flat_previous_tokens):])
 
-                if generated_sequence is None or len(generated_sequence) == 0:
-                    continue
+                    if generated_sequence is None or len(generated_sequence) == 0:
+                        continue
 
-                if generated_sequence[0] not in self._eos_token_ids:
+                    if generated_sequence[0] not in self._eos_token_ids:
 
-                    # Truncate the generated sentence.
-                    first_index = self._generation_config["max_length"]
-                    for end_token in self._eos_token_ids:
-                        try:
-                            if end_token not in self._keep_eos_ids:
-                                first_index = min(generated_sequence.index(end_token), first_index)
-                            else:
-                                first_index = min(generated_sequence.index(end_token) + 1, first_index)
-                        except ValueError:
-                            pass
+                        # Truncate the generated sentence.
+                        first_index = self._generation_config["max_length"]
+                        for end_token in self._eos_token_ids:
+                            try:
+                                if end_token not in self._keep_eos_ids:
+                                    first_index = min(generated_sequence.index(end_token), first_index)
+                                else:
+                                    first_index = min(generated_sequence.index(end_token) + 1, first_index)
+                            except ValueError:
+                                pass
 
-                        if first_index < self._generation_config["max_length"]:
-                            generated_sequence = generated_sequence[: first_index]
+                            if first_index < self._generation_config["max_length"]:
+                                generated_sequence = generated_sequence[: first_index]
 
-                        if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
-                            generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
+                            if generated_sequence[-1] != END_OF_SENTENCE_TOKEN_ID:
+                                generated_sequence.append(END_OF_SENTENCE_TOKEN_ID)
 
-                    if len(generated_sequence) > 0:
-                        generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
-                                                                           clean_up_tokenization_spaces=True,
-                                                                           skip_special_tokens=True)
+                        if len(generated_sequence) > 0:
+                            generated_text = self._tokenizer._tokenizer.decode(generated_sequence,
+                                                                               clean_up_tokenization_spaces=True,
+                                                                               skip_special_tokens=True)
 
-                        if not generated_text.isspace() and sum(
-                                [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
-                            generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+                            if not generated_text.isspace() and sum(
+                                    [s.isalnum() for s in generated_text]) >= self._min_sentence_character_length:
+                                generated_sequences.append({"text": generated_text, "tokens": generated_sequence})
+            except RuntimeError as err:
+                print("Runtime error", err)
 
         # print(f"Generated: {generated_sequences}")
         return generated_sequences
