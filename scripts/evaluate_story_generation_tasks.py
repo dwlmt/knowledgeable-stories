@@ -45,7 +45,7 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
     for index, row in df.iterrows():
 
-        for i in range(number_of_story_types, start=1):
+        for i in range(1, number_of_story_types + 1):
 
             d_dict = {}
 
