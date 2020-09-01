@@ -67,8 +67,8 @@ def evaluate(aws_results, output_dir, number_of_story_types):
                 for t in ["overall","coherence","relevance","style","suspense"]:
                     value = json_answers[f"{t}_ranking_{r}"]
                     if int(value) == i:
-                        print(f"{t}_ranking",value)
-                        d_dict[f"{t}_ranking"] = int(value)
+                        print(f"{t}_ranking",r)
+                        d_dict[f"{t}_ranking"] = int(r)
 
             deanonymised_list.append(d_dict)
 
