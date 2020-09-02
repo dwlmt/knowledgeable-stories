@@ -106,10 +106,17 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 def worker_agreement(output_dir, questions, story_df):
     def annotation_agreement(agreement_triples, attribute, distance=interval_distance):
         results_dict = {}
-        t = AnnotationTask(data=agreement_triples, distance=distance)
-        results_dict[f"{attribute}_alpha"] = t.alpha()
-        results_dict[f"{attribute}_agreement"] = t.avg_Ao()
+        try:
+            t = AnnotationTask(data=agreement_triples, distance=distance)
+            results_dict[f"{attribute}_alpha"] = t.alpha()
+            results_dict[f"{attribute}_agreement"] = t.avg_Ao()
+        except StopIteration as err:
+            print(err)
+            results_dict[f"{attribute}_alpha"] = 0.0
+            results_dict[f"{attribute}_agreement"] = 0.0
         return results_dict
+
+
 
     for q in questions:
         distinct_worker_ids = story_df[WORKER_COL].unique()
