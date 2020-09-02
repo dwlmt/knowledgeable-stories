@@ -100,6 +100,10 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
     question_rank_correlations(output_dir, questions, story_df)
 
+    worker_agreement(output_dir, questions, story_df)
+
+
+def worker_agreement(output_dir, questions, story_df):
     def annotation_agreement(agreement_triples, attribute, distance=interval_distance):
         results_dict = {}
         t = AnnotationTask(data=agreement_triples, distance=distance)
@@ -115,7 +119,7 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
             all_triples = []
 
-            for index, row in worker_two_df.iterrows():
+            for index, row in story_df.iterrows():
                 # coder, item, labels
                 all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(worker_two_df[f"{q}_ranking"])))
 
@@ -148,9 +152,6 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
         worker_agreement_df = pandas.DataFrame(worker_agreement_list)
         print("Worker agreement", worker_agreement_df)
         worker_agreement_df.to_csv(f"{output_dir}/worker_agreement.csv")
-
-
-
 
 
 def question_rank_correlations(output_dir, questions, story_df):
