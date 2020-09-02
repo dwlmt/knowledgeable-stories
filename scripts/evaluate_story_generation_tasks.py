@@ -92,13 +92,22 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
     summary_stats(output_dir, story_df)
 
+
     for t in ["overall", "coherence", "relevance", "style", "suspense"]:
       value_col = f"{t}_ranking"
 
       aov = pg.anova(dv=value_col, between='story_type', data=story_df,
                      detailed=True)
 
-      print(aov)
+      print("ANOVA", aov)
+      aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
+
+      multi_aov = pg.anova(dv=value_col, between=['story_type',WORKER_COL, HIT_COL], data=story_df,
+                     detailed=True)
+
+      print("Multiway ANOVA", aov)
+      multi_aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
+
 
 
 
