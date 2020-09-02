@@ -94,20 +94,18 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
 
     for t in ["overall", "coherence", "relevance", "style", "suspense"]:
+
       value_col = f"{t}_ranking"
 
       aov = pg.anova(dv=value_col, between='story_type', data=story_df,
-                     detailed=True)
+                     detailed=True).round(3)
 
       print("ANOVA", aov)
       aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
 
-      multi_aov = pg.anova(dv=value_col, between=['story_type',WORKER_COL, HIT_COL], data=story_df,
-                     detailed=True)
-
-      print("Multiway ANOVA", aov)
-      multi_aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
-
+      tukey = pg.pairwise_tukey(dv=value_col, between='story_type', data=story_df).round(3)
+      print("TUKEY", tukey)
+      tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
 
 
 
