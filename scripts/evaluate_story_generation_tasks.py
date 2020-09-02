@@ -129,19 +129,19 @@ def anova_and_tukey(output_dir, story_df, questions):
     for t in questions:
         value_col = f"{t}_ranking"
 
-        aov = pg.anova(dv=value_col, between='story_type', data=story_df,
+        aov = pg.anova(dv=value_col, between='model_type', data=story_df,
                        detailed=True).round(4)
 
         print("ANOVA", aov)
         aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
 
-        tukey = pg.pairwise_tukey(dv=value_col, between='story_type', data=story_df).round(4)
+        tukey = pg.pairwise_tukey(dv=value_col, between='model_type', data=story_df).round(4)
         print("TUKEY", tukey)
         tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
 
 
 def summary_stats(output_dir, story_df):
-    story_type_summary_statistics = story_df.groupby('story_type').describe().unstack(1)
+    story_type_summary_statistics = story_df.groupby('model_type').describe().unstack(1)
     print(story_type_summary_statistics)
     story_type_summary_statistics.to_csv(f"{output_dir}/story_type_summary_stats.csv")
     worker_summary_statistics = story_df.groupby(WORKER_COL).describe().unstack(1)
