@@ -121,7 +121,7 @@ def worker_agreement(output_dir, questions, story_df):
 
             for index, row in story_df.iterrows():
                 # coder, item, labels
-                all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(story_df[f"{q}_ranking"])))
+                all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
 
             res_dict = annotation_agreement(all_triples, f"{q}_ranking")
             res_dict["worker_1"] = "all"
