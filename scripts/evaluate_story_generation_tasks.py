@@ -116,8 +116,6 @@ def worker_agreement(output_dir, questions, story_df):
             results_dict[f"{attribute}_agreement"] = 0.0
         return results_dict
 
-
-
     for q in questions:
         distinct_worker_ids = story_df[WORKER_COL].unique()
         worker_agreement_list = []
@@ -139,8 +137,8 @@ def worker_agreement(output_dir, questions, story_df):
             for w in worker_permutations:
                 triples = []
 
-                worker_one_df = story_df[WORKER_COL == w[0]]
-                worker_two_df = story_df[WORKER_COL == w[1]]
+                worker_one_df = story_df.loc[story_df[WORKER_COL] == w[0]]
+                worker_two_df = story_df.loc[story_df[WORKER_COL] == w[1]]
 
                 for index, row in worker_one_df.iterrows():
                     # coder, item, labels
