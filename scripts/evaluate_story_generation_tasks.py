@@ -9,6 +9,7 @@ from typing import List, OrderedDict
 import fire
 import more_itertools
 import pandas
+import pingouin as pg
 from jsonlines import jsonlines
 from tqdm import tqdm
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
@@ -89,19 +90,28 @@ def evaluate(aws_results, output_dir, number_of_story_types):
     story_df = pandas.DataFrame(deanonymised_list)
     story_df.to_csv(f"{output_dir}/processed.csv")
 
+    summary_stats(output_dir, story_df)
+
+    for t in ["overall", "coherence", "relevance", "style", "suspense"]:
+      value_col = f"{t}_ranking"
+
+      aov = pg.anova(dv=value_col, between='story_type', data=story_df,
+                     detailed=True)
+
+      print(aov)
+
+
+
+def summary_stats(output_dir, story_df):
     story_type_summary_statistics = story_df.groupby('story_type').describe().unstack(1)
     print(story_type_summary_statistics)
     story_type_summary_statistics.to_csv(f"{output_dir}/story_type_summary_stats.csv")
-
     worker_summary_statistics = story_df.groupby(WORKER_COL).describe().unstack(1)
     print(worker_summary_statistics)
     worker_summary_statistics.to_csv(f"{output_dir}/worker_summary_stats.csv")
-
     hit_summary_statistics = story_df.groupby(HIT_COL).describe().unstack(1)
     print(hit_summary_statistics)
     story_type_summary_statistics.to_csv(f"{output_dir}/hit_summary_stats.csv")
-
-
 
 
 def load_dfs(aws_results):
