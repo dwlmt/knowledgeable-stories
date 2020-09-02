@@ -116,9 +116,10 @@ def worker_agreement(output_dir, questions, story_df):
             results_dict[f"{attribute}_agreement"] = 0.0
         return results_dict
 
+    worker_agreement_list = []
     for q in questions:
         distinct_worker_ids = story_df[WORKER_COL].unique()
-        worker_agreement_list = []
+
         if len(distinct_worker_ids) > 1:
             worker_permutations = distinct_permutations(distinct_worker_ids, 2)
 
@@ -154,9 +155,9 @@ def worker_agreement(output_dir, questions, story_df):
                 res_dict["question"] = q
                 worker_agreement_list.append(res_dict)
 
-        worker_agreement_df = pandas.DataFrame(worker_agreement_list)
-        print("Worker agreement", worker_agreement_df)
-        worker_agreement_df.to_csv(f"{output_dir}/worker_agreement.csv")
+    worker_agreement_df = pandas.DataFrame(worker_agreement_list)
+    print("Worker agreement", worker_agreement_df)
+    worker_agreement_df.to_csv(f"{output_dir}/worker_agreement.csv")
 
 
 def question_rank_correlations(output_dir, questions, story_df):
