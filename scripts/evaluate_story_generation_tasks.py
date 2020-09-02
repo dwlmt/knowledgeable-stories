@@ -110,7 +110,7 @@ def worker_agreement(output_dir, questions, story_df):
             t = AnnotationTask(data=agreement_triples, distance=distance)
             results_dict[f"{attribute}_alpha"] = t.alpha()
             results_dict[f"{attribute}_agreement"] = t.avg_Ao()
-        except StopIteration as err:
+        except RuntimeError as err:
             print(err)
             results_dict[f"{attribute}_alpha"] = 0.0
             results_dict[f"{attribute}_agreement"] = 0.0
