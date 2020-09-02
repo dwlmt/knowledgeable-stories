@@ -11,6 +11,8 @@ import more_itertools
 import pandas
 import pingouin as pg
 from jsonlines import jsonlines
+from more_itertools import distinct_permutations
+
 from scipy.stats import kendalltau, spearmanr, pearsonr
 from tqdm import tqdm
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
@@ -95,7 +97,7 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
     anova_and_tukey(output_dir, story_df, questions)
 
-    question_permutations = more_itertools.distinct_permutations(questions, 2)
+    question_permutations = distinct_permutations(questions, 2)
     rank_correlation_list = []
     for p in question_permutations:
 
