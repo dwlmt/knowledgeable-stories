@@ -11,6 +11,7 @@ import more_itertools
 import pandas
 import pingouin as pg
 from jsonlines import jsonlines
+from scipy.stats import kendalltau, spearmanr, pearsonr
 from tqdm import tqdm
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 
@@ -36,7 +37,7 @@ COPY_COLUMNS = ['HITTypeId', 'Title', 'Description', 'Keywords', 'Reward',
        'RequesterFeedback', 'WorkTimeInSeconds', 'LifetimeApprovalRate',
        'Last30DaysApprovalRate', 'Last7DaysApprovalRate', 'Approve', 'Reject']
 
-def evaluate(aws_results, output_dir, number_of_story_types):
+def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
     pandas.set_option('display.max_rows', None)
     pandas.set_option('display.max_columns', None)
@@ -59,7 +60,7 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
             d_dict = {}
 
-            d_dict["story_type"] = row[f"Input.story_{i}_type"]
+            d_dict["model_type"] = row[f"Input.story_{i}_type"]
             d_dict["story_text"] = row[f"Input.story_{i}"]
             d_dict["prompt"] = row['Input.prompt']
             d_dict[WORKER_COL] = row[WORKER_COL]
@@ -92,21 +93,51 @@ def evaluate(aws_results, output_dir, number_of_story_types):
 
     summary_stats(output_dir, story_df)
 
+    anova_and_tukey(output_dir, story_df, questions)
 
-    for t in ["overall", "coherence", "relevance", "style", "suspense"]:
+    question_permutations = more_itertools.distinct_permutations(questions, r=2)
+    rank_correlation_list = []
+    for p in question_permutations:
+        rank_dict = {}
+        print(p[0],p[1])
+        rank_dict["model_type_1"] = p[0]
+        rank_dict["model_type_2"] = p[1]
 
-      value_col = f"{t}_ranking"
+        values_one = story_df[f"{p[0]}_ranking"]
+        values_two = story_df[f"{p[1]}_ranking"]
 
-      aov = pg.anova(dv=value_col, between='story_type', data=story_df,
-                     detailed=True).round(3)
+        kendall, kendall_p_value = kendalltau(values_one, values_two)
+        rank_dict["kendall"] = kendall
+        rank_dict["kendall_p_value"] = kendall_p_value
 
-      print("ANOVA", aov)
-      aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
+        spearman, spearman_p_value = spearmanr(values_one, values_two)
+        rank_dict["spearman"] = spearman
+        rank_dict["spearman_p_value"] = spearman_p_value
 
-      tukey = pg.pairwise_tukey(dv=value_col, between='story_type', data=story_df).round(3)
-      print("TUKEY", tukey)
-      tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
+        pearson, pearson_p_value = pearsonr(values_one, values_two)
+        rank_dict["pearson"] = pearson
+        rank_dict["pearson_p_value"] = pearson_p_value
 
+        rank_correlation_list.append(rank_dict)
+
+    rank_correlation_df = pandas.DataFrame(rank_correlation_list)
+    print("Rank Correlation", rank_correlation_df)
+    rank_correlation_df.to_csv(f"{output_dir}/questions_rank_correlation.csv")
+            
+
+def anova_and_tukey(output_dir, story_df, questions):
+    for t in questions:
+        value_col = f"{t}_ranking"
+
+        aov = pg.anova(dv=value_col, between='story_type', data=story_df,
+                       detailed=True).round(4)
+
+        print("ANOVA", aov)
+        aov.to_csv(f"{output_dir}/{value_col}_anova.csv")
+
+        tukey = pg.pairwise_tukey(dv=value_col, between='story_type', data=story_df).round(4)
+        print("TUKEY", tukey)
+        tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
 
 
 def summary_stats(output_dir, story_df):
@@ -136,9 +167,12 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--aws-results', required=True, type=str, nargs="+", help="List of AWS results.")
 parser.add_argument('--output-dir', required=True, type=str, help="The output dir for the results.")
 parser.add_argument('--number-of-story-types', required=False, type=int, default=5, help="Number of stories in the AWS evaluation.")
+parser.add_argument('--questions', required=False, type=str, default=["overall", "coherence", "relevance", "style", "suspense"])
+
 
 args = parser.parse_args()
 
-evaluate(aws_results=args.aws_results, output_dir=args.output_dir, number_of_story_types=args.number_of_story_types)
+evaluate(aws_results=args.aws_results, output_dir=args.output_dir, number_of_story_types=args.number_of_story_types,
+         questions=args.questions)
 
 
