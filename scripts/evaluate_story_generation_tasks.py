@@ -12,6 +12,7 @@ import pandas
 import pingouin as pg
 from jsonlines import jsonlines
 from more_itertools import distinct_permutations
+from nltk import interval_distance, AnnotationTask
 
 from scipy.stats import kendalltau, spearmanr, pearsonr
 from tqdm import tqdm
@@ -97,12 +98,67 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
     anova_and_tukey(output_dir, story_df, questions)
 
+    question_rank_correlations(output_dir, questions, story_df)
+
+    def annotation_agreement(agreement_triples, attribute, distance=interval_distance):
+        results_dict = {}
+        t = AnnotationTask(data=agreement_triples, distance=distance)
+        results_dict[f"{attribute}_alpha"] = t.alpha()
+        results_dict[f"{attribute}_agreement"] = t.avg_Ao()
+        return results_dict
+
+    for q in questions:
+        distinct_worker_ids = story_df[WORKER_COL].unique()
+        worker_agreement_list = []
+        if len(distinct_worker_ids) > 1:
+            worker_permutations = distinct_permutations(distinct_worker_ids, 2)
+
+            all_triples = []
+
+            for index, row in worker_two_df.iterrows():
+                # coder, item, labels
+                all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(worker_two_df[f"{q}_ranking"])))
+
+            res_dict = annotation_agreement(all_triples, f"{q}_ranking")
+            res_dict["worker_1"] = "all"
+            res_dict["worker_2"] = "all"
+            res_dict["question"] = q
+            worker_agreement_list.append(res_dict)
+
+            for w in worker_permutations:
+                triples = []
+
+                worker_one_df = story_df[WORKER_COL == w[0]]
+                worker_two_df = story_df[WORKER_COL == w[1]]
+
+                for index, row in worker_one_df.iterrows():
+                    # coder, item, labels
+                    triples.append((w[0], row[ASSIGNMENT_COL], int(worker_one_df[f"{q}_ranking"])))
+
+                for index, row in worker_two_df.iterrows():
+                    # coder, item, labels
+                    triples.append((w[1], row[ASSIGNMENT_COL], int(worker_two_df[f"{q}_ranking"])))
+
+                res_dict = annotation_agreement(triples, f"{q}_ranking")
+                res_dict["worker_1"] = w[0]
+                res_dict["worker_2"] = w[1]
+                res_dict["question"] = q
+                worker_agreement_list.append(res_dict)
+
+        worker_agreement_df = pandas.DataFrame(worker_agreement_list)
+        print("Worker agreement", worker_agreement_df)
+        worker_agreement_df.to_csv(f"{output_dir}/worker_agreement.csv")
+
+
+
+
+
+def question_rank_correlations(output_dir, questions, story_df):
     question_permutations = distinct_permutations(questions, 2)
     rank_correlation_list = []
     for p in question_permutations:
-
         rank_dict = {}
-        print(p[0],p[1])
+        print(p[0], p[1])
         rank_dict["model_type_1"] = p[0]
         rank_dict["model_type_2"] = p[1]
 
@@ -122,11 +178,10 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
         rank_dict["pearson_p_value"] = pearson_p_value
 
         rank_correlation_list.append(rank_dict)
-
     rank_correlation_df = pandas.DataFrame(rank_correlation_list)
     print("Rank Correlation", rank_correlation_df)
     rank_correlation_df.to_csv(f"{output_dir}/questions_rank_correlation.csv")
-            
+
 
 def anova_and_tukey(output_dir, story_df, questions):
     for t in questions:
