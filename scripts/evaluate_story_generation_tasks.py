@@ -95,13 +95,10 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
     anova_and_tukey(output_dir, story_df, questions)
 
-    question_permutations = more_itertools.distinct_permutations(questions)
+    question_permutations = more_itertools.distinct_permutations(questions, 2)
     rank_correlation_list = []
     for p in question_permutations:
 
-        if len(p) != 2:
-            print(p)
-            continue
         rank_dict = {}
         print(p[0],p[1])
         rank_dict["model_type_1"] = p[0]
