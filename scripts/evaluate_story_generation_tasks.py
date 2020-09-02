@@ -129,7 +129,7 @@ def worker_agreement(output_dir, questions, story_df):
                 # coder, item, labels
                 all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
 
-            res_dict = annotation_agreement(all_triples, f"{q}_ranking")
+            res_dict = annotation_agreement(all_triples, f"ranking")
             res_dict["worker_1"] = "all"
             res_dict["worker_2"] = "all"
             res_dict["question"] = q
@@ -149,7 +149,7 @@ def worker_agreement(output_dir, questions, story_df):
                     # coder, item, labels
                     triples.append((w[1], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
 
-                res_dict = annotation_agreement(triples, f"{q}_ranking")
+                res_dict = annotation_agreement(triples, f"ranking")
                 res_dict["worker_1"] = w[0]
                 res_dict["worker_2"] = w[1]
                 res_dict["question"] = q
