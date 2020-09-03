@@ -16,7 +16,7 @@ def cleanup_text(param):
     if param is None or len(param) == 0:
         return param
     for r in ["\n","<|endofsentence|>","<|endoftext|>","<newline>"]:
-        param = param.replace(r, "")
+        param = param.replace(r, " ")
     return param
 
 
