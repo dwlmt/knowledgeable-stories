@@ -107,7 +107,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
                 story_text = f"{prompt_text} {sentence_text}"
 
-                m_dict[story_id]["passage"] = " ".join(story_text)
+                m_dict[story_id]["passage"] = story_text
 
         models_dict[t] = m_dict
 
