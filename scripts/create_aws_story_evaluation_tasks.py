@@ -63,10 +63,17 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     with jsonlines.open(gold_json) as reader:
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
-            sentences = prompt_dict[obj["story_id"]]["sentences"] + sentences
-            sentences = sentences[ : story_length]
+            prompt_text =  " ".join(prompt_dict[obj["story_id"]]["sentences"])
+            prompt_text = f"<p><b>{prompt_text}</b></p>"
 
-            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": " ". join(sentences)}
+            #sentences = prompt_text + sentences
+            sentences = sentences[ : story_length]
+            sentence_text = " ".join(sentences)
+            sentence_text = f"<p>{sentence_text}</p>"
+
+            story_text = f"{prompt_text} {sentence_text}"
+
+            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": story_text}
 
     models_dict["gold"] = gold_dict
     for m, t in zip(models_json, models_types):
@@ -91,8 +98,16 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                     print(m,t,sentence)
                     sentences.append(cleanup_text(sentence["text"]))
 
+                prompt_text = " ".join(prompt_dict[obj["story_id"]]["sentences"])
+                prompt_text = f"<p><b>{prompt_text}</b></p>"
+
                 sentences = sentences[: story_length]
-                m_dict[story_id]["passage"] = " ".join(sentences)
+                sentence_text = " ".join(sentences)
+                sentence_text = f"<p>{sentence_text}</p>"
+
+                story_text = f"{prompt_text} {sentence_text}"
+
+                m_dict[story_id]["passage"] = " ".join(story_text)
 
         models_dict[t] = m_dict
 
