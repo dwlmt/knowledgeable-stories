@@ -32,7 +32,10 @@ def ensure_dir(file_path):
 def create(prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
            output_file: str, debug_prefix: bool = False,
            story_length=25,
-           extra_columns=[]):
+           extra_columns=[],
+           min_characters = 1000,
+           max_characters = 2000):
+
     print("Input", models_json, models_types)
 
     ensure_dir(output_file)
@@ -139,9 +142,10 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         for model_key, model_val in models_dict.items():
 
             if p_key in model_val:
-                model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"]}
+                model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"][:max_characters]}
 
-                models_rows.append(model_row_dict)
+                if len(model_row_dict)["passage"] > min_characters:
+                    models_rows.append(model_row_dict)
 
         if len(models_rows) == number_of_models:
             from random import shuffle
@@ -187,7 +191,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
-parser.add_argument('--story-length', required=False, type=int, default=25, help="Story length. ")
+parser.add_argument('--story-length', required=False, type=int, default=30, help="Story length. ")
+parser.add_argument('--max-characters', required=False, type=int, default=2000, help="Story length. ")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
 parser.add_argument('--extra-columns', required=False, type=str, nargs="+", default=[], help="Extra columns.")
@@ -200,6 +205,7 @@ args = parser.parse_args()
 
 create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_file=args.output_file,
        models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
-       story_length=args.story_length, extra_columns=args.extra_columns)
+       story_length=args.story_length, extra_columns=args.extra_columns,
+       min_characters=args.max_characters, max_characters=args.max_characters)
 
 
