@@ -192,7 +192,7 @@ parser.add_argument('--prompts-json', required=True, type=str, help="The standal
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-file', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--story-length', required=False, type=int, default=30, help="Story length. ")
-parser.add_argument('--max-characters', required=False, type=int, default=50, help="Min number of characters.")
+parser.add_argument('--min-characters', required=False, type=int, default=500, help="Min number of characters.")
 parser.add_argument('--max-characters', required=False, type=int, default=2000, help="Max number of characters.")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
