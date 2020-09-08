@@ -118,7 +118,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 m_dict[story_id]["passage"] = story_text
                 m_dict["story_length_char"] = len(story_text)
 
-                length_list.append({"story_id": obj["story_id"], "type": t, "story_length_char": len(story_text)})
+                length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
 
 
         models_dict[t] = m_dict
