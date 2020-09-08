@@ -54,11 +54,11 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     models_dict = collections.OrderedDict()
 
-    length_dict = {}
+    length_list = []
 
     prompt_split = []
     with jsonlines.open(prompts_json) as reader:
-        length_dict["gold"] = 0.0
+
         for obj in reader:
             clean_passage = cleanup_text(obj["passage"])
             prompt_split = sentence_splitter.split_sentences(clean_passage)
@@ -67,7 +67,6 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     with jsonlines.open(gold_json) as reader:
 
-        length_dict["gold"] = []
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
             prompt_text =  " ".join(prompt_dict[obj["story_id"]]["sentences"])
@@ -80,14 +79,11 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
             story_text = f"{prompt_text} {sentence_text}"
 
-            length_dict["gold"].append(len(story_text))
+            length_list.append({"story_id": obj["story_id"], "type": "gold", "story_length_char": len(story_text)})
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": story_text, "story_length_char": len(story_text)}
 
     models_dict["gold"] = gold_dict
     for m, t in zip(models_json, models_types):
-
-        if t not in length_dict:
-            length_dict[t] = []
 
         m_dict = collections.OrderedDict()
         with jsonlines.open(m) as reader:
@@ -121,7 +117,9 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
                 m_dict[story_id]["passage"] = story_text
                 m_dict["story_length_char"] = len(story_text)
-                length_dict[t].append(len(story_text))
+
+                length_list.append({"story_id": obj["story_id"], "type": t, "story_length_char": len(story_text)})
+
 
         models_dict[t] = m_dict
 
@@ -167,7 +165,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             #print(f"Row: {row}")
             csv_writer.writerow(row)
 
-    length_df = pandas.Dataframe(length_dict)
+    length_df = pandas.DataFrame(length_list)
     print(length_df)
 
     length_stats_df = length_df[["type","story_length_char"]].groupby("type").describe()
