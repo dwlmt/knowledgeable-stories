@@ -27,7 +27,7 @@ torch.set_printoptions(profile="full")
 END_OF_SENTENCE_TOKEN_ID = 50257
 
 def parse_bool(b):
-    return b == "True" or b == "TRUE" or b == "true" or b == "1"
+    return b == "True" or b == "TRUE" or b == "true" or b == "1" or b == "On" or b == "on" or b == "on"
 
 
 @Predictor.register('eval_cloze')
@@ -119,6 +119,8 @@ class EvalClozePredictor(Predictor):
         self._sentiment_weighting = float(os.getenv("PREDICTOR_SENTIMENT_WEIGHTING", default=1.0))
 
         self._override_lm = parse_bool(os.getenv("PREDICTOR_OVERRIDE_LM", default="False"))
+
+        self.lm_only = parse_bool(os.getenv("LM_ONLY", default="False"))
 
         self._neg_examples = int(os.getenv("NEGATIVE_EXAMPLES_PER_STORY", default=1))
         self._neg_examples_num_mutated = int(os.getenv("NEGATIVE_EXAMPLES_NUM_MUTATED_SENTENCES", default=1))
@@ -293,11 +295,12 @@ class EvalClozePredictor(Predictor):
 
                     cached_dict = self.convert_output_to_tensors(output_dict)
 
-                    if self._tdvae:
-                        self._surprise_tdvae_metrics(sentence_batch, cached_dict)
-                        self._suspense_tdvae_metrics(sentence_batch, cached_dict)
-                    else:
-                        self._next_step_metrics(sentence_batch, cached_dict, )
+                    if not self.lm_only:
+                        if self._tdvae:
+                            self._surprise_tdvae_metrics(sentence_batch, cached_dict)
+                            self._suspense_tdvae_metrics(sentence_batch, cached_dict)
+                        else:
+                            self._next_step_metrics(sentence_batch, cached_dict)
 
                     all_processed_sentences.extend(sentence_batch)
 
