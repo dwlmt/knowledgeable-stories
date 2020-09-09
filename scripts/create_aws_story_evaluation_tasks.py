@@ -214,6 +214,6 @@ args = parser.parse_args()
 create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_file=args.output_file,
        models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
        story_length=args.story_length, extra_columns=args.extra_columns,
-       min_characters=args.max_characters, max_characters=args.max_characters)
+       min_characters=args.min_characters, max_characters=args.max_characters)
 
 
