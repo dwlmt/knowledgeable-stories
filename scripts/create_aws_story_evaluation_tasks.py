@@ -146,9 +146,10 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         for model_key, model_val in models_dict.items():
 
             if p_key in model_val:
-                model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"][:max_characters]}
 
-                if len(model_row_dict["passage"]) >= min_characters:
+                if "passage" in model_row_dict and len(model_row_dict["passage"]) >= min_characters:
+                    model_row_dict = {"type": model_key, "passage": model_val[p_key]["passage"][:max_characters]}
+
                     models_rows.append(model_row_dict)
 
         if len(models_rows) == number_of_models:
