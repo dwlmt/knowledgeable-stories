@@ -76,7 +76,8 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
             json_answers = json.loads(row[ANSWER_COL])[0]
             print(json_answers)
 
-            d_dict["rationale"] = json_answers["rationale"]
+            d_dict["best_summary"] = json_answers["best_summary"]
+            d_dict["worst_summary"] = json_answers["worst_summary"]
 
             # Swap around the ranking to story ranking.
             for r in range(1, number_of_story_types + 1):
