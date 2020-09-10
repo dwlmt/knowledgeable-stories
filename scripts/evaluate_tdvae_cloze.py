@@ -23,6 +23,9 @@ class EvalTdvaeCloze(object):
             ranked_results_counts = {}
             for i, obj in tqdm(enumerate(reader)):
 
+                if accuracy_field not in obj:
+                    continue
+
                 if i == 0:
                     sum_dict = obj[accuracy_field]
                 else:
