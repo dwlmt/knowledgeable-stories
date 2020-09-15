@@ -106,6 +106,7 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
 
 def worker_agreement(output_dir, questions, story_df):
     def annotation_agreement(agreement_triples, attribute, distance=interval_distance):
+        print(attribute, agreement_triples)
         results_dict = {}
         try:
             t = AnnotationTask(data=agreement_triples, distance=distance)
