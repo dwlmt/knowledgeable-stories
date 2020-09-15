@@ -128,8 +128,8 @@ def worker_agreement(output_dir, questions, story_df):
 
             for index, row in story_df.iterrows():
                 # coder, item, labels
-                print(row)
-                all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
+                #print(row)
+                all_triples.append((row[WORKER_COL], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
 
 
             res_dict = annotation_agreement(all_triples, f"ranking")
@@ -147,13 +147,13 @@ def worker_agreement(output_dir, questions, story_df):
 
                 for index, row in worker_one_df.iterrows():
                     # coder, item, labels
-                    print(row)
-                    triples.append((w[0], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
+                    #print(row)
+                    triples.append((w[0], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
 
                 for index, row in worker_two_df.iterrows():
-                    print(row)
+                    #print(row)
                     # coder, item, labels
-                    triples.append((w[1], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
+                    triples.append((w[1], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
 
                 res_dict = annotation_agreement(triples, f"ranking")
                 res_dict["worker_1"] = w[0]
