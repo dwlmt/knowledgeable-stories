@@ -123,13 +123,14 @@ def worker_agreement(output_dir, questions, story_df):
         distinct_worker_ids = story_df[WORKER_COL].unique()
 
         if len(distinct_worker_ids) > 1:
-            worker_permutations = distinct_permutations(distinct_worker_ids, 2)
 
             all_triples = []
 
             for index, row in story_df.iterrows():
                 # coder, item, labels
+                print(row)
                 all_triples.append((row[WORKER_COL], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
+
 
             res_dict = annotation_agreement(all_triples, f"ranking")
             res_dict["worker_1"] = "all"
@@ -137,6 +138,7 @@ def worker_agreement(output_dir, questions, story_df):
             res_dict["question"] = q
             worker_agreement_list.append(res_dict)
 
+            worker_permutations = distinct_permutations(distinct_worker_ids, 2)
             for w in worker_permutations:
                 triples = []
 
@@ -145,9 +147,11 @@ def worker_agreement(output_dir, questions, story_df):
 
                 for index, row in worker_one_df.iterrows():
                     # coder, item, labels
+                    print(row)
                     triples.append((w[0], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
 
                 for index, row in worker_two_df.iterrows():
+                    print(row)
                     # coder, item, labels
                     triples.append((w[1], row[ASSIGNMENT_COL], int(row[f"{q}_ranking"])))
 
