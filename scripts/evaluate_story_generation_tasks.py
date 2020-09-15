@@ -121,45 +121,51 @@ def worker_agreement(output_dir, questions, story_df):
     worker_agreement_list = []
     for q in questions:
         distinct_worker_ids = story_df[WORKER_COL].unique()
+        distinct_model_types = story_df["model_type"].unique()
 
         if len(distinct_worker_ids) > 1:
 
-            all_triples = []
+            for model in distinct_model_types:
 
-            for index, row in story_df.iterrows():
-                # coder, item, labels
-                #print(row)
-                all_triples.append((row[WORKER_COL], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
+                all_triples = []
 
+                model_df = story_df.loc[story_df["model_type"] == model]
 
-            res_dict = annotation_agreement(all_triples, f"ranking")
-            res_dict["worker_1"] = "all"
-            res_dict["worker_2"] = "all"
-            res_dict["question"] = q
-            worker_agreement_list.append(res_dict)
-
-            worker_permutations = distinct_permutations(distinct_worker_ids, 2)
-            for w in worker_permutations:
-                triples = []
-
-                worker_one_df = story_df.loc[story_df[WORKER_COL] == w[0]]
-                worker_two_df = story_df.loc[story_df[WORKER_COL] == w[1]]
-
-                for index, row in worker_one_df.iterrows():
+                for index, row in model_df.iterrows():
                     # coder, item, labels
                     #print(row)
-                    triples.append((w[0], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
+                    all_triples.append((row[WORKER_COL], f"{row['model_type']}_{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
 
-                for index, row in worker_two_df.iterrows():
-                    #print(row)
-                    # coder, item, labels
-                    triples.append((w[1], f"{row['model_type']}{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
-
-                res_dict = annotation_agreement(triples, f"ranking")
-                res_dict["worker_1"] = w[0]
-                res_dict["worker_2"] = w[1]
+                res_dict = annotation_agreement(all_triples, f"ranking")
+                res_dict["worker_1"] = "all"
+                res_dict["worker_2"] = "all"
                 res_dict["question"] = q
+                res_dict["model_type"] = model
                 worker_agreement_list.append(res_dict)
+
+                worker_permutations = distinct_permutations(distinct_worker_ids, 2)
+                for w in worker_permutations:
+                    triples = []
+
+                    worker_one_df = model_df.loc[model_df[WORKER_COL] == w[0]]
+                    worker_two_df = model_df.loc[model_df[WORKER_COL] == w[1]]
+
+                    for index, row in worker_one_df.iterrows():
+                        # coder, item, labels
+                        #print(row)
+                        triples.append((w[0], f"{row['model_type']}_{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
+
+                    for index, row in worker_two_df.iterrows():
+                        #print(row)
+                        # coder, item, labels
+                        triples.append((w[1], f"{row['model_type']}_{row[ASSIGNMENT_COL]}", int(row[f"{q}_ranking"])))
+
+                    res_dict = annotation_agreement(triples, f"ranking")
+                    res_dict["worker_1"] = w[0]
+                    res_dict["worker_2"] = w[1]
+                    res_dict["question"] = q
+                    res_dict["model_type"] = model
+                    worker_agreement_list.append(res_dict)
 
     worker_agreement_df = pandas.DataFrame(worker_agreement_list)
     print("Worker agreement", worker_agreement_df)
