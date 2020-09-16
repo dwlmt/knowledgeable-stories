@@ -147,6 +147,7 @@ def worker_agreement(output_dir, questions, story_df):
                 res_dict["model_type"] = model
                 worker_agreement_list.append(res_dict)
 
+                '''
                 worker_permutations = distinct_permutations(distinct_worker_ids, 2)
                 for w in worker_permutations:
                     triples = []
@@ -170,6 +171,7 @@ def worker_agreement(output_dir, questions, story_df):
                     res_dict["question"] = q
                     res_dict["model_type"] = model
                     worker_agreement_list.append(res_dict)
+                    '''
 
     worker_agreement_df = pandas.DataFrame(worker_agreement_list)
     print("Worker agreement", worker_agreement_df)
