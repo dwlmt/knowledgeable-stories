@@ -111,15 +111,15 @@ def worker_agreement(output_dir, questions, story_df):
         try:
             t = AnnotationTask(data=agreement_triples, distance=distance)
             results_dict[f"{attribute}_alpha"] = t.alpha()
-            results_dict[f"{attribute}_agreement"] = t.avg_Ao()
+            #results_dict[f"{attribute}_agreement"] = t.avg_Ao()
         except RuntimeError as err:
             print(err)
             results_dict[f"{attribute}_alpha"] = 0.0
-            results_dict[f"{attribute}_agreement"] = 0.0
+            #results_dict[f"{attribute}_agreement"] = 0.0
         except ZeroDivisionError as err:
             print(err)
             results_dict[f"{attribute}_alpha"] = 0.0
-            results_dict[f"{attribute}_agreement"] = 0.0
+            #results_dict[f"{attribute}_agreement"] = 0.0
         return results_dict
 
     worker_agreement_list = []
