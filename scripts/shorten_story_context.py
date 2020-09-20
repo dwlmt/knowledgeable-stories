@@ -21,7 +21,7 @@ def process_text(args):
 
     json_list = []
 
-    with jsonlines.open('input_json') as reader:
+    with jsonlines.open(args['input_json']) as reader:
         for obj in reader:
             print(obj)
 
