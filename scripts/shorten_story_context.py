@@ -17,11 +17,11 @@ def process_text(args):
 
     Path(os.path.dirname(args["output_json"])).mkdir(parents=True, exist_ok=True)
 
-    print(f"Process json from ${args['input_json']}")
+    #print(f"Process json from ${args['input_json']}")
 
     json_list = []
 
-    with jsonlines.open('input_jsonl') as reader:
+    with jsonlines.open('input_json') as reader:
         for obj in reader:
             print(obj)
 
