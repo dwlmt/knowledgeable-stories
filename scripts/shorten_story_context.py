@@ -5,7 +5,12 @@ from pathlib import Path
 from allennlp.data.tokenizers import sentence_splitter
 from jsonlines import jsonlines
 
-from scripts.create_aws_story_evaluation_tasks import cleanup_text
+def cleanup_text(param):
+    if param is None or len(param) == 0:
+        return param
+    for r in ["\n","<|endofsentence|>","<|endoftext|>","<newline>"]:
+        param = param.replace(r, "")
+    return param
 
 parser = argparse.ArgumentParser(
     description='Read the stories and write the first n sentences to a new file thereby truncating the story.')
