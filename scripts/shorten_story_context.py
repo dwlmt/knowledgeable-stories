@@ -2,7 +2,10 @@ import argparse
 import os
 from pathlib import Path
 
+from allennlp.data.tokenizers import sentence_splitter
 from jsonlines import jsonlines
+
+from scripts.create_aws_story_evaluation_tasks import cleanup_text
 
 parser = argparse.ArgumentParser(
     description='Read the stories and write the first n sentences to a new file thereby truncating the story.')
@@ -23,14 +26,18 @@ def process_text(args):
 
     with jsonlines.open(args['input_json']) as reader:
         for obj in reader:
-            print(obj)
 
-    """
+            clean_passage = cleanup_text(obj["passage"])
+            prompt_split = sentence_splitter.split_sentences(clean_passage)
+
+            prompt_split = prompt_split[:args["keep_sentences"]]
+            obj["passage"] = " ".join(prompt_split)
+            json_list.append(obj)
+
     with jsonlines.open(args['output_json'], mode='w') as writer:
 
         for j in json_list:
             writer.write(j)
-    """
 
 
 process_text(vars(args))
