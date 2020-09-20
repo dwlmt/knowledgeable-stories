@@ -2,7 +2,7 @@ import argparse
 import os
 from pathlib import Path
 
-from allennlp.data.tokenizers import sentence_splitter
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter
 from jsonlines import jsonlines
 
 def cleanup_text(param):
@@ -24,6 +24,8 @@ args = parser.parse_args()
 def process_text(args):
 
     Path(os.path.dirname(args["output_json"])).mkdir(parents=True, exist_ok=True)
+
+    sentence_splitter = SpacySentenceSplitter()
 
     #print(f"Process json from ${args['input_json']}")
 
