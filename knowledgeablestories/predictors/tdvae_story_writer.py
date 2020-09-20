@@ -244,7 +244,7 @@ class TdvaeStoryWriterPredictor(Predictor):
 
                             # print("L2 Input", generated_sentence_tensor.size(), rollout_x_sentence.size())
                             try:
-                                dist = self._cosine_similarity(
+                                dist = 1.0 - self._cosine_similarity(
                                     torch.unsqueeze(generated_sentence_tensor.cuda(), dim=0),
                                     torch.unsqueeze(rollout_x_sentence.cuda(), dim=0)).cpu().item()
 
