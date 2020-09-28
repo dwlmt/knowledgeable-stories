@@ -199,7 +199,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_2_text = row[f"story_{model_pair[1]}"]
 
             meteor = load_metric("meteor")
-            bleu = load_metric("sacrebleu")
+            bleu = load_metric("bleu")
             bertscore = load_metric("bertscore")
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
