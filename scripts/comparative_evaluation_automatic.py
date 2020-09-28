@@ -13,6 +13,8 @@ from jsonlines import jsonlines
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from more_itertools import distinct_permutations
 
+import datasets
+
 def cleanup_text(param):
     if param is None or len(param) == 0:
         return param
@@ -181,40 +183,38 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     pairwise_comparison_list = []
     model_permutations = more_itertools.distinct_permutations(models_dict.keys(), 2)
 
-    import datasets
-
     for model_pair in model_permutations:
+
+        model_pair_dict = collections.OrderedDict()
+        model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
+        model_pair_dict["pair_name"] = model_pair_dict
+        model_pair_dict["model_one"] = model_pair[0]
+        model_pair_dict["model_two"] = model_pair[1]
+
+        model_1_text = row[f"story_{model_pair[0]}"]
+        model_2_text = row[f"story_{model_pair[1]}"]
 
         for row in aligned_rows:
 
             sacrebleu = datasets.load_metric('sacrebleu')
 
-            print(row)
+            sacrebleu.add_batch(predictions=[model_2_text], references=[model_1_text])
 
-            model_pair_dict = collections.OrderedDict()
-            model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
-            model_pair_dict["pair_name"] = model_pair_dict
-            model_pair_dict["model_one"] = model_pair[0]
-            model_pair_dict["model_two"] = model_pair[1]
-
-            model_1_text = row[f"story_{model_pair[0]}"]
-            model_2_text = row[f"story_{model_pair[1]}"]
-
-            sacrebleu.add_batch(predictions=model_2_text, references=[model_1_text])
-            sacrebleu_score = scarebleu.compute()
-            row["sacrebleu_score"] = sacrebleu_score
-
-            print(model_pair_name, model_1_text, model_2_text,
 
             pairwise_comparison_list.append(model_pair_dict)
 
-    with open(f"{output_dir}/pairwise_evaluation.csv", 'w', newline='') as csv_file:
+        sacrebleu_score = scarebleu.compute()
+        row["sacrebleu_score"] = sacrebleu_score
 
-        csv_writer = csv.DictWriter(csv_file, fieldnames=list(pairwise_comparison_list[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
-        csv_writer.writeheader()
+        with open(f"{output_dir}/pairwise_merics.csv", 'w', newline='') as csv_file:
 
-        for row in pairwise_comparison_list:
-            csv_writer.writerow(row)
+            csv_writer = csv.DictWriter(csv_file, fieldnames=list(pairwise_comparison_list[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
+            csv_writer.writeheader()
+
+            for row in pairwise_comparison_list:
+                # print(f"Row: {row}")
+                csv_writer.writerow(row)
+
 
 def str2bool(v):
     if isinstance(v, bool):
