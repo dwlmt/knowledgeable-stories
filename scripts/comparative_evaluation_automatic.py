@@ -181,9 +181,13 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     pairwise_comparison_list = []
     model_permutations = more_itertools.distinct_permutations(models_dict.keys(), 2)
 
+    import datasets
+
     for model_pair in model_permutations:
 
         for row in aligned_rows:
+
+            sacrebleu = datasets.load_metric('sacrebleu')
 
             print(row)
 
@@ -196,7 +200,11 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
-            print(model_pair_name, model_1_text, model_2_text)
+            sacrebleu.add_batch(predictions=model_2_text, references=[model_1_text])
+            sacrebleu_score = scarebleu.compute()
+            row["sacrebleu_score"] = sacrebleu_score
+
+            print(model_pair_name, model_1_text, model_2_text,
 
             pairwise_comparison_list.append(model_pair_dict)
 
