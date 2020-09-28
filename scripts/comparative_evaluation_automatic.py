@@ -158,7 +158,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                 csv_row_dict[f"story_{r['type']}"] = r["passage"]
 
                 if debug_prefix:
-                    csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {r['type']} : " + csv_row_dict[f"story_{i}"]
+                    csv_row_dict[f"story_{r['type']}"] = f"STORY TYPE DEBUG {r['type']} : " + csv_row_dict[f"story_{r['type']}"]
 
             aligned_rows.append(csv_row_dict)
 
@@ -179,11 +179,14 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     # Do the pairwise comparison.
     pairwise_comparison_list = []
-    model_permutations = distinct_permutations(models_dict.keys(), 2)
+    model_permutations = more_itertools.distinct_permutations(models_dict.keys(), 2)
 
     for model_pair in model_permutations:
 
         for row in aligned_rows:
+
+            print(row)
+
             model_pair_dict = collections.OrderedDict()
             model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
             model_pair_dict["pair_name"] = model_pair_dict
@@ -195,7 +198,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
             print(model_pair_name, model_1_text, model_2_text)
 
-        pairwise_comparison_list.append(model_pair_dict)
+            pairwise_comparison_list.append(model_pair_dict)
 
     with open(f"{output_dir}/pairwise_evaluation.csv", 'w', newline='') as csv_file:
 
