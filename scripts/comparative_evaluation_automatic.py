@@ -8,10 +8,13 @@ from typing import List, OrderedDict
 import fire
 import more_itertools
 import pandas
+from datasets import datasets
 from jsonlines import jsonlines
 
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from more_itertools import distinct_permutations
+from nlp.metrics.bertscore.fb176889831bf0ce995ed197edc94b2e9a83f647a869bb8c9477dbb2d04d0f08.bertscore import BERTScore
+
 
 def cleanup_text(param):
     if param is None or len(param) == 0:
@@ -194,14 +197,14 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
-            #sacrebleu = datasets.load_metric('sacrebleu')
+            meteor = datasets.load_metric("meteor")
 
-            #sacrebleu.add(prediction=model_2_text, reference=model_1_text)
+            meteor.add(prediction=model_2_text, reference=model_1_text)
 
         pairwise_comparison_list.append(model_pair_dict)
 
-        #sacrebleu_score = sacrebleu.compute()
-        #row["sacrebleu_score"] = sacrebleu_score
+        meteor_score = meteor.compute()
+        row["meteor_score"] = meteor_score
 
         with open(f"{output_dir}/pairwise_metrics.csv", 'w', newline='') as csv_file:
 
