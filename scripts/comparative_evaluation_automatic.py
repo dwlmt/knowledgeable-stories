@@ -9,6 +9,7 @@ import fire
 import more_itertools
 import pandas
 from jsonlines import jsonlines
+from more_itertools import distinct_permutations
 from tqdm import tqdm
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 
@@ -69,15 +70,16 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
         for obj in reader:
             sentences = sentence_splitter.split_sentences(cleanup_text(obj["passage"]))
-            prompt_text =  " ".join(prompt_dict[obj["story_id"]]["sentences"])
-            prompt_text = f"<p><b>{prompt_text}</b></p>"
+            #prompt_text =  " ".join(prompt_dict[obj["story_id"]]["sentences"])
+            #prompt_text = f"<p><b>{prompt_text}</b></p>"
 
             #sentences = prompt_text + sentences
             sentences = sentences[ : story_length]
             sentence_text = " ".join(sentences)
-            sentence_text = f"<p>{sentence_text}</p>"
+            #sentence_text = f"<p>{sentence_text}</p>"
 
-            story_text = f"{prompt_text} {sentence_text}"
+            #story_text = f"{prompt_text} {sentence_text}"
+            story_text = f"{sentence_text}"
 
             length_list.append({"story_id": obj["story_id"], "type": "gold", "story_length_char": len(story_text)})
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": story_text, "story_length_char": len(story_text)}
@@ -131,7 +133,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     print(f"Gold: {gold_dict.values()}")
     print(f"Models: {models_dict.values()}")
 
-    csv_rows = []
+    aligned_rows = []
 
     for p_key, p_val in prompt_dict.items():
         csv_row_dict = collections.OrderedDict()
@@ -153,20 +155,19 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         if len(models_rows) == number_of_models:
 
             for i, r in enumerate(models_rows, start=1):
-                csv_row_dict[f"story_{i}"] = r["passage"]
-                csv_row_dict[f"story_{i}_type"] = r["type"]
+                csv_row_dict[f"story_{r['type']}"] = r["passage"]
 
                 if debug_prefix:
                     csv_row_dict[f"story_{i}"] = f"STORY TYPE DEBUG {r['type']} : " + csv_row_dict[f"story_{i}"]
 
-            csv_rows.append(csv_row_dict)
+            aligned_rows.append(csv_row_dict)
 
     with open(f"{output_dir}/aws.csv", 'w', newline='') as csv_file:
 
-        csv_writer = csv.DictWriter(csv_file, fieldnames=list(csv_rows[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer = csv.DictWriter(csv_file, fieldnames=list(aligned_rows[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
         csv_writer.writeheader()
 
-        for row in csv_rows:
+        for row in aligned_rows:
             #print(f"Row: {row}")
             csv_writer.writerow(row)
 
@@ -178,26 +179,30 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
     # Do the pairwise comparison.
     pairwise_comparison_list = []
-    model_permutations = more_itertools.distinct_permutations(models_dict.keys(), 2)
+    model_permutations = distinct_permutations(models_dict.keys(), 2)
 
     for model_pair in model_permutations:
         model_pair_dict = collections.OrderedDict()
         model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
         model_pair_dict["pair_name"] = model_pair_dict
 
-        print(model_pair_name)
+
+
+        for row in aligned_rows:
+            model_1_text = f"story_{row[model_pair[0]]}"
+            model_2_text = f"story_{row[model_pair[1]]}"
+
+            print(model_pair_name, model_1_text, model_2_text)
 
         pairwise_comparison_list.append(model_pair_dict)
 
     with open(f"{output_dir}/pairwise_evaluation.csv", 'w', newline='') as csv_file:
 
-        csv_writer = csv.DictWriter(csv_file, fieldnames=list(csv_rows[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
+        csv_writer = csv.DictWriter(csv_file, fieldnames=list(pairwise_comparison_list[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
         csv_writer.writeheader()
 
         for row in pairwise_comparison_list:
             csv_writer.writerow(row)
-
-
 
 def str2bool(v):
     if isinstance(v, bool):
