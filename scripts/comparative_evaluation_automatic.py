@@ -32,7 +32,7 @@ def ensure_dir(file_path):
 
 def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
          output_dir: str, debug_prefix: bool = False,
-         story_length=20):
+         story_length=20, max_story_length=25):
 
     print("Input", models_json, models_types)
 
