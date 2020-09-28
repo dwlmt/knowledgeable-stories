@@ -13,8 +13,6 @@ from jsonlines import jsonlines
 
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from more_itertools import distinct_permutations
-from nlp.metrics.bertscore.fb176889831bf0ce995ed197edc94b2e9a83f647a869bb8c9477dbb2d04d0f08.bertscore import BERTScore
-
 
 def cleanup_text(param):
     if param is None or len(param) == 0:
