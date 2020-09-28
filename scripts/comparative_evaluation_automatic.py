@@ -74,7 +74,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             #prompt_text = f"<p><b>{prompt_text}</b></p>"
 
             #sentences = prompt_text + sentences
-            #sentences = sentences[ : story_length]
+            sentences = sentences[story_length : max_story_length]
             sentence_text = " ".join(sentences)
             #sentence_text = f"<p>{sentence_text}</p>"
 
@@ -115,7 +115,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
                 prompt_text = " ".join(prompt_list)
                 #prompt_text = f"<p><b>{prompt_text}</b></p>"
 
-                #sentences = sentences[story_length :]
+                sentences = sentences[story_length : max_story_length]
                 sentence_text = " ".join(sentences)
                 #sentence_text = f"<p>{sentence_text}</p>"
 
