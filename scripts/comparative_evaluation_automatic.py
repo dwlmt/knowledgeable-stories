@@ -189,10 +189,10 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         model_pair_dict["model_one"] = model_pair[0]
         model_pair_dict["model_two"] = model_pair[1]
 
-        model_1_text = row[f"story_{model_pair[0]}"]
-        model_2_text = row[f"story_{model_pair[1]}"]
-
         for row in aligned_rows:
+
+            model_1_text = row[f"story_{model_pair[0]}"]
+            model_2_text = row[f"story_{model_pair[1]}"]
 
             #sacrebleu = datasets.load_metric('sacrebleu')
 
