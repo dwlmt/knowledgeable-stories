@@ -206,7 +206,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
         sacrebleu_score = scarebleu.compute()
         row["sacrebleu_score"] = sacrebleu_score
 
-        with open(f"{output_dir}/pairwise_merics.csv", 'w', newline='') as csv_file:
+        with open(f"{output_dir}/pairwise_metrics.csv", 'w', newline='') as csv_file:
 
             csv_writer = csv.DictWriter(csv_file, fieldnames=list(pairwise_comparison_list[0].keys()), quoting=csv.QUOTE_NONNUMERIC)
             csv_writer.writeheader()
