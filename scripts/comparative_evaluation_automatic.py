@@ -13,8 +13,6 @@ from jsonlines import jsonlines
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from more_itertools import distinct_permutations
 
-import datasets
-
 def cleanup_text(param):
     if param is None or len(param) == 0:
         return param
@@ -196,15 +194,13 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
         for row in aligned_rows:
 
-            sacrebleu = datasets.load_metric('sacrebleu')
+            #sacrebleu = datasets.load_metric('sacrebleu')
 
-            sacrebleu.add(prediction=model_2_text, reference=model_1_text)
-
-
+            #sacrebleu.add(prediction=model_2_text, reference=model_1_text)
             pairwise_comparison_list.append(model_pair_dict)
 
-        sacrebleu_score = scarebleu.compute()
-        row["sacrebleu_score"] = sacrebleu_score
+        #sacrebleu_score = sacrebleu.compute()
+        #row["sacrebleu_score"] = sacrebleu_score
 
         with open(f"{output_dir}/pairwise_metrics.csv", 'w', newline='') as csv_file:
 
