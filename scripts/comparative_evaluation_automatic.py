@@ -9,10 +9,9 @@ import fire
 import more_itertools
 import pandas
 from jsonlines import jsonlines
-from more_itertools import distinct_permutations
-from tqdm import tqdm
-from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 
+from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
+from more_itertools import distinct_permutations
 
 def cleanup_text(param):
     if param is None or len(param) == 0:
@@ -183,13 +182,14 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
     model_permutations = distinct_permutations(models_dict.keys(), 2)
 
     for model_pair in model_permutations:
-        model_pair_dict = collections.OrderedDict()
-        model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
-        model_pair_dict["pair_name"] = model_pair_dict
-
-
 
         for row in aligned_rows:
+            model_pair_dict = collections.OrderedDict()
+            model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
+            model_pair_dict["pair_name"] = model_pair_dict
+            model_pair_dict["model_one"] = model_pair[0]
+            model_pair_dict["model_two"] = model_pair[1]
+
             model_1_text = f"story_{row[model_pair[0]]}"
             model_2_text = f"story_{row[model_pair[1]]}"
 
