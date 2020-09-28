@@ -116,7 +116,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
                 sentences = sentences[story_length :]
                 sentence_text = " ".join(sentences)
-                sentence_text = f"<p>{sentence_text}</p>"
+                #sentence_text = f"<p>{sentence_text}</p>"
 
                 #story_text = f"{prompt_text} {sentence_text}"
                 story_text = f"{sentence_text}"
@@ -224,7 +224,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-dir', required=True, type=str, help="The gold standard json.")
-parser.add_argument('--story-length', required=False, type=int, default=30, help="Story length. ")
+parser.add_argument('--story-length', required=False, type=int, default=20, help="Story length. ")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
 parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
