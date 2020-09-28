@@ -193,8 +193,8 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             model_pair_dict["model_one"] = model_pair[0]
             model_pair_dict["model_two"] = model_pair[1]
 
-            model_1_text = f"story_{row[model_pair[0]]}"
-            model_2_text = f"story_{row[model_pair[1]]}"
+            model_1_text = row[f"story_{model_pair[0]}"]
+            model_2_text = row[f"story_{model_pair[1]}"]
 
             print(model_pair_name, model_1_text, model_2_text)
 
