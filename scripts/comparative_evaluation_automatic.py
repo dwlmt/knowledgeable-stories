@@ -8,7 +8,7 @@ from typing import List, OrderedDict
 import fire
 import more_itertools
 import pandas
-from datasets import datasets
+from datasets import load_metric
 from jsonlines import jsonlines
 
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
@@ -195,7 +195,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
-            meteor = datasets.load_metric("meteor")
+            meteor = load_metric("meteor")
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
 
