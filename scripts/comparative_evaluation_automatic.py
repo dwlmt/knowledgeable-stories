@@ -111,15 +111,16 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                     print(m,t,sentence)
                     sentences.append(cleanup_text(sentence["text"]))
 
-                prompt_list = prompt_dict[story_id]["sentences"]
+                prompt_list = sentences[: story_length]
                 prompt_text = " ".join(prompt_list)
-                prompt_text = f"<p><b>{prompt_text}</b></p>"
+                #prompt_text = f"<p><b>{prompt_text}</b></p>"
 
-                sentences = sentences[len(prompt_list): story_length]
+                sentences = sentences[story_length :]
                 sentence_text = " ".join(sentences)
                 sentence_text = f"<p>{sentence_text}</p>"
 
-                story_text = f"{prompt_text} {sentence_text}"
+                #story_text = f"{prompt_text} {sentence_text}"
+                story_text = f"{sentence_text}"
 
                 m_dict[story_id]["passage"] = story_text
                 m_dict["story_length_char"] = len(story_text)
