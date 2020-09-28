@@ -185,7 +185,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
         model_pair_dict = collections.OrderedDict()
         model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
-        model_pair_dict["pair_name"] = model_pair_dict
+        model_pair_dict["pair_name"] = model_pair_name
         model_pair_dict["model_one"] = model_pair[0]
         model_pair_dict["model_two"] = model_pair[1]
 
@@ -197,7 +197,8 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             #sacrebleu = datasets.load_metric('sacrebleu')
 
             #sacrebleu.add(prediction=model_2_text, reference=model_1_text)
-            pairwise_comparison_list.append(model_pair_dict)
+
+        pairwise_comparison_list.append(model_pair_dict)
 
         #sacrebleu_score = sacrebleu.compute()
         #row["sacrebleu_score"] = sacrebleu_score
