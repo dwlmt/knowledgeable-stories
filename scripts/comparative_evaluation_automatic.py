@@ -196,13 +196,23 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_2_text = row[f"story_{model_pair[1]}"]
 
             meteor = load_metric("meteor")
+            bleu = load_metric("sacrebleu")
+            bertscore = load_metric("bertscore")
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
+            bleu.add(prediction=model_2_text, reference=model_1_text)
+            bertscore.add(prediction=model_2_text, reference=model_1_text)
 
         pairwise_comparison_list.append(model_pair_dict)
 
         meteor_score = meteor.compute()
         row["meteor_score"] = meteor_score
+
+        bleu_score = bleu.compute()
+        row["bleu_score"] = bleu_score
+
+        bertscore_score = bertscore.compute()
+        row["bert_score"] = bertscore_score
 
         with open(f"{output_dir}/pairwise_metrics.csv", 'w', newline='') as csv_file:
 
