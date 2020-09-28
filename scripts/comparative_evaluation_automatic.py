@@ -32,9 +32,9 @@ def ensure_dir(file_path):
         print(f"Create directory: {directory}")
         os.makedirs(directory)
 
-def create(prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
-           output_dir: str, debug_prefix: bool = False,
-           story_length=20):
+def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types: List[str],
+         output_dir: str, debug_prefix: bool = False,
+         story_length=20):
 
     print("Input", models_json, models_types)
 
@@ -232,7 +232,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
 parser.add_argument('--gold-json', required=True, type=str, help="The gold standard json.")
 parser.add_argument('--output-dir', required=True, type=str, help="The gold standard json.")
-parser.add_argument('--story-length', required=False, type=int, default=20, help="Story length. ")
+parser.add_argument('--story-length', required=False, type=int, default=20, help="Story length.")
+parser.add_argument('--max-story-length', required=False, type=int, default=20, help="Max story length.")
 parser.add_argument('--models-json', required=True, type=str, nargs="+", help="The models generated json output.")
 parser.add_argument('--models-types', required=True, type=str, nargs="+", help="Types for the models.")
 parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
@@ -242,8 +243,8 @@ parser.add_argument("--debug-prefix", type=str2bool, nargs='?',
 
 args = parser.parse_args()
 
-create(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.output_dir,
-       models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
-       story_length=args.story_length)
+eval(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.output_dir,
+     models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
+     story_length=args.story_length, max_story_length=args.max_story_length)
 
 
