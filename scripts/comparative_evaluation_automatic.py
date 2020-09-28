@@ -198,7 +198,7 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
 
             sacrebleu = datasets.load_metric('sacrebleu')
 
-            sacrebleu.add_batch(predictions=[[model_2_text]], references=[[model_1_text]])
+            sacrebleu.add_batch(predictions=[model_2_text], references=[model_1_text])
 
 
             pairwise_comparison_list.append(model_pair_dict)
