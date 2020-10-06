@@ -185,8 +185,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
     for model_pair in model_permutations:
 
-        if model_pair[0] != "gold":
-            continue
+        #if model_pair[0] != "gold":
+        #    continue
 
         model_pair_dict = collections.OrderedDict()
         model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
