@@ -204,7 +204,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
             print(model_2_text, model_1_text)
             meteor.add(prediction=model_2_text, reference=model_1_text)
-            bleu.add(prediction=[model_2_text], reference=[model_1_text])
+            #bleu.add(prediction=[model_2_text], reference=[model_1_text])
             bertscore.add(prediction=model_2_text, reference=[model_1_text])
 
         meteor_score = meteor.compute()
