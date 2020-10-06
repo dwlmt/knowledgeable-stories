@@ -223,10 +223,10 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bertscore.add_batch(predictions=model_2_texts, references=model_1_texts)
 
         meteor_score = meteor.compute()
-        model_pair_dict["meteor_score"] = meteor_score
+        model_pair_dict["meteor_score"] = meteor_score["meteor"]
 
         bleu_score = bleu.compute()
-        model_pair_dict["bleu_score"] = bleu_score
+        model_pair_dict["bleu_score"] = bleu_score["score"]
 
         #bertscore_score = bertscore.compute(lang='en')
         #model_pair_dict["bert_score"] = bertscore_score
