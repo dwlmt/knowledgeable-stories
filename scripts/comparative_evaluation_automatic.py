@@ -193,15 +193,16 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         model_pair_dict["model_one"] = model_pair[0]
         model_pair_dict["model_two"] = model_pair[1]
 
+        meteor = load_metric("meteor")
+        bleu = load_metric("bleu")
+        bertscore = load_metric("bertscore")
+
         for row in aligned_rows:
 
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
-            meteor = load_metric("meteor")
-            bleu = load_metric("bleu")
-            bertscore = load_metric("bertscore")
-
+            print(model_2_text, model_1_text)
             meteor.add(prediction=model_2_text, reference=model_1_text)
             bleu.add(prediction=[model_2_text], reference=[model_1_text])
             bertscore.add(prediction=model_2_text, reference=model_1_text)
