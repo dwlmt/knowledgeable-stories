@@ -204,17 +204,17 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
             print(model_2_text, model_1_text)
             meteor.add(prediction=model_2_text, reference=model_1_text)
-            #bleu.add(prediction=model_2_text, reference=model_1_text)
-            #bertscore.add(prediction=model_2_text, reference=model_1_text)
+            bleu.add(prediction=model_2_text, reference=model_1_text)
+            bertscore.add(prediction=model_2_text, reference=model_1_text)
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score
 
-        #bleu_score = bleu.compute()
-        #model_pair_dict["bleu_score"] = bleu_score
+        bleu_score = bleu.compute()
+        model_pair_dict["bleu_score"] = bleu_score
 
-        #bertscore_score = bertscore.compute(lang='en')
-        #model_pair_dict["bert_score"] = bertscore_score
+        bertscore_score = bertscore.compute(lang='en')
+        model_pair_dict["bert_score"] = bertscore_score
 
         print(model_pair_dict)
 
