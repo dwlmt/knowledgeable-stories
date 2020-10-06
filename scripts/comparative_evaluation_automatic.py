@@ -212,7 +212,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             meteor.add(prediction=model_2_text, reference=model_1_text)
             bleurt.add(prediction=model_2_text, reference=model_1_text)
 
-            print(model_2_text, model_1_text)
+            #print(model_2_text, model_1_text)
 
         '''
         model_2_texts = ['The dog bit the man.', "It wasn't surprising.", 'The man had just bitten him.']
@@ -230,10 +230,11 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu_score = bleu.compute()
         model_pair_dict["bleu_score"] = bleu_score["score"]
 
-        bluert = bleurt.compute()
-        model_pair_dict["bluert_score"] = bluert
+        bluert_score = bleurt.compute()
+        print(bluert_score)
+        model_pair_dict["bluert_score"] = bluert_score
 
-        print(model_pair_dict)
+        #print(model_pair_dict)
 
         pairwise_comparison_list.append(model_pair_dict)
 
