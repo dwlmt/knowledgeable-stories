@@ -10,6 +10,7 @@ import more_itertools
 import pandas
 from datasets import load_metric
 from jsonlines import jsonlines
+import nlp
 
 from allennlp.data.tokenizers.sentence_splitter import SpacySentenceSplitter, SentenceSplitter
 from more_itertools import distinct_permutations
@@ -195,7 +196,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
         meteor = load_metric("meteor")
         bleu = load_metric("sacrebleu")
-        bertscore = load_metric("bertscore")
+        bertscore = nlp.load_metric('metrics/bertscore')
 
         model_1_texts = []
         model_2_texts = []
@@ -228,8 +229,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu_score = bleu.compute()
         model_pair_dict["bleu_score"] = bleu_score["score"]
 
-        #bertscore_score = bertscore.compute(lang='en')
-        #model_pair_dict["bert_score"] = bertscore_score
+        bertscore_score = bertscore.compute(lang='en')
+        model_pair_dict["bert_score"] = bertscore_score
 
         print(model_pair_dict)
 
