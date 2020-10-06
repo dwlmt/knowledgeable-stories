@@ -210,6 +210,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_2_texts.append(model_2_text)
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
+            bluert.add(prediction=model_2_text, reference=model_1_text)
 
             print(model_2_text, model_1_text)
 
@@ -221,7 +222,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         '''
 
         bleu.add_batch(predictions=model_2_texts, references=[model_1_texts])
-        bleurt.add_batch(predictions=model_2_texts, references=model_1_texts)
+        #bleurt.add_batch(predictions=model_2_texts, references=model_1_texts)
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score["meteor"]
@@ -229,8 +230,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu_score = bleu.compute()
         model_pair_dict["bleu_score"] = bleu_score["score"]
 
-        #bluert = bleurt.compute()
-        #model_pair_dict["bluert_score"] = bluert
+        bluert = bleurt.compute()
+        model_pair_dict["bluert_score"] = bluert
 
         print(model_pair_dict)
 
