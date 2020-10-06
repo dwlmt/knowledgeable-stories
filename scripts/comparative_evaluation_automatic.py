@@ -197,15 +197,22 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu = load_metric("bleu")
         bertscore = load_metric("bertscore")
 
+        model_1_texts = []
+        model_2_texts = []
+
         for row in aligned_rows:
 
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
+            model_1_text.append(model_1_text)
+            model_2_texts.append(model_2_text)
+
             print(model_2_text, model_1_text)
-            meteor.add(prediction=model_2_text, reference=model_1_text)
-            bleu.add(prediction=[model_2_text], reference=[model_1_text])
-            #bertscore.add(prediction=model_2_text, reference=[model_1_text])
+
+        meteor.add_batch(predictions=model_2_texts, references=model_1_texts)
+        bleu.add_batch(predictions=model_2_texts, references=[model_1_texts])
+        bertscore.add_batch(predictions=model_2_texts, references=[model_1_texts])
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score
@@ -213,8 +220,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu_score = bleu.compute()
         model_pair_dict["bleu_score"] = bleu_score
 
-        #bertscore_score = bertscore.compute(lang='en')
-        #model_pair_dict["bert_score"] = bertscore_score
+        bertscore_score = bertscore.compute(lang='en')
+        model_pair_dict["bert_score"] = bertscore_score
 
         print(model_pair_dict)
 
