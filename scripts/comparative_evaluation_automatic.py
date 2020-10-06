@@ -229,8 +229,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         bleu_score = bleu.compute()
         model_pair_dict["bleu_score"] = bleu_score["score"]
 
-        bluert = bleurt.compute()
-        model_pair_dict["bluert_score"] = bluert
+        #bluert = bleurt.compute()
+        #model_pair_dict["bluert_score"] = bluert
 
         print(model_pair_dict)
 
