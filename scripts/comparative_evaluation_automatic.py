@@ -196,7 +196,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
         meteor = load_metric("meteor")
         bleu = load_metric("sacrebleu")
-        bertscore = nlp.load_metric('metrics/bertscore')
+        bertscore = load_metric('metrics/bertscore')
 
         model_1_texts = []
         model_2_texts = []
