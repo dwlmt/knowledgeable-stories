@@ -196,7 +196,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
         meteor = load_metric("meteor")
         bleu = load_metric("sacrebleu")
-        bleurt = load_metric('bleurt')
+        #bleurt = load_metric('bleurt')
 
         model_1_texts = []
         model_2_texts = []
@@ -210,7 +210,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_2_texts.append(model_2_text)
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
-            bleurt.add(prediction=model_2_text, reference=model_1_text)
+            #bleurt.add(prediction=model_2_text, reference=model_1_text)
 
             #print(model_2_text, model_1_text)
 
