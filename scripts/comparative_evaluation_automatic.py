@@ -184,7 +184,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
     for model_pair in model_permutations:
 
-        if model_pair[0] is not "gold":
+        if model_pair[0] != "gold":
             continue
 
         model_pair_dict = collections.OrderedDict()
@@ -209,11 +209,11 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score
 
-        bleu_score = bleu.compute()
-        model_pair_dict["bleu_score"] = bleu_score
+        #bleu_score = bleu.compute()
+        #model_pair_dict["bleu_score"] = bleu_score
 
-        bertscore_score = bertscore.compute(lang='en')
-        model_pair_dict["bert_score"] = bertscore_score
+        #bertscore_score = bertscore.compute(lang='en')
+        #model_pair_dict["bert_score"] = bertscore_score
 
         print(model_pair_dict)
 
