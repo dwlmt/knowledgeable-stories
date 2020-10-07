@@ -234,7 +234,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         print(bleurt_score)
         model_pair_dict["bluert_score"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
 
-        bert_score = bertscore.compute()
+        bert_score = bertscore.compute(lang="en")
         print(bert_score)
         model_pair_dict["bert_score"] = sum(bert_score["scores"]) / len(bert_score["scores"])
 
