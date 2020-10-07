@@ -183,8 +183,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
     for model_pair in model_permutations:
 
-        if model_pair[0] != "gold":
-            continue
+        #if model_pair[0] != "gold":
+        #    continue
 
         model_pair_dict = collections.OrderedDict()
         model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
@@ -211,7 +211,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             meteor.add(prediction=model_2_text, reference=model_1_text)
             bleurt.add(prediction=model_2_text, reference=model_1_text)
 
-        bleu.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
+        bleu.add_batch(predictions=[[t] for t in model_2_texts], references=[[t] for t in model_1_texts])
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score["meteor"]
@@ -226,7 +226,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         from bert_score import score
         P, R, F1 = score(model_2_texts, model_1_texts, lang='en', verbose=True)
         print("BERT", P, R, F1)
-        model_pair_dict["bert_score"] = F1
+        model_pair_dict["bert_score"] = F1.mean()
 
         print(model_pair_dict)
 
