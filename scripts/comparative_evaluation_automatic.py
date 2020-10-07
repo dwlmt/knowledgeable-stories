@@ -280,7 +280,8 @@ eval(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.o
 
 '''
 
-eval(prompts_json="$HOME/WP_prompts/test_prompts_1000.jsonl", gold_json="$HOME/WP_prompts/test_gold_1000.jsonl", output_dir=args.output_dir,
+eval(prompts_json="$HOME/WP_prompts/test_prompts_1000.jsonl", gold_json="$HOME/WP_prompts/test_gold_1000.jsonl",
+     output_dir="./story_continuations_eval/",
      models_json=[ "$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
 "$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
 "$HOME/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl",
