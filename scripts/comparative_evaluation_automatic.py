@@ -226,7 +226,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         from bert_score import score
         P, R, F1 = score(model_2_texts, model_1_texts, lang='en', verbose=True)
         print("BERT", P, R, F1)
-        model_pair_dict["bert_score"] = F1.mean()
+        model_pair_dict["bert_score"] = F1.mean().item()
 
         print(model_pair_dict)
 
