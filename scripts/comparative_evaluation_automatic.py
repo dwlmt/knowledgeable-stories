@@ -205,23 +205,13 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             model_1_text = row[f"story_{model_pair[0]}"]
             model_2_text = row[f"story_{model_pair[1]}"]
 
-            model_1_texts.append([model_1_text])
+            model_1_texts.append(model_1_text)
             model_2_texts.append(model_2_text)
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
             bleurt.add(prediction=model_2_text, reference=model_1_text)
-            #bertscore.add(prediction=model_2_text, reference=model_1_text)
 
-            # print(model_2_text, model_1_text)
-
-        '''
-        model_2_texts = ['The dog bit the man.', "It wasn't surprising.", 'The man had just bitten him.']
-        model_1_texts = [['The dog bit the man.', 'The dog had bit the man.'],
-                           ['It was not unexpected.', 'No one was surprised.'],
-                           ['The man bit him first.', 'The man had bitten the dog.']]
-        '''
-
-        bleu.add_batch(predictions=model_2_texts, references=model_1_texts)
+        bleu.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score["meteor"]
@@ -231,11 +221,12 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
         bleurt_score = bleurt.compute()
         print(bleurt_score)
-        model_pair_dict["bluert_score"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
+        model_pair_dict["bleurt_score"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
 
-        #bert_score = bertscore.compute(lang="en")
-        #print(bert_score)
-        #model_pair_dict["bert_score"] = sum(bert_score["scores"]) / len(bert_score["scores"])
+        from bert_score import score
+        P, R, F1 = score(model_2_text, model_1_text, lang='en', verbose=True)
+        print("BERT", P, R, F1)
+        model_pair_dict["bert_score"] = F1
 
         print(model_pair_dict)
 
