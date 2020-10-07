@@ -224,7 +224,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         model_pair_dict["bleurt_score"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
 
         from bert_score import score
-        P, R, F1 = score(model_2_text, model_1_text, lang='en', verbose=True)
+        P, R, F1 = score(model_2_texts, model_1_texts, lang='en', verbose=True)
         print("BERT", P, R, F1)
         model_pair_dict["bert_score"] = F1
 
