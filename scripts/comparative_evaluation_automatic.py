@@ -280,12 +280,12 @@ eval(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.o
 
 '''
 
-eval(prompts_json="$HOME/WP_prompts/test_prompts_1000.jsonl", gold_json="$HOME/WP_prompts/test_gold_1000.jsonl",
+eval(prompts_json="/home/s1569885/WP_prompts/test_prompts_1000.jsonl", gold_json="/home/s1569885/WP_prompts/test_gold_1000.jsonl",
      output_dir="./story_continuations_eval/",
-     models_json=[ "$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
-"$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
-"$HOME/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl",
-"$HOME/stories_continuation/story_context_lm_big.jsonl"], models_types=["tdvae", "tdvae_memory", "lstm", "lm"], debug_prefix=False,
+     models_json=[ "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
+"/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
+"/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl",
+"/home/s1569885/stories_continuation/story_context_lm_big.jsonl"], models_types=["tdvae", "tdvae_memory", "lstm", "lm"], debug_prefix=False,
      story_length=20, max_story_length=25)
 
 
