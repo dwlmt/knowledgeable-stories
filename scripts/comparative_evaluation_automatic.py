@@ -257,6 +257,8 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+
+'''
 parser = argparse.ArgumentParser(
     description='Run stats from  the prediction output, clustering and stats for the annotations and predictions.')
 parser.add_argument('--prompts-json', required=True, type=str, help="The standalone prompts.")
@@ -275,3 +277,14 @@ args = parser.parse_args()
 eval(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.output_dir,
      models_json=args.models_json, models_types=args.models_types, debug_prefix=args.debug_prefix,
      story_length=args.story_length, max_story_length=args.max_story_length)
+
+'''
+
+eval(prompts_json="$HOME/WP_prompts/test_prompts_1000.jsonl", gold_json="$HOME/WP_prompts/test_gold_1000.jsonl", output_dir=args.output_dir,
+     models_json=[ "$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
+"$HOME/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
+"$HOME/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl",
+"$HOME/stories_continuation/story_context_lm_big.jsonl"], models_types=["tdvae", "tdvae_memory", "lstm", "lm"], debug_prefix=False,
+     story_length=20, max_story_length=25)
+
+
