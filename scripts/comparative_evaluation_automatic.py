@@ -238,7 +238,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         print(bert_score)
         model_pair_dict["bert_score"] = sum(bert_score["scores"]) / len(bert_score["scores"])
 
-        # print(model_pair_dict)
+        print(model_pair_dict)
 
         pairwise_comparison_list.append(model_pair_dict)
 
