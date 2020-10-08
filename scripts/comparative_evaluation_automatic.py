@@ -183,7 +183,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
     for model_pair in model_permutations:
 
-        #if model_pair[0] != "gold":
+        # if model_pair[0] != "gold":
         #    continue
 
         model_pair_dict = collections.OrderedDict()
@@ -195,8 +195,7 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         meteor = load_metric("meteor")
         bleu = load_metric("sacrebleu")
         bleurt = load_metric('bleurt')
-        #bertscore = load_metric('bertscore')
-
+        # bertscore = load_metric('bertscore')
 
         model_1_texts = []
         model_2_texts = []
@@ -254,7 +253,6 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-
 '''
 parser = argparse.ArgumentParser(
     description='Run stats from  the prediction output, clustering and stats for the annotations and predictions.')
@@ -277,12 +275,14 @@ eval(prompts_json=args.prompts_json, gold_json=args.gold_json, output_dir=args.o
 
 '''
 
-eval(prompts_json="/home/s1569885/WP_prompts/test_prompts_1000.jsonl", gold_json="/home/s1569885/WP_prompts/test_gold_1000.jsonl",
+eval(prompts_json="/home/s1569885/WP_prompts/test_prompts_1000.jsonl",
+     gold_json="/home/s1569885/WP_prompts/test_gold_1000.jsonl",
      output_dir="./story_continuations_eval/",
-     models_json=[ "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
-"/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
-"/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl", "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_transformer_26599.jsonl"
-"/home/s1569885/stories_continuation/story_context_lm_big.jsonl"], models_types=["tdvae", "tdvae_memory", "lstm", "transformer","lm"], debug_prefix=False,
+     models_json=[
+         "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_anneal_27306.jsonl",
+         "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_tdvae_big_wider_memory_avg_30631.jsonl",
+         "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_lstm.jsonl",
+         "/home/s1569885/stories_continuation/story_context_wp_kb_big_text_medium_transformer_26599.jsonl",
+         "/home/s1569885/stories_continuation/story_context_lm_big.jsonl"],
+     models_types=["tdvae", "tdvae_memory", "lstm", "transformer", "lm"], debug_prefix=False,
      story_length=20, max_story_length=25)
-
-
