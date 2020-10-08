@@ -210,9 +210,10 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
             meteor.add(prediction=model_2_text, reference=model_1_text)
             bleurt.add(prediction=model_2_text, reference=model_1_text)
+            rouge.add(prediction=model_2_text, reference=model_1_text)
 
         bleu.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
-        rouge.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
+
 
         meteor_score = meteor.compute()
         model_pair_dict["meteor_score"] = meteor_score["meteor"]
