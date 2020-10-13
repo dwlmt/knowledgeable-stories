@@ -72,15 +72,19 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
             # prompt_text = f"<p><b>{prompt_text}</b></p>"
 
             # sentences = prompt_text + sentences
-            sentences = sentences[story_length: max_story_length]
-            sentence_text = " ".join(sentences)
-            # sentence_text = f"<p>{sentence_text}</p>"
+            if len(sentences) < max_story_length:
+                continue
 
-            # story_text = f"{prompt_text} {sentence_text}"
-            story_text = f"{sentence_text}"
+            prompt_sentences = sentences[:story_length]
+            prompt_dict[obj["story_id"]]["passage"] += " ".join(prompt_sentences)
+            prompt_dict[obj["story_id"]]["sentences"] += prompt_sentences
+
+            sentences = sentences[story_length: max_story_length]
+            story_text = " ".join(sentences)
+
 
             length_list.append({"story_id": obj["story_id"], "type": "gold", "story_length_char": len(story_text)})
-            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": story_text,
+            gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": sentences,
                                           "story_length_char": len(story_text)}
 
     models_dict["gold"] = gold_dict
@@ -110,18 +114,10 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
                     print(m, t, sentence)
                     sentences.append(cleanup_text(sentence["text"]))
 
-                prompt_list = sentences  # sentences[: story_length]
-                prompt_text = " ".join(prompt_list)
-                # prompt_text = f"<p><b>{prompt_text}</b></p>"
-
                 sentences = sentences[story_length: max_story_length]
-                sentence_text = " ".join(sentences)
-                # sentence_text = f"<p>{sentence_text}</p>"
+                story_text = " ".join(sentences)
 
-                # story_text = f"{prompt_text} {sentence_text}"
-                story_text = f"{sentence_text}"
-
-                m_dict[story_id]["passage"] = story_text
+                m_dict[story_id]["passage"] = sentences
                 m_dict["story_length_char"] = len(story_text)
 
                 length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
@@ -183,8 +179,10 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
 
     for model_pair in model_permutations:
 
-        # if model_pair[0] != "gold":
-        #    continue
+        meteor_total = 0.0
+        bleu_total = 0.0
+        bleurt_total = 0.0
+        bertscore_total = 0.0
 
         model_pair_dict = collections.OrderedDict()
         model_pair_name = f"{model_pair[0]}_{model_pair[1]}"
@@ -192,46 +190,62 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
         model_pair_dict["model_one"] = model_pair[0]
         model_pair_dict["model_two"] = model_pair[1]
 
-        meteor = load_metric("meteor")
-        bleu = load_metric("sacrebleu")
-        rouge = load_metric("rouge")
-        bleurt = load_metric('bleurt')
-        # bertscore = load_metric('bertscore')
+        sentences = list(range(1, max_story_length - story_length + 1, 1))
+        num_extended = len(sentences)
+        for i in sentences:
 
-        model_1_texts = []
-        model_2_texts = []
+            # if model_pair[0] != "gold":
+            #    continue
 
-        for row in aligned_rows:
-            model_1_text = row[f"story_{model_pair[0]}"]
-            model_2_text = row[f"story_{model_pair[1]}"]
+            meteor = load_metric("meteor")
+            bleu = load_metric("sacrebleu")
+            bleurt = load_metric('bleurt')
+            # bertscore = load_metric('bertscore')
 
-            model_1_texts.append(model_1_text)
-            model_2_texts.append(model_2_text)
+            model_1_texts = []
+            model_2_texts = []
 
-            meteor.add(prediction=model_2_text, reference=model_1_text)
-            bleurt.add(prediction=model_2_text, reference=model_1_text)
-            rouge.add(prediction=model_2_text, reference=model_1_text)
+            for row in aligned_rows:
 
-        bleu.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
+                print(row)
+                if i > len(row[f"story_{model_pair[0]}"]) or  i > len(row[f"story_{model_pair[1]}"]):
+                    continue
+
+                model_1_text = row[f"story_{model_pair[0]}"][i-1]
+                model_2_text = row[f"story_{model_pair[1]}"][i-1]
+
+                model_1_texts.append(model_1_text)
+                model_2_texts.append(model_2_text)
+
+                meteor.add(prediction=model_2_text, reference=model_1_text)
+                bleurt.add(prediction=model_2_text, reference=model_1_text)
+
+            bleu.add_batch(predictions=model_2_texts, references=[[t] for t in model_1_texts])
+
+            meteor_score = meteor.compute()
+            model_pair_dict[f"meteor_score_{i}"] = meteor_score["meteor"]
+            meteor_total += meteor_score["meteor"]
+
+            bleu_score = bleu.compute()
+            model_pair_dict[f"bleu_score_{i}"] = bleu_score["score"]
+            bleu_total += bleu_score["score"]
+
+            bleurt_score = bleurt.compute()
+            print(bleurt_score)
+            model_pair_dict[f"bleurt_score_{i}"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
+            bleurt_total += sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
 
 
-        meteor_score = meteor.compute()
-        model_pair_dict["meteor_score"] = meteor_score["meteor"]
+            from bert_score import score
+            P, R, F1 = score(model_2_texts, model_1_texts, lang='en', verbose=True)
+            print("BERT", P, R, F1)
+            model_pair_dict[f"bert_score_{i}"] = F1.mean().item()
+            bertscore_total += F1.mean().item()
 
-        bleu_score = bleu.compute()
-        model_pair_dict["bleu_score"] = bleu_score["score"]
-
-        rouge_score = rouge.compute()
-        model_pair_dict["rouge_score"] = rouge_score["rougeL"]["high"].fmeasure
-
-        bleurt_score = bleurt.compute()
-        print(bleurt_score)
-        model_pair_dict["bleurt_score"] = sum(bleurt_score["scores"]) / len(bleurt_score["scores"])
-
-        from bert_score import score
-        P, R, F1 = score(model_2_texts, model_1_texts, lang='en', verbose=True)
-        print("BERT", P, R, F1)
-        model_pair_dict["bert_score"] = F1.mean().item()
+        model_pair_dict[f"bleu_score_all"] = bleu_total / num_extended
+        model_pair_dict[f"meteor_score_all"] = meteor_total / num_extended
+        model_pair_dict[f"bleurt_score_all"] = bleurt_total / num_extended
+        model_pair_dict[f"bert_score_all"] = bertscore_total / num_extended
 
         print(model_pair_dict)
 
