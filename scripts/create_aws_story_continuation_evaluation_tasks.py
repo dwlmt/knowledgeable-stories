@@ -79,14 +79,14 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
             prompt_dict[obj["story_id"]]["passage"] = f"{prompt_dict[obj['story_id']]['passage']} {' '.join(prompt_sentences)}"
             prompt_dict[obj["story_id"]]["sentences"] += prompt_sentences
 
-            continuation_sentences = sentences[story_length: max_story_length]
-            sentence_text = " ".join(continuation_sentences)
-            # sentence_text = f"<p>{sentence_text}</p>"
+            continuation_sentences = sentences[story_length: max_story_length + 2]
 
-            # story_text = f"{prompt_text} {sentence_text}"
+            sentence_text = " ".join(continuation_sentences)
+           
             story_text = f"{sentence_text}"
 
-            length_list.append({"story_id": obj["story_id"], "type": "gold", "story_length_char": len(story_text)})
+            if len(story_text) > 0:
+                length_list.append({"story_id": obj["story_id"], "type": "gold", "story_length_char": len(story_text)})
             gold_dict[obj["story_id"]] = {"story_id": obj["story_id"], "passage": story_text,
                                           "story_length_char": len(story_text)}
 
@@ -118,13 +118,28 @@ def create(prompts_json: str, gold_json: str, models_json: List[str], models_typ
                     sentences.append(cleanup_text(sentence["text"]))
 
                 sentences = sentences[story_length: ]
-                sentence_text = " ".join(sentences)
+
+                #print(gold_dict.keys())
+                if story_id in gold_dict:
+                    gold_len = len(gold_dict[story_id]['passage'])
+                else:
+                    gold_len = 10000
+
+                if "tdvae" not in t:
+                    gold_len -= 90
+
+                sentence_text = ""
+                for c in sentences:
+                    if len(sentence_text) < gold_len:
+                        sentence_text += f" {c}"
+
                 story_text = f"{sentence_text}"
 
                 m_dict[story_id]["passage"] = story_text
                 m_dict["story_length_char"] = len(story_text)
 
-                length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
+                if len(story_text) > 0:
+                    length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
 
 
         models_dict[t] = m_dict
