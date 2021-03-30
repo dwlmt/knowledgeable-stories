@@ -1,4 +1,4 @@
-name: allennlp
+name: allennlp-0.9
 channels:
   - pytorch
   - plotly
@@ -103,8 +103,6 @@ dependencies:
     - docopt==0.6.2
     - docutils==0.15.2
     - editdistance==0.5.3
-    - en-core-web-md==2.1.0
-    - en-core-web-sm==2.1.0
     - filelock==3.0.12
     - firebase-admin==4.0.0
     - flaky==3.6.1
