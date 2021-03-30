@@ -339,12 +339,16 @@ class KnowledgeablePredictor(Predictor):
 
     def _suspense_tdvae_metrics(self, sentence_batch, cached_dict):
 
-        curr_sampled_x = cached_dict['tdvae_rollout_sampled_x']
+        #curr_sampled_x = cached_dict['tdvae_rollout_sampled_x']
+
+        if 'tdvae_rollout_sampled_z2' not in cached_dict or 'tdvae_sampled_z1' not in cached_dict:
+            return
+
         curr_sampled_z2 = cached_dict['tdvae_rollout_sampled_z2']
         curr_sampled_z1 = cached_dict['tdvae_sampled_z1']
 
         print(
-            f"TDVAE Sampled sizes: Sampled X - {curr_sampled_x.size()}, Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
+            f"TDVAE Sampled sizes:  Sampled Z1 - {curr_sampled_z1.size()}, Sampled Z2 - {curr_sampled_z2.size()}")
 
         for s in sentence_batch:
             if "prediction_metrics" not in s:

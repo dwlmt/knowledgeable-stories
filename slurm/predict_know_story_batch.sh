@@ -17,7 +17,7 @@ set -e # fail fast
 export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
 
 # Activate Conda
-source /home/${USER}/miniconda3/bin/activate allennlp
+source /home/${USER}/miniconda3/bin/activate allennlp-0.9
 
 echo "I'm running on ${SLURM_JOB_NODELIST}"
 dt=$(date '+%d_%m_%y__%H_%M')
@@ -47,7 +47,7 @@ for i in "${ScratchPathArray[@]}"; do
   fi
 done
 
-find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut -d ' ' -f 2- | sed -e 's/^/"/' -e 's/$/"/' | xargs rm -rf
+
 
 echo ${SCRATCH_HOME}
 
@@ -75,6 +75,7 @@ allennlp predict --include-package knowledgeablestories --predictor ${PREDICTOR}
   ${MODEL_ZIP} \
   ${PREDICTION_STORY_FILE} --cuda-device -1 \
   --batch-size 1 \
+  --overrides '{"model.lm_memory_cuda_device": 0, "model.lm_device": 0, "model.tdvae_device": 0}' \
   --output-file ${SERIAL_DIR}/${EXP_ID}_prediction_output.jsonl
 
 echo "============"

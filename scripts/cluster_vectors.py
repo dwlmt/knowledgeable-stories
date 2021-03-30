@@ -152,7 +152,7 @@ def export_figure(args, fig, save_path):
     if not args["no_html_plots"]:
         file_path = f"{save_path}.html"
         print(f"Save plot: {file_path}")
-        pio.write_html(fig, file_path)
+        pio.write_html(fig, file_path,include_plotlyjs='cdn', include_mathjax='cdn', auto_open=False)
     '''
     if not args["no_pdf_plots"]:
         file_path = f"{save_path}.pdf"

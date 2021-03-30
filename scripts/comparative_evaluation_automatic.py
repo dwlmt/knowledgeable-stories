@@ -120,7 +120,8 @@ def eval(prompts_json: str, gold_json: str, models_json: List[str], models_types
                 m_dict[story_id]["passage"] = sentences
                 m_dict["story_length_char"] = len(story_text)
 
-                length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
+                if len(story_text) > 0:
+                    length_list.append({"story_id": story_id, "type": t, "story_length_char": len(story_text)})
 
         models_dict[t] = m_dict
 

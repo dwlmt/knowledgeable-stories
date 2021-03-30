@@ -17,7 +17,7 @@ set -e # fail fast
 export CURRENT_TIME=$(date "+%Y_%m_%d_%H%M%S")
 
 # Activate Conda
-source /home/${USER}/miniconda3/bin/activate allennlp
+source /home/${USER}/miniconda3/bin/activate allennlp-0.9
 
 echo "I'm running on ${SLURM_JOB_NODELIST}"
 dt=$(date '+%d_%m_%y__%H_%M')
@@ -55,7 +55,7 @@ for i in "${ScratchPathArray[@]}"; do
   fi
 done
 
-find ${SCRATCH_HOME} -type d -name "*" -mtime +7 -printf "%T+ %p\n" | sort | cut -d ' ' -f 2- | sed -e 's/^/"/' -e 's/$/"/' | xargs rm -rf
+
 
 echo ${SCRATCH_HOME}
 

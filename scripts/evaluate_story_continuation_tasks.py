@@ -79,14 +79,10 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
             #d_dict["best_summary"] = json_answers["best_summary"]
             #d_dict["worst_summary"] = json_answers["worst_summary"]
 
-            # Swap around the ranking to story ranking.
-            for r in range(1, number_of_story_types + 1):
+            for t in ["overall","coherence","relevance","style","suspense"]:
 
-                for t in ["overall","coherence","style"]:
-                    value = json_answers[f"{t}_ranking_{r}"]
-                    if int(value) == i:
-                        print(f"{t}_ranking",r)
-                        d_dict[f"{t}_ranking"] = int(r)
+                if f"{t}_ranking_{i}" in json_answers:
+                    d_dict[f"{t}_ranking"] = int(json_answers[f"{t}_ranking_{i}"])
 
             deanonymised_list.append(d_dict)
 

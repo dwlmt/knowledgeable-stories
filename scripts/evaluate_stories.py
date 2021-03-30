@@ -10,7 +10,7 @@ import colorlover
 import numpy
 import pandas
 import pandas as pd
-import plotly.graph_objs as go
+import plotly.graph_objects as go
 import plotly.io as pio
 import scipy
 import torch
@@ -157,9 +157,9 @@ def contineous_evaluation(annotator_df, position_df, args, metric_columns):
 
     train_df = train_df.loc[train_df['worker_id'] != 'mean']
 
-    cont_model_predictions(args, train_df, metric_columns)
+    #cont_model_predictions(args, train_df, metric_columns)
     cont_model_pred_to_ann(args, train_df, metric_columns)
-    cont_worker_to_worker(args, train_df)
+    #cont_worker_to_worker(args, train_df)
 
 
 def cont_worker_to_worker(args, train_df):
@@ -348,7 +348,6 @@ def cont_model_pred_to_ann(args, train_df, metric_columns):
 
         story_results_df = pandas.DataFrame(data=story_data)
         story_results_df.to_csv(f"{args['output_dir']}/sentence_model_evaluation/model_to_ann_rel_to_abs_story.csv")
-    return col, story_ids
 
 
 def cont_model_predictions(args, train_df, metric_columns):
@@ -721,6 +720,7 @@ def evaluate_stories(args):
     df_list = [r for r in extract_rows(args)]
 
     position_df = pandas.concat(df_list)
+    position_df.fillna(0.0)
 
     metric_columns = [i for i in list(position_df.columns) if i.startswith("metric")]
     metric_columns = sorted(metric_columns)
@@ -737,6 +737,8 @@ def evaluate_stories(args):
 
         if args["exclude_worker_ids"] is not None and len(args["exclude_worker_ids"]) > 0:
             annotator_df = annotator_df[~annotator_df["worker_id"].isin(args["exclude_worker_ids"])]
+
+    annotator_df.fillna(0.0)
 
     plot_annotator_and_model_predictions(position_df, annotator_df, args, metric_columns)
     if annotator_df is not None:
@@ -783,12 +785,12 @@ def export_plots(args, file, fig):
     if not args["no_html_plots"]:
         file_path = f"{args['output_dir']}/{file}.html"
         print(f"Save plot: {file_path}")
-        pio.write_html(fig, file_path)
+        pio.write_html(fig, file_path,include_plotlyjs='cdn', include_mathjax='cdn', auto_open=False)
 
     if not args["no_pdf_plots"]:
         file_path = f"{args['output_dir']}/{file}.pdf"
         print(f"Save plot pdf: {file_path}")
-        pio.write_image(fig, file_path)
+        #pio.write_image(fig, file_path)
 
 def optionally_top_n_peaks(num_of_peaks, peak_indices, peaks_meta):
     if num_of_peaks > 0 and len(peak_indices) > 0:
