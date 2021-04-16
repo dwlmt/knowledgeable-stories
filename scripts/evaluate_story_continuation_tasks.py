@@ -218,6 +218,10 @@ def anova_and_tukey(output_dir, story_df, questions):
         print("TUKEY", tukey)
         tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
 
+        ttests = pg.pairwise_ttests(dv=value_col,between='model_type', data=story_df).round(4)
+        print("TTests", ttests)
+        ttests.to_csv(f"{output_dir}/{value_col}_ttests.csv")
+
 
 def summary_stats(output_dir, story_df):
     story_type_summary_statistics = story_df.groupby('model_type').describe().unstack(1)

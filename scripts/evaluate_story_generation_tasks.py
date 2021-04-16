@@ -82,7 +82,7 @@ def evaluate(aws_results, output_dir, number_of_story_types, questions):
             # Swap around the ranking to story ranking.
             for r in range(1, number_of_story_types + 1):
 
-                for t in ["overall","coherence","style"]:
+                for t in ["overall","coherence","style","suspense","relevance"]:
                     value = json_answers[f"{t}_ranking_{r}"]
                     if int(value) == i:
                         print(f"{t}_ranking",r)
@@ -222,6 +222,10 @@ def anova_and_tukey(output_dir, story_df, questions):
         print("TUKEY", tukey)
         tukey.to_csv(f"{output_dir}/{value_col}_tukey.csv")
 
+        ttests = pg.pairwise_ttests(dv=value_col, between='model_type', data=story_df).round(4)
+        print("TTests", ttests)
+        ttests.to_csv(f"{output_dir}/{value_col}_ttests.csv")
+
 
 def summary_stats(output_dir, story_df):
     story_type_summary_statistics = story_df.groupby('model_type').describe().unstack(1)
@@ -250,7 +254,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--aws-results', required=True, type=str, nargs="+", help="List of AWS results.")
 parser.add_argument('--output-dir', required=True, type=str, help="The output dir for the results.")
 parser.add_argument('--number-of-story-types', required=False, type=int, default=5, help="Number of stories in the AWS evaluation.")
-parser.add_argument('--questions', required=False, type=str, default=["overall", "coherence", "style"])
+parser.add_argument('--questions', required=False, type=str, default=["overall", "coherence", "relevance", "style", "suspense"])
 
 
 args = parser.parse_args()
