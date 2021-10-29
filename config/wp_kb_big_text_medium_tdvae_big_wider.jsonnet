@@ -493,7 +493,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "num_layers": 6,
          "samples_per_seq": 100,
          "t_diff_min": 1,
-         "t_diff_max": 8,
+         "t_diff_max": 5,
          "d_block_hidden_size": 512,
          "decoder_hidden_sizes": [6144, 4096, 2048],
          "kl_loss_weight": 5.0,
