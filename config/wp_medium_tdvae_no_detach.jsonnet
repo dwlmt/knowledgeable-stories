@@ -120,7 +120,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
          "num_layers": 5,
          "samples_per_seq": 200,
          "t_diff_min": 1,
-         "t_diff_max": 8,
+         "t_diff_max": 5,
          "d_block_hidden_size": 128,
          "decoder_hidden_size": 256,
     },
