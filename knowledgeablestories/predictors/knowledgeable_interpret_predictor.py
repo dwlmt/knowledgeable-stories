@@ -133,14 +133,20 @@ class KnowledgeableInterpretPredictor(Predictor):
 
     def _split_sentences_if_required(self, inputs):
         # If whole text rather than sentences are provided then split the sentences.
-        if "text" in inputs and "sentences" not in inputs:
-            sentences = self._sentence_splitter.split_sentences(inputs["text"])
+        if ("passage" in inputs or "story" in inputs) and "sentences" not in inputs:
+
+            if "passage" in inputs:
+                sentences = self._sentence_splitter.split_sentences(inputs["passage"])
+            elif "story" in inputs:
+                sentences = self._sentence_splitter.split_sentences(inputs["story"])
 
             if len(sentences) > 0:
 
                 sentence_dict_list = []
                 for i, sentence in enumerate(sentences):
-                    sentence_dict_list.append({"sentence_num": i, "text": sentence})
+                    token_ids = self._tokenizer._tokenizer.encode(sentence)
+                    sentence_dict_list.append(
+                        {"sentence_num": i, "tokens": token_ids, "text": sentence})
 
                 inputs["sentences"] = sentence_dict_list
 
@@ -161,8 +167,8 @@ class KnowledgeableInterpretPredictor(Predictor):
         add_end_to_sentences = []
         for sent in sentences_text:
 
-            #if "<|endofsentence|>" not in sent:
-            #    sent += " <|endofsentence|>"
+            if "<|endofsentence|>" not in sent:
+                sent += " <|endofsentence|>"
             add_end_to_sentences.append(sent)
 
         sentences_text = add_end_to_sentences

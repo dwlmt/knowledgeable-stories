@@ -389,8 +389,12 @@ class TdvaeStoryWriterPredictor(Predictor):
 
     def _split_sentences_if_required(self, inputs):
         # If whole text rather than sentences are provided then split the sentences.
-        if "passage" in inputs and "sentences" not in inputs:
-            sentences = self._sentence_splitter.split_sentences(inputs["passage"])
+        if ("passage" in inputs or "story" in inputs) and "sentences" not in inputs:
+
+            if "passage" in inputs:
+                sentences = self._sentence_splitter.split_sentences(inputs["passage"])
+            elif "story" in inputs:
+                sentences = self._sentence_splitter.split_sentences(inputs["story"])
 
             if len(sentences) > 0:
 
