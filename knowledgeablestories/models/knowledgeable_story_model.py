@@ -63,7 +63,7 @@ class KnowledgeableStoriesModel(Model):
                  lm_memory_hidden_size: int = 1024,
                  lm_memory_heads: int = 16,
                  lm_memory_cuda_device: int = 3,
-                 lm_memory_max_sentences: int = 15,
+                 lm_memory_max_sentences: int = 16,
                  lm_memory_train_sentence: bool = True,
                  cat_minus: bool = True,
                  passage_tdvae: TDVAE = None,
@@ -147,6 +147,7 @@ class KnowledgeableStoriesModel(Model):
         self._pplm_projection_out = pplm_projection_out
 
         self._lm_memory_cuda_device = torch.device(f'cuda:{lm_memory_cuda_device}')
+
         if lm_memory_dense is not None:
             self._lm_memory_dense = lm_memory_dense.to(self._lm_memory_cuda_device)
         else:
@@ -256,7 +257,7 @@ class KnowledgeableStoriesModel(Model):
         self._sampled = parse_bool(os.getenv("SAMPLED", default="False"))
         self._sentence_disc = parse_bool(os.getenv("SENTENCE_DISC", default="True"))
 
-        self._passage_lm = parse_bool(os.getenv("PASSAGE_LM", default="False"))
+        self._passage_lm = parse_bool(os.getenv("PASSAGE_LM", default="True"))
         self._reinforce_num_sequences = int(os.getenv("REINFORCE_NUM_SEQUENCES", default=10))
         self._reinforce_num_positions = int(os.getenv("REINFORCE_NUM_POSITIONS", default=2))
 
@@ -394,17 +395,16 @@ class KnowledgeableStoriesModel(Model):
 
                     passage_mask = self._passage_masks(lm_mask)
 
-                with torch.set_grad_enabled(False):  # not (self._passage_lm and passage_tuning_random)):
+                with torch.set_grad_enabled(False):
                     encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask).to(self._default_cuda_device)
 
                 if self._sentence_2_seq2seq_encoder is not None or self._sentence_2_seq2vec_encoder is not None:
 
-                    with torch.set_grad_enabled(False):  # not (self._passage_lm and passage_tuning_random)):
+                    with torch.set_grad_enabled(False):
                         encoded_sentences_2 = self._encode_sentences_batch(lm_output, lm_mask, encode=2).to(
                             self._default_cuda_device)
 
-                    if "sentence_disc_loss" in self._loss_weights and not (
-                            self._passage_lm and passage_tuning_random) and not prediction_mode:
+                    if "sentence_disc_loss" in self._loss_weights and passage_tuning_random and not prediction_mode:
                         sentence_disc_loss, sent_disc_output_dict = self._calculate_disc_loss(encoded_sentences,
                                                                                               encoded_sentences_2,
                                                                                               mask=passage_mask,
@@ -441,8 +441,6 @@ class KnowledgeableStoriesModel(Model):
                                                                  passages_storytype,
                                                                  loss)
 
-                if self._sentence_detach:
-                    encoded_sentences_cat = encoded_sentences_cat.detach()
 
                 loss = self.pplm_loss_if_required(encoded_sentences_cat, lm_mask, lm_output, passage_mask, loss)
 
@@ -454,15 +452,7 @@ class KnowledgeableStoriesModel(Model):
                 output["tokens"] = passages["tokens"]
 
                 if self._passage_lm and passage_tuning_random:
-                    lm_output = lm_output.detach().cpu()
-                    lm_mask = lm_mask.detach().cpu()
-                    encoded_sentences = encoded_sentences.detach()
-                    encoded_sentences_cat = encoded_sentences_cat.detach()
-
-                    del lm_output
-                    del lm_mask
-                    del encoded_sentences
-
+                   
                     passages["tokens"] = passages["tokens"].detach()
 
                     if "reinforce_loss" in self._loss_weights:
@@ -470,12 +460,17 @@ class KnowledgeableStoriesModel(Model):
                         loss += reinforce_loss.to(self._default_cuda_device)
                         self._metrics["reinforce_loss"](reinforce_loss)
 
+
                     if "lm_memory_loss" in self._loss_weights:
+                        
                         lm_memory_loss = self._lm_memory_finetune(passages, encoded_sentences_cat)
-                        print(lm_memory_loss)
+
                         loss += lm_memory_loss.to(self._default_cuda_device)
-                        self._metrics["lm_memory_loss"](lm_memory_loss)
+                        self._metrics["lm_memory_loss"](lm_memory_loss.item())
                 else:
+
+                    if self._sentence_detach:
+                        encoded_sentences_cat = encoded_sentences_cat.detach()
 
                     if self._passage_seq2seq_encoder != None:
 
@@ -538,7 +533,7 @@ class KnowledgeableStoriesModel(Model):
                         #    self._evaluate_hierarchy_if_required(conclusions, dataset_name, encoded_sentences_cat,
                         #                                         passages_encoded, lm_mask)
 
-                    if self._passage_tdvae is not None:
+                    if self._passage_tdvae is not None and not passage_tuning_random:
 
                         encoded_sentences_cat = torch.sigmoid(encoded_sentences_cat.detach())
 
@@ -740,46 +735,52 @@ class KnowledgeableStoriesModel(Model):
 
     def _lm_memory_finetune(self, passages, encoded_sentences):
 
-        with torch.set_grad_enabled(not self._lm_memory_train_sentence):
+        with torch.set_grad_enabled(self._lm_memory_train_sentence):
             tokens = passages["tokens"].to(self._lm_device)
+            #print("Orig Tokens", tokens)
 
             loss = torch.tensor(0.0).to(self._default_cuda_device)
-
-            encoded_sentences = torch.squeeze(encoded_sentences, dim=0)
 
             lm_mask = self.create_lm_mask(tokens)
 
             passage_mask = self._passage_masks(lm_mask)
-            max_pass = torch.sum(passage_mask)
+            batch_size, sentence_size = passage_mask.size()
+            #print("Passage Mask", passage_mask)
+            passage_mask_flat = passage_mask.view(batch_size * sentence_size)
+            encoded_sentences_flat = encoded_sentences.view(batch_size * sentence_size, -1)
+            tokens_flat = tokens.view(batch_size * sentence_size, -1)
+            #print("Flat Tokens", tokens_flat)
 
-            # print("Masks", lm_mask.size())
+            #print("Flat", passage_mask_flat.size(), encoded_sentences_flat.size(), tokens_flat.size())
 
-            encoded_sentences = encoded_sentences[0: max_pass]
-            tokens = tokens[:, 0:max_pass, :]
+            encoded_sentences_flat = encoded_sentences_flat[passage_mask_flat]
+            tokens_flat = tokens_flat[passage_mask_flat]
 
-            rand_indices = torch.randperm(max_pass)
-            encoded_sentences = encoded_sentences[rand_indices][: min(self._lm_memory_max_sentences, max_pass), :]
-            tokens = tokens[:, rand_indices, :][:, : min(self._lm_memory_max_sentences, max_pass), :]
+            #print("Non zero", encoded_sentences_flat.size(), tokens_flat.size(),)
 
-            lm_mask = self.create_lm_mask(tokens)
-            lm_mask = torch.cat((torch.ones(lm_mask.size(0), lm_mask.size(1), 1).bool().to(lm_mask.device), lm_mask),
+            rand_indices = torch.randperm(min(self._lm_memory_max_sentences, tokens_flat.size()[0]))
+            encoded_sentences_flat = encoded_sentences_flat[rand_indices]
+            tokens_flat = tokens_flat[rand_indices]
+
+            lm_mask_flat = self.create_lm_mask(tokens_flat)
+            lm_mask_flat = torch.cat((torch.ones(lm_mask_flat.size(0), 1).bool().to(lm_mask_flat.device), lm_mask_flat),
                                 dim=-1)
+            #print("LM Mask Expanded", lm_mask_flat.size())
 
-            if not self._lm_memory_train_sentence:
-                encoded_sentences = encoded_sentences.detach()
+            #print("Encoded Sentences", encoded_sentences)
+            encoded_sentences_flat = encoded_sentences_flat.to(self._lm_memory_cuda_device)
 
-        encoded_sentences = encoded_sentences.to(self._lm_memory_cuda_device)
+            past = self._lm_memory_encode_past_train(encoded_sentences_flat)
 
-        past = self._lm_memory_encode_past_train(encoded_sentences)
+            #print(tokens_flat,lm_mask_flat)
+            #print("LM Input", tokens_flat.size(), past[0].size(), lm_mask_flat.size())
+            lm_loss, lm_logits, _ = self._lm_model(tokens_flat,
+                                                   labels=tokens_flat, past=past, attention_mask=lm_mask_flat)
+    
+            lm_loss *= self._loss_weights["lm_memory_loss"]
+            loss += lm_loss.to(0)
 
-        lm_loss, lm_logits, _ = self._lm_model(tokens,
-                                               labels=tokens, past=past, attention_mask=lm_mask)
-
-        lm_loss *= self._loss_weights["lm_memory_loss"]
-        loss += lm_loss.to(0)
-        self._metrics["lm_memory_loss"](lm_loss.item())
-
-        return loss
+            return loss
 
     def _lm_memory_encode_past_train(self, encoded_sentences):
         self._lm_memory_dense = self._lm_memory_dense.to(self._lm_memory_cuda_device)
@@ -1095,17 +1096,16 @@ class KnowledgeableStoriesModel(Model):
 
         batch_size, sentence_num, feature_size = source_encoded.size()
 
-        # Zero out blank sentences.
-        mask_expanded = torch.unsqueeze(mask, dim=-1).byte()
-        source_encoded = source_encoded.clone() * mask_expanded
-        target_encoded = target_encoded.clone() * mask_expanded
-
         # print("Encoded views", source_encoded.size(), target_encoded.size())
         source_encoded_flat = source_encoded.view(batch_size * sentence_num, feature_size)
         target_encoded_flat = target_encoded.view(batch_size * sentence_num, feature_size)
+        mask_flat = mask.view(batch_size * sentence_num)
+
+        #number_of_sentences = torch.sum(mask_flat.byte(),dim=-1)
+        source_encoded_flat = source_encoded_flat[mask_flat]
+        target_encoded_flat = target_encoded_flat[mask_flat]
 
         logits = self.calculate_logits(source_encoded_flat, target_encoded_flat, self._passage_disc_loss_cosine)
-        zero_mask = logits == 0.0
 
         # Mask out the same sentence.
         source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
@@ -1114,18 +1114,15 @@ class KnowledgeableStoriesModel(Model):
         if exclude_self:
             eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
             source_mask.masked_fill_(eye, 0)
-            source_mask.masked_fill_(zero_mask, 0)
-        source_mask *= zero_mask
 
         source_mask = source_mask.bool()
 
         target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
-                                                      label_smoothing=label_smoothing, blank_mask=zero_mask).to(
+                                                      label_smoothing=label_smoothing).to(
             source_encoded.device)
 
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
 
-        # print(logit_scores, target_mask, source_mask, mask_flat)
         disc_loss = self._kl_loss(logits_softmax, target_dist) * self._loss_weights[f"{level_name}_disc_loss"]
 
         with torch.no_grad():
@@ -1163,7 +1160,7 @@ class KnowledgeableStoriesModel(Model):
         return output_dict
 
     def calculate_logits(self, embeddings_one, embeddings_two, cosine=False):
-
+        
         if cosine:
             embeddings_one = torch.norm(embeddings_one, p=2, dim=-1, keepdim=True)
             embeddings_two = torch.norm(embeddings_two, p=2, dim=-1, keepdim=True)
