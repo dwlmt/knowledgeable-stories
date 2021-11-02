@@ -3,7 +3,7 @@ local dataset_cache_root = std.extVar("DATASET_CACHE_ROOT");
 local embedder_vocab_size = std.parseInt(std.extVar("EMBEDDER_VOCAB_SIZE"));
 local NUM_GPUS = std.parseInt(std.extVar("NUM_GPUS"));
 local NUM_CPUS = std.parseInt(std.extVar("NUM_CPUS"));
-local PASSAGE_BASE_BATCH_SIZE = 2;
+local PASSAGE_BASE_BATCH_SIZE = 1;
 local LM_BASE_BATCH_SIZE = 1;
 local MAX_INSTANCES_IN_MEMORY = std.parseInt(std.extVar("MAX_INSTANCES_IN_MEMORY"));
 local EPOCHS = std.parseInt(std.extVar("EPOCHS"));
@@ -23,7 +23,7 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
              "writing_prompts_lm": {
                 "type": "writing_prompts_lm",
                 "lazy": true,
-                "batch_size" : 16,
+                "batch_size" : 36,
             "max_sentence_grouping": 36,
             "max_token_len": 768,
             },
@@ -136,8 +136,8 @@ local VALIDATION_ITERATION_SIZE = std.parseInt(std.extVar("VALIDATION_ITERATION_
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
     "lm_gradients_for_hierarchy": false,
-    "sent_offsets": [-1, 1],
-    "sent_scales": [1.0, 1.0],
+     "sent_offsets": [-3, -2, -1, 1, 2, 3],
+    "sent_scales": [1.0, 3.0, 9.0, 9.0, 3.0, 1.0],
     "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {

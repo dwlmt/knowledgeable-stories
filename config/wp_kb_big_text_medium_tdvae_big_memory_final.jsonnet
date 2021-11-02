@@ -23,9 +23,9 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "writing_prompts_lm": {
           "type": "writing_prompts_lm",
           "lazy": true,
-          "batch_size" : 16,
-        "max_sentence_grouping": 36,
-        "max_token_len": 768,
+           "batch_size" : 16,
+           "max_sentence_grouping": 32,
+           "max_token_len": 768,
         },
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
@@ -43,8 +43,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "cmu_movie_lm": {
             "type": "cmu_movie_lm",
             "lazy": true,
-            "batch_size" : 16,
-            "max_sentence_grouping": 36,
+             "batch_size" : 16,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cmu_movie_hierarchy": {
@@ -56,7 +56,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "type": "cmu_book_lm",
             "lazy": true,
             "batch_size" : 16,
-            "max_sentence_grouping": 36,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cmu_book_hierarchy": {
@@ -67,14 +67,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 16,
-            "max_sentence_grouping": 36,
+            "batch_size" : 16,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+             "batch_size" : 100,
         },
         "schmoop_lm": {
             "type": "sharded_simple",
@@ -143,31 +143,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": [ "writing_prompts_lm", "writing_prompts_hierarchy",
-      "roc_lm", "roc_hierarchy",
-      "cmu_book_lm", "cmu_book_hierarchy",
-      "cbt_lm", "cbt_hierarchy",
-      "cmu_movie_lm", "cmu_movie_hierarchy",
-       "schmoop_lm", "schmoop_hierarchy",
-       "bookscorpus_lm", "bookscorpus_hierarchy",
-       "filmcorpus_lm", "filmcorpus_hierarchy",
-<<<<<<< HEAD
+    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
+      "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy", 
+       "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy",
        "atomic","snli","multinli"],
-=======
-       "atomic","snli","multinli"],],
->>>>>>> fc63c5ca578075a9bb3c92b79a44061831a3753e
-      "iterate_forever": false,
-      "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-      "sampling_rates":  [
-        6.0/100.0, 10.0/100.0,
-        1.0/100.0, 1.0/100.0,
-        3.5/100.0, 6.5/100.0,
-        1.0/100.0, 1.0/100.0,
-        3.5/100.0, 6.5/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 5.0/100.0, 5.0/100.0],
+       "iterate_forever": false,
+       "batches_per_epoch": TRAINING_ITERATION_SIZE,
+        "sampling_rates":  [6.0/95.0, 12.0/95.0, 1.0/95.0, 1.0/95.0, 3.5/95.0, 6.5/95.0,3.5/95.0, 6.5/95.0,
+      3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 5.0/95.0, 5.0/95.0, 5.0/95.0],
      "iterators": {
        "writing_prompts_lm": {
             "type": "basic",
@@ -269,31 +252,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "validation_iterator": {
    "type": "multitask_iterator",
-    "names_to_index": [ "writing_prompts_lm", "writing_prompts_hierarchy",
-      "roc_lm", "roc_hierarchy",
-      "cmu_book_lm", "cmu_book_hierarchy",
-      "cbt_lm", "cbt_hierarchy",
-      "cmu_movie_lm", "cmu_movie_hierarchy",
-       "schmoop_lm", "schmoop_hierarchy",
-       "bookscorpus_lm", "bookscorpus_hierarchy",
-       "filmcorpus_lm", "filmcorpus_hierarchy",
-<<<<<<< HEAD
-       "atomic","snli","multinli"],
-=======
-       "atomic","snli","multinli"],],
->>>>>>> fc63c5ca578075a9bb3c92b79a44061831a3753e
+    "names_to_index": ["writing_prompts_lm", "writing_prompts_hierarchy", "roc_lm", "roc_hierarchy",
+      "cmu_book_lm", "cmu_book_hierarchy", "cbt_lm", "cbt_hierarchy","cmu_movie_lm", "cmu_movie_hierarchy",
+      "schmoop_lm", "schmoop_hierarchy", "bookscorpus_lm", "bookscorpus_hierarchy", "filmcorpus_lm", "filmcorpus_hierarchy",
+      "atomic","snli","multinli"],
       "iterate_forever": false,
       "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-      "sampling_rates":  [
-        6.0/100.0, 10.0/100.0,
-        1.0/100.0, 1.0/100.0,
-        3.5/100.0, 6.5/100.0,
-        1.0/100.0, 1.0/100.0,
-        3.5/100.0, 6.5/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 10.0/100.0,
-        5.0/100.0, 5.0/100.0, 5.0/100.0],
+      "sampling_rates":  [5.0/95.0, 13.0/95.0, 1.0/95.0, 1.0/95.0, 3.5/95.0, 6.5/95.0,3.5/95.0, 6.5/95.0,
+      3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 3.5/95.0, 6.5/95.0, 5.0/95.0, 5.0/95.0, 5.0/95.0],
      "iterators": {
        "writing_prompts_lm": {
           "type": "basic",
@@ -442,8 +408,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
     "cat_minus": true,
-    "sent_offsets": [-3, -2, -1, 1, 2, 3],
-    "sent_scales": [1.0, 3.0, 9.0, 9.0, 3.0, 1.0],
+    "sent_offsets": [-1, 1],
+    "sent_scales": [1.0, 1.0],
     "label_smoothing": 0.0,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
@@ -500,9 +466,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "sentence_seq2vec_encoder": {
       "type": "seq2seq_pooler",
       "pooler": {
-        "type": "bag_of_embeddings",
-        "embedding_dim": 1024,
-        "averaged": true
+        "type": "final_pooler",
+        "embedding_dim": 1024
       },
       "seq2seq_encoder": {
         "type": "pytorch_transformer",
@@ -517,9 +482,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "sentence_2_seq2vec_encoder": {
       "type": "seq2seq_pooler",
       "pooler": {
-       "type": "bag_of_embeddings",
-        "embedding_dim": 1024,
-        "averaged": true
+        "type": "final_pooler",
+        "embedding_dim": 1024
       },
       "seq2seq_encoder": {
         "type": "pytorch_transformer",

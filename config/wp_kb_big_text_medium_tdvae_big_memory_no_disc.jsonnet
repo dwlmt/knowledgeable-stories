@@ -23,9 +23,9 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
         "writing_prompts_lm": {
           "type": "writing_prompts_lm",
           "lazy": true,
-          "batch_size" : 16,
-        "max_sentence_grouping": 36,
-        "max_token_len": 768,
+           "batch_size" : 16,
+           "max_sentence_grouping": 32,
+           "max_token_len": 768,
         },
         "writing_prompts_hierarchy": {
             "type": "writing_prompts_hierarchy",
@@ -44,7 +44,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "type": "cmu_movie_lm",
             "lazy": true,
             "batch_size" : 16,
-            "max_sentence_grouping": 36,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cmu_movie_hierarchy": {
@@ -56,7 +56,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
             "type": "cmu_book_lm",
             "lazy": true,
             "batch_size" : 16,
-            "max_sentence_grouping": 36,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cmu_book_hierarchy": {
@@ -67,14 +67,14 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "cbt_lm": {
            "type": "cbt_lm",
            "lazy": true,
-           "batch_size" : 16,
-            "max_sentence_grouping": 36,
+            "batch_size" : 16,
+            "max_sentence_grouping": 32,
             "max_token_len": 768,
         },
         "cbt_hierarchy": {
             "type": "cbt_hierarchy",
             "lazy": true,
-            "batch_size" : 100,
+             "batch_size" : 100,
         },
         "schmoop_lm": {
             "type": "sharded_simple",
@@ -91,6 +91,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "type": "multifile_hierarchy",
                 "lazy": true,
                 "types_label": 1,
+                "batch_size" : 100,
             },
         },
         "bookscorpus_lm": {
@@ -108,6 +109,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "type": "multifile_hierarchy",
                 "lazy": true,
                 "types_label": 1,
+                "batch_size" : 100,
             },
         },
         "filmcorpus_lm": {
@@ -125,6 +127,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
                 "type": "multifile_hierarchy",
                 "lazy": true,
                 "types_label": 2,
+                "batch_size" : 100,
             },
         },
         "atomic": {
@@ -143,7 +146,8 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
   },
   "iterator": {
    "type": "multitask_iterator",
-   "names_to_index": [ "writing_prompts_lm", "writing_prompts_hierarchy",
+    "names_to_index": [
+      "writing_prompts_lm", "writing_prompts_hierarchy",
       "roc_lm", "roc_hierarchy",
       "cmu_book_lm", "cmu_book_hierarchy",
       "cbt_lm", "cbt_hierarchy",
@@ -151,14 +155,10 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
        "schmoop_lm", "schmoop_hierarchy",
        "bookscorpus_lm", "bookscorpus_hierarchy",
        "filmcorpus_lm", "filmcorpus_hierarchy",
-<<<<<<< HEAD
        "atomic","snli","multinli"],
-=======
-       "atomic","snli","multinli"],],
->>>>>>> fc63c5ca578075a9bb3c92b79a44061831a3753e
-      "iterate_forever": false,
-      "batches_per_epoch": VALIDATION_ITERATION_SIZE,
-      "sampling_rates":  [
+       "iterate_forever": false,
+       "batches_per_epoch": TRAINING_ITERATION_SIZE,
+       "sampling_rates":  [
         6.0/100.0, 10.0/100.0,
         1.0/100.0, 1.0/100.0,
         3.5/100.0, 6.5/100.0,
@@ -277,11 +277,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
        "schmoop_lm", "schmoop_hierarchy",
        "bookscorpus_lm", "bookscorpus_hierarchy",
        "filmcorpus_lm", "filmcorpus_hierarchy",
-<<<<<<< HEAD
        "atomic","snli","multinli"],
-=======
-       "atomic","snli","multinli"],],
->>>>>>> fc63c5ca578075a9bb3c92b79a44061831a3753e
       "iterate_forever": false,
       "batches_per_epoch": VALIDATION_ITERATION_SIZE,
       "sampling_rates":  [
@@ -442,9 +438,10 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "tdvae_device": 2,
     "lm_finetune_final_layer_only": false,
     "cat_minus": true,
-    "sent_offsets": [-3, -2, -1, 1, 2, 3],
-    "sent_scales": [1.0, 3.0, 9.0, 9.0, 3.0, 1.0],
+    "sent_offsets": [-1, 1],
+    "sent_scales": [1.0, 1.0],
     "label_smoothing": 0.0,
+    "lm_memory_max_sentences": 16,
     "embedder_vocab_size": embedder_vocab_size,
     "dataset_config": {
         "writing_prompts_lm": {},
@@ -467,11 +464,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
     "loss_weights" : {
         "lm_loss": 1.0,
         "tdvae_loss": 1.0,
-        "sentence_disc_loss": 1.0,
         "sentence_autoencoder": 1.0,
-        "position_loss": 1.0,
-        "sentiment_loss": 1.0,
-        "storytype_loss": 1.0,
         "atomic_loss": 1.0,
         "snli_loss": 1.0,
         "lm_memory_loss": 1.0,
@@ -542,7 +535,7 @@ local LR_REDUCE_RATE = std.parseJson(std.extVar("LR_REDUCE_RATE"));
          "t_diff_max": 5,
          "d_block_hidden_size": 512,
          "decoder_hidden_sizes": [6144, 4096, 2048],
-         "kl_loss_weight": 5.0,
+         "kl_loss_weight": 1.0,
     },
     "sentence_autoencoder": {
         "input_dim": 2048,
