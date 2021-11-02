@@ -341,6 +341,7 @@ class KnowledgeableStoriesModel(Model):
         prediction_mode = metadata[0].pop("prediction", False) or self._prediction_mode
 
         passage_tuning_random = random.choice([True, False])
+        lm_mem_finetuning = random.choice([True, False])
 
         loss = torch.tensor(0.0)
         loss = loss.to(self._default_cuda_device)
@@ -394,6 +395,8 @@ class KnowledgeableStoriesModel(Model):
                     lm_output, lm_mask = self.lm_mask_and_hidden_states(passages)
 
                     passage_mask = self._passage_masks(lm_mask)
+                    #print("Passages and Tokens:",passages["tokens"], metadata["passages"])
+
 
                 with torch.set_grad_enabled(False):
                     encoded_sentences = self._encode_sentences_batch(lm_output, lm_mask).to(self._default_cuda_device)
@@ -455,13 +458,13 @@ class KnowledgeableStoriesModel(Model):
                    
                     passages["tokens"] = passages["tokens"].detach()
 
-                    if "reinforce_loss" in self._loss_weights:
+                    if "reinforce_loss" in self._loss_weights and  (lm_mem_finetuning or "sentence_disc_loss" not in self._loss_weights):
                         reinforce_loss = self._reinforce_finetune(passages, passage_mask, encoded_sentences_cat)
                         loss += reinforce_loss.to(self._default_cuda_device)
                         self._metrics["reinforce_loss"](reinforce_loss)
 
 
-                    if "lm_memory_loss" in self._loss_weights:
+                    if "lm_memory_loss" in self._loss_weights and (lm_mem_finetuning or "sentence_disc_loss" not in self._loss_weights):
                         
                         lm_memory_loss = self._lm_memory_finetune(passages, encoded_sentences_cat)
 
@@ -480,28 +483,12 @@ class KnowledgeableStoriesModel(Model):
                         if self._passage_dense is not None:
                             encoded_sentences_cat = self._passage_dense(encoded_sentences_cat.cuda())
 
-                        if "passage_disc_loss" in self._loss_weights:
-                            if self._sentence_disc and not prediction_mode:
+                        if (not lm_mem_finetuning or "sentence_disc_loss" not in self._loss_weights):
+                            if "passage_disc_loss":
+                                if self._sentence_disc and not prediction_mode:
 
-                                passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                                encoded_sentences_cat,
-                                                                                                mask=passage_mask,
-                                                                                                offsets=self._passage_offsets,
-                                                                                                scales=self._passage_scales,
-                                                                                                label_smoothing=self._label_smoothing,
-                                                                                                level_name="passage",
-                                                                                                exclude_self=True)
-
-                                output = {**output, **disc_output_dict}
-
-                                loss += passage_disc_loss
-
-                                self._metrics["passage_disc_loss"](passage_disc_loss.item())
-                            else:
-
-                                if not prediction_mode:
                                     passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
-                                                                                                    passages_encoded,
+                                                                                                    encoded_sentences_cat,
                                                                                                     mask=passage_mask,
                                                                                                     offsets=self._passage_offsets,
                                                                                                     scales=self._passage_scales,
@@ -509,13 +496,30 @@ class KnowledgeableStoriesModel(Model):
                                                                                                     level_name="passage",
                                                                                                     exclude_self=True)
 
+                                    output = {**output, **disc_output_dict}
+
                                     loss += passage_disc_loss
 
                                     self._metrics["passage_disc_loss"](passage_disc_loss.item())
+                                else:
 
-                            if not prediction_mode:
-                                loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
-                                                                    passages_encoded)
+                                    if not prediction_mode and not  lm_mem_finetuning and self._lm_memory_dense is not None:
+                                        passage_disc_loss, disc_output_dict = self._calculate_disc_loss(passages_encoded,
+                                                                                                        passages_encoded,
+                                                                                                        mask=passage_mask,
+                                                                                                        offsets=self._passage_offsets,
+                                                                                                        scales=self._passage_scales,
+                                                                                                        label_smoothing=self._label_smoothing,
+                                                                                                        level_name="passage",
+                                                                                                        exclude_self=True)
+
+                                        loss += passage_disc_loss
+
+                                        self._metrics["passage_disc_loss"](passage_disc_loss.item())
+
+                                if not prediction_mode:
+                                    loss = self.fusion_loss_if_required(lm_mask, lm_output, passages["tokens"], loss,
+                                                                        passages_encoded)
 
                         if prediction_mode:
                             output["passages_encoded"] = passages_encoded
@@ -1107,6 +1111,8 @@ class KnowledgeableStoriesModel(Model):
 
         logits = self.calculate_logits(source_encoded_flat, target_encoded_flat, self._passage_disc_loss_cosine)
 
+        zero_mask = logits == 0.0
+
         # Mask out the same sentence.
         source_mask = torch.ones(source_encoded_flat.size(0), source_encoded_flat.size(0), dtype=torch.bool,
                                  device=source_encoded.device)
@@ -1114,11 +1120,12 @@ class KnowledgeableStoriesModel(Model):
         if exclude_self:
             eye = torch.eye(source_encoded_flat.size(0), dtype=torch.bool, device=source_encoded.device)
             source_mask.masked_fill_(eye, 0)
+            source_mask.masked_fill_(zero_mask, 0)
 
         source_mask = source_mask.bool()
 
         target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
-                                                      label_smoothing=label_smoothing).to(
+                                                      label_smoothing=label_smoothing, zero_mask=zero_mask).to(
             source_encoded.device)
 
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
