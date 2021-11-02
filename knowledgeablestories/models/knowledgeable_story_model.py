@@ -1125,7 +1125,7 @@ class KnowledgeableStoriesModel(Model):
         source_mask = source_mask.bool()
 
         target_dist = self._generate_smoothed_targets(logits.size(0), offsets=offsets, scales=scales,
-                                                      label_smoothing=label_smoothing, zero_mask=zero_mask).to(
+                                                      label_smoothing=label_smoothing, blank_mask=zero_mask).to(
             source_encoded.device)
 
         logits_softmax = masked_log_softmax(logits, mask=source_mask)
