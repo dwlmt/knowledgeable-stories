@@ -83,6 +83,7 @@ class TDVAE(nn.Module, FromParams):
                  samples_per_seq: int = 200,
                  decoder_hidden_size: int = 512,
                  decoder_hidden_sizes=[],
+                 decoder_only_final_layer: bool = False,
                  d_block_hidden_size: int = 256,
                  t_diff_min: int = 1,
                  t_diff_max: int = 6,
@@ -131,7 +132,12 @@ class TDVAE(nn.Module, FromParams):
             for layer in range(num_layers)])
 
         # state to observation
-        self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, decoder_hidden_sizes, x_size)
+        self._decoder_only_final_layer = decoder_only_final_layer
+        self._input_size = input_size
+        if not decoder_only_final_layer:
+            self.x_z_decoder = Decoder(num_layers * z_posterior_size, decoder_hidden_size, decoder_hidden_sizes, x_size)
+        else:
+            self.x_z_decoder = Decoder(z_posterior_size, decoder_hidden_size, decoder_hidden_sizes, x_size)
 
     def forward(self, x, mask=None):
 
@@ -170,7 +176,10 @@ class TDVAE(nn.Module, FromParams):
         pt_z2_z1_logvar, pt_z2_z1_mu = self._z_prediction(qb_z2_b2s, qs_z1_z2_b1)
 
         # This decoder is grounding the prediction in the data x2 from t2.
-        pd_x2_z2 = self.x_z_decoder(qb_z2_b2)
+        if not self._decoder_only_final_layer:
+            pd_x2_z2 = self.x_z_decoder(qb_z2_b2)
+        else:
+            pd_x2_z2 = self.x_z_decoder(qb_z2_b2[:,-self._input_size:])
 
         return (x, t2, qs_z1_z2_b1_mu, qs_z1_z2_b1_logvar, pb_z1_b1_mu, pb_z1_b1_logvar, qb_z2_b2_mu, qb_z2_b2_logvar,
                 qb_z2_b2, pt_z2_z1_mu, pt_z2_z1_logvar, pd_x2_z2)
@@ -371,7 +380,10 @@ class TDVAE(nn.Module, FromParams):
 
                 z = torch.cat(next_z, dim=1)
                 rollout_z2.append(z)
-                rollout_x.append(self.x_z_decoder(z))
+                if not self._decoder_only_final_layer:
+                    rollout_x.append(self.x_z_decoder(z))
+                else:
+                    rollout_x.append(self.x_z_decoder(z[:, -self._input_size:]))
 
             rollout_x = torch.squeeze(torch.stack(rollout_x, dim=1), dim=0)
             outer_rollout_x.append(rollout_x)
