@@ -19,7 +19,7 @@ from nltk import interval_distance, AnnotationTask
 from scipy.signal import find_peaks
 from scipy.spatial import distance
 from scipy.stats import kendalltau, pearsonr, spearmanr, combine_pvalues
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser(
@@ -750,7 +750,7 @@ def scale_prediction_columns(position_df, metric_columns):
         if col not in position_df.columns:
             continue
 
-        scaler = StandardScaler()
+        scaler = RobustScaler()
         scaled_col = numpy.squeeze(scaler.fit_transform(position_df[col].to_numpy().reshape(-1, 1)),
                                    axis=1).tolist()
         position_df[f"{col}_scaled"] = scaled_col
