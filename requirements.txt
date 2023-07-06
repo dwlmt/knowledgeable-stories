@@ -10,7 +10,7 @@ pytest==5.3.5
 plotly==4.5.1
 more_itertools==8.2.0
 umap_learn==0.3.10
-scipy==1.4.1
+scipy==1.10.0
 hdbscan==0.8.25
 overrides==2.8.0
 torch==1.5.0
